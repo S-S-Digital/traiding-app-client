@@ -1,28 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 
-final lightTheme = ThemeData(
-  useMaterial3: true,
-  brightness: Brightness.light,
-  scaffoldBackgroundColor: AppColors.lightBackgroundColor,
-  // primaryColor: AppColors.primaryColor,
-  cardColor: Colors.white,
-  appBarTheme: const AppBarTheme(
-    backgroundColor: Colors.white,
-    foregroundColor: Colors.black,
-    elevation: 0,
-  ),
-  textTheme: const TextTheme(
-    bodyLarge: TextStyle(color: Colors.black),
-    bodyMedium: TextStyle(color: Colors.black87),
-  ),
-  bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-    backgroundColor: Colors.white,
-    selectedItemColor: AppColors.darkAccentBlue,
-    unselectedItemColor: AppColors.darkTextPrimary,
-  ),
-);
-
 final darkTheme = ThemeData(
   useMaterial3: true,
   brightness: Brightness.dark,
@@ -34,10 +12,7 @@ final darkTheme = ThemeData(
     foregroundColor: AppColors.darkTextPrimary,
     elevation: 0,
   ),
-  textTheme: const TextTheme(
-    bodyLarge: TextStyle(color: AppColors.darkTextPrimary),
-    bodyMedium: TextStyle(color: AppColors.darkTextSecondary),
-  ),
+
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
     backgroundColor: AppColors.darkSecondaryBackground,
     selectedItemColor: AppColors.darkAccentBlue,
@@ -45,4 +20,33 @@ final darkTheme = ThemeData(
   ),
   dividerColor: AppColors.darkBorderColor,
   shadowColor: AppColors.darkShadow,
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: AppColors.darkBackgroundColor.withValues(
+        alpha: 0.2,
+      ), // фон кнопки
+      foregroundColor: Colors.white, // цвет текста и иконок
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(
+          color: AppColors.darkBackgroundColor.withValues(alpha: 0.6),
+          width: 1,
+        ),
+      ),
+      minimumSize: const Size(150, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    ),
+  ),
+
+  colorScheme: const ColorScheme(
+    brightness: Brightness.dark,
+    primary: AppColors.darkAccentBlue, // основной цвет (кнопки, FAB)
+    onPrimary: Colors.white, // текст на primary
+    secondary: AppColors.darkAccentGreen, // "купить", акцентные элементы
+    onSecondary: Colors.white, // текст на secondary
+    error: AppColors.darkAccentRed, // "продать"
+    onError: Colors.white, // текст на error
+    surface: AppColors.darkCardColor, // фон карточек, панели
+    onSurface: AppColors.darkTextPrimary, // текст на surface
+  ),
 );
