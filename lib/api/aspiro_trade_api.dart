@@ -1,3 +1,5 @@
+import 'package:aspiro_trade/api/api.dart';
+import 'package:aspiro_trade/repositories/auth/auth.dart';
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:talker/talker.dart';
@@ -22,5 +24,25 @@ abstract class AspiroTradeApi {
     return AspiroTradeApi(dio);
   }
 
+
+// =============== Auth ===============
+  @POST('/auth/register')
+  Future<AuthDto> register(@Body() Register register);
+
+  @POST('/auth/login')
+  Future<AuthDto> login(@Body() Login login);
+
+
+  @POST('/auth/refresh')
+  Future<RefreshDto> refresh(@Body() Refresh refresh);
+
+
+  @POST('/auth/fcm-token')
+  Future<String> registerFcmToken(@Body() FirebaseToken token);
+
+  @POST('/auth/logout')
+  Future<void> logout();
+
   
+    
 }

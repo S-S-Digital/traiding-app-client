@@ -118,7 +118,7 @@ class SettingsContainers extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         child: Container(
-          padding: EdgeInsets.all(10),
+          padding: EdgeInsets.all(12),
           width: double.infinity,
           decoration: BoxDecoration(
             color: theme.cardColor,

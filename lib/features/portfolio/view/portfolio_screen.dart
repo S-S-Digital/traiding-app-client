@@ -129,7 +129,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
                         SignalChart(
                           height: 120,
-                          color: theme.colorScheme.error,
+                          color: theme.colorScheme.secondary,
                         ),
 
                         Divider(),
