@@ -9,7 +9,6 @@ class _UserLocal {
   late String email;
   late String phone;
 
-  late String accessToken;
-  late String refreshToken;
+  
 
 }

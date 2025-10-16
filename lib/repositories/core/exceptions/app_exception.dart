@@ -1,0 +1,34 @@
+sealed class AppException implements Exception {
+  final String message;
+  final int? statusCode;
+
+  const AppException(this.message, {this.statusCode});
+
+  @override
+  String toString() => '$runtimeType: $message';
+}
+
+class BadRequestException extends AppException {
+  const BadRequestException([super.message = 'Некорректный запрос'])
+      : super(statusCode: 400);
+}
+
+class UnauthorizedException extends AppException {
+  const UnauthorizedException([super.message = 'Необходима авторизация'])
+      : super(statusCode: 401);
+}
+
+class ConflictException extends AppException {
+  const ConflictException([super.message = 'Конфликт данных'])
+      : super(statusCode: 409);
+}
+
+class InternalServerErrorException extends AppException {
+  const InternalServerErrorException([super.message = 'Ошибка сервера'])
+      : super(statusCode: 500);
+}
+
+class UnknownException extends AppException {
+  const UnknownException([super.message = 'Неизвестная ошибка'])
+      : super();
+}

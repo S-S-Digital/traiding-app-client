@@ -1,42 +1,69 @@
 import 'package:aspiro_trade/api/api.dart';
 import 'package:aspiro_trade/repositories/auth/auth.dart';
+import 'package:aspiro_trade/repositories/base/base.dart';
+import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:realm/realm.dart';
 
-class AuthRepository implements AuthRepositoryI{
-  AuthRepository({required this.api, required this.realm});
+class AuthRepository extends BaseRepository implements AuthRepositoryI {
+  AuthRepository(
+    super.talker, {
+    required this.api,
+    required this.realm,
+    required this.tokenStorage,
+  });
 
   final AspiroTradeApi api;
   final Realm realm;
-
-  
-  @override
-  Future<User> login(Login login) {
-    // TODO: implement login
-    throw UnimplementedError();
-  }
+  final TokenStorage tokenStorage;
 
   @override
-  Future<void> logout() {
-    // TODO: implement logout
-    throw UnimplementedError();
-  }
+  Future<User> login(Login login) => safeApiCall(() async {
+    final userDto = await api.login(login);
+
+
+    await tokenStorage.saveTokens(userDto.accessToken, userDto.refreshToken);
+
+    realm.write(() {
+      realm.deleteAll<UserLocal>();
+      realm.add(userDto.user.toLocal(), update: true);
+    });
+
+    return userDto.user.toEntity();
+  });
 
   @override
-  Future<RefreshDto> refresh(Refresh refresh) {
-    // TODO: implement refresh
-    throw UnimplementedError();
-  }
+  Future<void> logout() => safeApiCall(() async {
+    await api.logout();
+    await tokenStorage.clear();
+    realm.write(() {
+      realm.deleteAll();
+    });
+  });
 
   @override
-  Future<User> register(Register register) {
-    // TODO: implement register
-    throw UnimplementedError();
-  }
+  Future<void> refresh(Refresh refresh)=> safeApiCall(() async {
+
+    final tokens = await api.refresh(refresh);
+    
+    await tokenStorage.clear();
+    await tokenStorage.saveTokens(tokens.accessToken, tokens.refreshToken);
+  });
 
   @override
-  Future<String> registerFcmToken(FirebaseToken token) {
-    // TODO: implement registerFcmToken
-    throw UnimplementedError();
-  }
+  Future<User> register(Register register) => safeApiCall(() async {
+    final userDto = await api.register(register);
 
+
+    await tokenStorage.saveTokens(userDto.accessToken, userDto.refreshToken);
+
+    realm.write(() {
+      realm.deleteAll<UserLocal>();
+      realm.add(userDto.user.toLocal(), update: true);
+    });
+    return userDto.user.toEntity();
+  });
+
+  @override
+  Future<String> registerFcmToken(FirebaseToken token) =>
+      safeApiCall(() => api.registerFcmToken(token));
 }

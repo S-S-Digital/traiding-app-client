@@ -11,18 +11,10 @@ part of 'user_local.dart';
 // ignore_for_file: type=lint
 class UserLocal extends _UserLocal
     with RealmEntity, RealmObjectBase, RealmObject {
-  UserLocal(
-    String id,
-    String email,
-    String phone,
-    String accessToken,
-    String refreshToken,
-  ) {
+  UserLocal(String id, String email, String phone) {
     RealmObjectBase.set(this, 'id', id);
     RealmObjectBase.set(this, 'email', email);
     RealmObjectBase.set(this, 'phone', phone);
-    RealmObjectBase.set(this, 'accessToken', accessToken);
-    RealmObjectBase.set(this, 'refreshToken', refreshToken);
   }
 
   UserLocal._();
@@ -43,20 +35,6 @@ class UserLocal extends _UserLocal
   set phone(String value) => RealmObjectBase.set(this, 'phone', value);
 
   @override
-  String get accessToken =>
-      RealmObjectBase.get<String>(this, 'accessToken') as String;
-  @override
-  set accessToken(String value) =>
-      RealmObjectBase.set(this, 'accessToken', value);
-
-  @override
-  String get refreshToken =>
-      RealmObjectBase.get<String>(this, 'refreshToken') as String;
-  @override
-  set refreshToken(String value) =>
-      RealmObjectBase.set(this, 'refreshToken', value);
-
-  @override
   Stream<RealmObjectChanges<UserLocal>> get changes =>
       RealmObjectBase.getChanges<UserLocal>(this);
 
@@ -72,8 +50,6 @@ class UserLocal extends _UserLocal
       'id': id.toEJson(),
       'email': email.toEJson(),
       'phone': phone.toEJson(),
-      'accessToken': accessToken.toEJson(),
-      'refreshToken': refreshToken.toEJson(),
     };
   }
 
@@ -85,16 +61,8 @@ class UserLocal extends _UserLocal
         'id': EJsonValue id,
         'email': EJsonValue email,
         'phone': EJsonValue phone,
-        'accessToken': EJsonValue accessToken,
-        'refreshToken': EJsonValue refreshToken,
       } =>
-        UserLocal(
-          fromEJson(id),
-          fromEJson(email),
-          fromEJson(phone),
-          fromEJson(accessToken),
-          fromEJson(refreshToken),
-        ),
+        UserLocal(fromEJson(id), fromEJson(email), fromEJson(phone)),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -106,8 +74,6 @@ class UserLocal extends _UserLocal
       SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
       SchemaProperty('email', RealmPropertyType.string),
       SchemaProperty('phone', RealmPropertyType.string),
-      SchemaProperty('accessToken', RealmPropertyType.string),
-      SchemaProperty('refreshToken', RealmPropertyType.string),
     ]);
   }();
 

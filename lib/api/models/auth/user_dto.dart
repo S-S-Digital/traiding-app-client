@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/repositories/auth/auth.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -24,6 +25,16 @@ class UserDto extends Equatable {
       _$UserDtoFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserDtoToJson(this);
+
+
+    User toEntity() => User(
+    id: id,
+    email: email,
+    phone: phone
+  );
+
+  UserLocal toLocal() =>
+      UserLocal(id, email, phone);
 
   @override
   List<Object?> get props => [id, email, phone, createdAt];
