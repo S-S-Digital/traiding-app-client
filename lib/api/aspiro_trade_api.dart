@@ -52,4 +52,7 @@ abstract class AspiroTradeApi {
 
   @PATCH('/tickers/{id}')
   Future<void> updateTickerSignals(@Path() String id);
+
+
+  
 }
