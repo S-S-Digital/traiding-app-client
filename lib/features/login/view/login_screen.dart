@@ -4,6 +4,7 @@ import 'package:aspiro_trade/ui/ui.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
+
 @RoutePage()
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -55,6 +56,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       SizedBox(height: 10),
 
+                      
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -90,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       ForgotPasswordButton(onPressed: () {}),
 
-                      AuthButton(text: 'Войти', onPressed: () {}),
+                      AuthButton(text: 'Войти'.toUpperCase(), onPressed: () {}),
 
                       AuthFooter(
                         firstText: 'Нет аккаунта?',

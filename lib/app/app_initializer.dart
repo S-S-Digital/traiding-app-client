@@ -1,4 +1,6 @@
 import 'package:aspiro_trade/app/app.dart';
+import 'package:aspiro_trade/features/login/bloc/login_bloc.dart';
+import 'package:aspiro_trade/repositories/auth/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -25,7 +27,15 @@ class AppInitializer extends StatelessWidget {
           create: (context) => repositoryContainer.tickersRepository,
         ),
       ],
-      child: child,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) =>
+                LoginBloc(authRepository: context.read<AuthRepositoryI>()),
+          ),
+        ],
+        child: child,
+      ),
     );
   }
 }
