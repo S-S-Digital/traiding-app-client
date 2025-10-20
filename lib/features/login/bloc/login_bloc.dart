@@ -13,4 +13,6 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   }
 
   final AuthRepositoryI _authRepository;
+
+  
 }

@@ -83,12 +83,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       EmailTextField(
                         emailFocus: emailFocus,
                         emailController: emailController,
-                        passwordFocus: passwordFocus,
+                        passwordFocus: passwordFocus, onChanged: (String value) {  },
                       ),
                       SizedBox(height: 20),
                       PasswordTextField(
                         passwordFocus: passwordFocus,
-                        passwordController: passwordController,
+                        passwordController: passwordController, onChanged: (String value) {  },
                       ),
 
                       ForgotPasswordButton(onPressed: () {}),

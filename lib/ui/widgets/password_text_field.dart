@@ -5,6 +5,7 @@ class PasswordTextField extends StatelessWidget {
     super.key,
     required this.passwordFocus,
     required this.passwordController,
+    required this.onChanged,
     this.textInputAction = TextInputAction.done,
     this.onFieldSubmitted,
   });
@@ -13,6 +14,7 @@ class PasswordTextField extends StatelessWidget {
   final TextEditingController passwordController;
   final ValueChanged<String>? onFieldSubmitted;
   final TextInputAction textInputAction;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +25,7 @@ class PasswordTextField extends StatelessWidget {
       keyboardType: TextInputType.text,
       onFieldSubmitted: onFieldSubmitted ??
           (_) => FocusScope.of(context).unfocus(),
+      onChanged: (value) => onChanged,
       obscureText: true,
       decoration: InputDecoration(hintText: 'Введите пароль'),
     );

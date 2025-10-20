@@ -6,11 +6,13 @@ class EmailTextField extends StatelessWidget {
     required this.emailFocus,
     required this.emailController,
     required this.passwordFocus,
+    required this.onChanged
   });
 
   final FocusNode emailFocus;
   final TextEditingController emailController;
   final FocusNode passwordFocus;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +24,7 @@ class EmailTextField extends StatelessWidget {
       onFieldSubmitted: (_) {
         FocusScope.of(context).requestFocus(passwordFocus);
       },
+      onChanged: (value) => onChanged,
 
       decoration: InputDecoration(hintText: 'user@example.com'),
     );
