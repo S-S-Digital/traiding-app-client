@@ -20,6 +20,23 @@ final darkTheme = ThemeData(
   ),
   dividerColor: AppColors.darkBorderColor,
   shadowColor: AppColors.darkShadow,
+  inputDecorationTheme: InputDecorationTheme(
+    hintStyle: TextStyle(color: AppColors.darkTextSecondary),
+    fillColor: AppColors.darkSecondaryBackground,
+    filled: true,
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: AppColors.darkBackgroundColor, width: 1.0),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: AppColors.darkAccentBlue, width: 1.5),
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide.none,
+    ),
+  ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
       backgroundColor: AppColors.darkBackgroundColor.withValues(
@@ -43,7 +60,7 @@ final darkTheme = ThemeData(
     primary: AppColors.darkAccentBlue, // основной цвет (кнопки, FAB)
     onPrimary: Colors.white, // текст на primary
     secondary: AppColors.darkAccentGreen, // "купить", акцентные элементы
-    onSecondary: Colors.white, // текст на secondary
+    onSecondary: AppColors.darkTextSecondary, // текст на secondary
     error: AppColors.darkAccentRed, // "продать"
     onError: Colors.white, // текст на error
     surface: AppColors.darkCardColor, // фон карточек, панели

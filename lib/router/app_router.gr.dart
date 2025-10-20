@@ -43,6 +43,22 @@ class HomeRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [LoginScreen]
+class LoginRoute extends PageRouteInfo<void> {
+  const LoginRoute({List<PageRouteInfo>? children})
+    : super(LoginRoute.name, initialChildren: children);
+
+  static const String name = 'LoginRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const LoginScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [PortfolioScreen]
 class PortfolioRoute extends PageRouteInfo<void> {
   const PortfolioRoute({List<PageRouteInfo>? children})
@@ -54,6 +70,22 @@ class PortfolioRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const PortfolioScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [RegisterScreen]
+class RegisterRoute extends PageRouteInfo<void> {
+  const RegisterRoute({List<PageRouteInfo>? children})
+    : super(RegisterRoute.name, initialChildren: children);
+
+  static const String name = 'RegisterRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const RegisterScreen();
     },
   );
 }

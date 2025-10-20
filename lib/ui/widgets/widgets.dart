@@ -1,2 +1,7 @@
+export 'auth_button.dart';
+export 'auth_footer.dart';
 export 'base_app_bar.dart';
 export 'crypto_list_tile.dart';
+export 'email_text_field.dart';
+export 'password_text_field.dart';
+export 'welcome_header.dart';
