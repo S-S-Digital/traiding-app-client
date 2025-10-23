@@ -64,7 +64,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       EmailTextField(
                         emailFocus: emailFocus,
                         emailController: emailController,
-                        passwordFocus: passwordFocus, onChanged: (String value) {  },
+                        passwordFocus: passwordFocus,
+                        onChanged: (String value) {},
                       ),
                       SizedBox(height: 15),
                       PasswordTextField(
@@ -72,7 +73,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         passwordController: passwordController,
                         textInputAction: TextInputAction.next,
                         onFieldSubmitted: (_) =>
-                            FocusScope.of(context).requestFocus(phoneFocus), onChanged: (String value) {  },
+                            FocusScope.of(context).requestFocus(phoneFocus),
+                        onChanged: (String value) {},
                       ),
                       SizedBox(height: 15),
                       PhoneTextField(
@@ -81,6 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       SizedBox(height: 30),
                       AuthButton(
+                        isValid: false,
                         text: 'зарегистрироваться'.toUpperCase(),
                         onPressed: () {
                           AutoRouter.of(context).pushAndPopUntil(

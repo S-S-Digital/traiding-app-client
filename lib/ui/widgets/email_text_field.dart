@@ -24,7 +24,9 @@ class EmailTextField extends StatelessWidget {
       onFieldSubmitted: (_) {
         FocusScope.of(context).requestFocus(passwordFocus);
       },
-      onChanged: (value) => onChanged,
+      onChanged: (value) {
+        onChanged(value);
+      },
 
       decoration: InputDecoration(hintText: 'user@example.com'),
     );

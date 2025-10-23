@@ -25,7 +25,9 @@ class PasswordTextField extends StatelessWidget {
       keyboardType: TextInputType.text,
       onFieldSubmitted: onFieldSubmitted ??
           (_) => FocusScope.of(context).unfocus(),
-      onChanged: (value) => onChanged,
+      onChanged: (value){
+        onChanged(value);
+      },
       obscureText: true,
       decoration: InputDecoration(hintText: 'Введите пароль'),
     );

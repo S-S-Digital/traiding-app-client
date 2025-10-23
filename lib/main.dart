@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:realm/realm.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talker_bloc_logger/talker_bloc_logger.dart';
@@ -15,9 +16,10 @@ import 'package:talker_flutter/talker_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await dotenv.load(fileName: ".env");
+
+  final apiUrl = dotenv.env['API_URL'];
 
   final preferences = await SharedPreferences.getInstance();
   final tokenStorage = TokenStorage();
@@ -42,16 +44,19 @@ Future<void> main() async {
     ),
   );
 
-  final api = AspiroTradeApi.create(apiUrl: '', talker: talker);
+  final api = AspiroTradeApi.create(apiUrl: apiUrl, talker: talker);
 
   final config = AppConfig(
     preferences: preferences,
     talker: talker,
-    apiUrl: '',
+    apiUrl: apiUrl ?? '',
     api: api,
     realm: realm,
     tokenStorage: tokenStorage,
   );
+
+
+  
 
   runApp(AspiroTradeApp(config: config));
 }

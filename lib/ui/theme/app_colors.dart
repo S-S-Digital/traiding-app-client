@@ -9,7 +9,7 @@ class AppColors {
   static const Color darkTextPrimary = Color(0xFFD1D4DC); // --text-primary
   static const Color darkTextSecondary = Color(0xFF787B86); // --text-secondary
   static const Color darkAccentGreen = Color(0xFF26A69A); // --accent-green
-  static const Color darkAccentRed = Color(0xFFEF5350); // --accent-red
+  static const Color darkAccentRed = Color(0xFFFD232D); // --accent-red
   static const Color darkAccentBlue = Color(0xFF2962FF); // --accent-blue
   static const Color darkBorderColor = Color(0xFF363A45); // --border-color
   static const Color darkShadow = Color.fromRGBO(0, 0, 0, 0.3); // --shadow

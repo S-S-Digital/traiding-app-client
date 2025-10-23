@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 
@@ -67,3 +68,13 @@ final darkTheme = ThemeData(
     onSurface: AppColors.darkTextPrimary, // текст на surface
   ),
 );
+
+
+
+extension ThemePlatformExtension on ThemeData {
+  bool get isAndroid => defaultTargetPlatform == TargetPlatform.android;
+  bool get isCupertino => [TargetPlatform.iOS, TargetPlatform.macOS]
+      .contains(defaultTargetPlatform);
+  Color get cupertinoAlertColor =>  AppColors.darkAccentRed;
+  Color get cupertinoActionColor => AppColors.darkAccentBlue;
+}

@@ -1,21 +1,36 @@
 import 'app_exception.dart';
 
-
 final class AppExceptionFactory {
   const AppExceptionFactory._();
 
   static AppException fromStatusCode(int? statusCode, [String? message]) {
+    // нормализуем серверное сообщение
+    final msg = message?.toLowerCase().trim();
+
     switch (statusCode) {
       case 400:
-        return BadRequestException(message ?? 'Некорректный запрос');
+        return BadRequestException(_mapMessage(msg) ?? 'Некорректный запрос');
       case 401:
-        return UnauthorizedException(message ?? 'Необходима авторизация');
+        return UnauthorizedException(_mapMessage(msg) ?? 'Необходима авторизация');
       case 409:
-        return ConflictException(message ?? 'Конфликт данных');
+        return ConflictException(_mapMessage(msg) ?? 'Конфликт данных');
       case 500:
-        return InternalServerErrorException(message ?? 'Ошибка сервера');
+        return InternalServerErrorException(_mapMessage(msg) ?? 'Ошибка сервера');
       default:
-        return UnknownException(message ?? 'Неизвестная ошибка');
+        return UnknownException(_mapMessage(msg) ?? 'Неизвестная ошибка');
     }
+  }
+
+  static String? _mapMessage(String? msg) {
+    if (msg == null) return null;
+
+    // перевод стандартных фраз от backend
+    if (msg.contains('invalid credentials')) return 'Неверный логин или пароль';
+    if (msg.contains('user not found')) return 'Пользователь не найден';
+    if (msg.contains('email already exists')) return 'Email уже зарегистрирован';
+    if (msg.contains('network is unreachable')) return 'Нет подключения к сети';
+    if (msg.contains('token expired')) return 'Сессия истекла, войдите заново';
+
+    return null;
   }
 }

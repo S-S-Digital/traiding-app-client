@@ -19,7 +19,9 @@ abstract class BaseRepository {
       throw AppExceptionFactory.fromStatusCode(statusCode, message);
     } on AppException {
       rethrow;
-    } catch (e, stack) {
+    }
+    
+    catch (e, stack) {
       talker.error('Unknown error', e, stack);
       throw UnknownException(e.toString());
     }
