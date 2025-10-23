@@ -68,7 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     buildWhen: (previous, current) => current.isBuildable,
                     builder: (context, state) {
                       if (state is LoginLoading) {
-                        return Scaffold(body: Center(child: Text('data')));
+                        return Scaffold(
+                          body: Center(child: PlatformProgressIndicator()),
+                        );
                       } else if (state is LoginLoaded) {
                         return Column(
                           mainAxisSize: MainAxisSize.min,
@@ -126,11 +128,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             AuthButton(
                               isValid:
-                                  state.isEmailValid && state.isPasswordValid,
+                                  state.isValid,
                               text: 'Войти'.toUpperCase(),
                               onPressed: () {
-                                if (state.isEmailValid &&
-                                    state.isPasswordValid) {
+                                if (state.isValid ) {
                                   context.read<LoginBloc>().add(
                                     Auth(
                                       email: emailController.text.trim(),
@@ -161,4 +162,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

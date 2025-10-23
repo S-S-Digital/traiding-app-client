@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 part of 'login_bloc.dart';
 
 sealed class LoginState extends Equatable {
@@ -14,7 +13,6 @@ final class LoginInitial extends LoginState {}
 
 final class LoginLoading extends LoginState {
   @override
-  
   bool get isBuildable => true;
 }
 
@@ -22,49 +20,36 @@ class LoginLoaded extends LoginState {
   const LoginLoaded({
     required this.email,
     required this.password,
-    this.isEmailValid = false,
-    this.isPasswordValid = false,
+    this.isValid = false,
   });
 
-  LoginLoaded copyWith({
-    String? email,
-    bool? isEmailValid,
-    String? password,
-    bool? isPasswordValid,
-  }) {
+  LoginLoaded copyWith({String? email, bool? isValid, String? password}) {
     return LoginLoaded(
       email: email ?? this.email,
-      isEmailValid: isEmailValid ?? this.isEmailValid,
+      isValid: isValid ?? this.isValid,
       password: password ?? this.password,
-      isPasswordValid: isPasswordValid ?? this.isPasswordValid,
     );
   }
 
   final String email;
-  final bool isEmailValid;
   final String password;
-  final bool isPasswordValid;
+  final bool isValid;
 
   @override
-  List<Object> get props =>
-      super.props..addAll([email, password, isEmailValid, isPasswordValid]);
+  List<Object> get props => super.props..addAll([email, password, isValid]);
 }
 
 class LoginFailure extends LoginState {
+  LoginFailure({required this.error}) : timestamp = DateTime.now();
   final Object error;
   final DateTime timestamp;
-
-  LoginFailure({required this.error}) : timestamp = DateTime.now();
 
   @override
   List<Object> get props => [timestamp];
 
   @override
-
   bool get isBuildable => false;
 }
-
-
 
 final class LoginSuccess extends LoginState {
   @override

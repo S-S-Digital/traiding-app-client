@@ -14,58 +14,44 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     on<LoginStart>((event, emit) {
       emit(LoginLoaded(email: '', password: ''));
     });
-    on<OnChangedEmail>(_emailChanged);
-    on<OnChangedPassword>(_passwordChanged);
+    on<OnChangedEmail>(_onChangeField);
+    on<OnChangedPassword>(_onChangeField);
     on<Auth>(_login);
   }
 
   final AuthRepositoryI _authRepository;
 
-  Future<void> _emailChanged(
-    OnChangedEmail event,
-    Emitter<LoginState> emit,
-  ) async {
+  void _onChangeField<T>(LoginEvent event, Emitter<LoginState> emit) {
     try {
       final currentState = state;
+      if (currentState is! LoginLoaded) return;
 
-      if (currentState is LoginLoaded) {
-        final isValid = _validateEmail(event.email);
+      String email = currentState.email;
+      String password = currentState.password;
 
-        emit(currentState.copyWith(email: event.email, isEmailValid: isValid));
+      if (event is OnChangedEmail) {
+        email = event.email;
+      } else if (event is OnChangedPassword) {
+        password = event.password;
       }
-      else{
-        return;
-      }
+
+      final isValid = _validateCredentials(password: password, email: email);
+
+      emit(
+        currentState.copyWith(
+          email: email,
+          password: password,
+          isValid: isValid,
+        ),
+      );
     } catch (error) {
       emit(LoginFailure(error: error));
     }
   }
 
-  Future<void> _passwordChanged(
-    OnChangedPassword event,
-    Emitter<LoginState> emit,
-  ) async {
-    final currentState = state;
-
-    // Обрабатываем только если экран в состоянии ввода
-    if (currentState is LoginLoaded) {
-      final isValid = event.password.trim().length >= 8;
-
-      emit(
-        currentState.copyWith(
-          password: event.password,
-          isPasswordValid: isValid,
-        ),
-      );
-    } else {
-      // Если вдруг не в LoginLoaded, возвращаем форму в рабочее состояние
-      return;
-    }
-  }
-
   Future<void> _login(Auth event, Emitter<LoginState> emit) async {
     try {
-      if(event.email.isEmpty || event.password.isEmpty){
+      if (event.email.isEmpty || event.password.isEmpty) {
         emit(LoginFailure(error: 'заполните все поля'));
         return;
       }
@@ -81,8 +67,13 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     }
   }
 
-  bool _validateEmail(String email) {
-    final regex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-    return regex.hasMatch(email);
+  bool _validateCredentials({required String password, required String email}) {
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+
+    final isEmailValid = emailRegex.hasMatch(email);
+
+    final isPasswordValid = password.length >= 6;
+
+    return isEmailValid && isPasswordValid;
   }
 }
