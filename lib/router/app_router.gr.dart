@@ -59,22 +59,6 @@ class LoginRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [PortfolioScreen]
-class PortfolioRoute extends PageRouteInfo<void> {
-  const PortfolioRoute({List<PageRouteInfo>? children})
-    : super(PortfolioRoute.name, initialChildren: children);
-
-  static const String name = 'PortfolioRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const PortfolioScreen();
-    },
-  );
-}
-
-/// generated route for
 /// [RegisterScreen]
 class RegisterRoute extends PageRouteInfo<void> {
   const RegisterRoute({List<PageRouteInfo>? children})
@@ -118,6 +102,22 @@ class SignalsRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const SignalsScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [TickersScreen]
+class TickersRoute extends PageRouteInfo<void> {
+  const TickersRoute({List<PageRouteInfo>? children})
+    : super(TickersRoute.name, initialChildren: children);
+
+  static const String name = 'TickersRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const TickersScreen();
     },
   );
 }

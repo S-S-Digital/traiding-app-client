@@ -4,14 +4,14 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 @RoutePage()
-class PortfolioScreen extends StatefulWidget {
-  const PortfolioScreen({super.key});
+class TickersScreen extends StatefulWidget {
+  const TickersScreen({super.key});
 
   @override
-  State<PortfolioScreen> createState() => _PortfolioScreenState();
+  State<TickersScreen> createState() => _TickersScreenState();
 }
 
-class _PortfolioScreenState extends State<PortfolioScreen> {
+class _TickersScreenState extends State<TickersScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
