@@ -12,9 +12,22 @@ part 'aspiro_trade_api.g.dart';
 abstract class AspiroTradeApi {
   factory AspiroTradeApi(Dio dio, {String baseUrl}) = _AspiroTradeApi;
 
-  factory AspiroTradeApi.create({String? apiUrl, Talker? talker}) {
+  factory AspiroTradeApi.create({
+    String? apiUrl,
+    Talker? talker,
+    required Future<(String?, String?)> Function() getTokens,
+    required Future<void> Function(String access, String refresh) saveTokens,
+  }) {
     final dio = Dio();
-    dio.interceptors.addAll([TalkerDioLogger(talker: talker)]);
+    dio.interceptors.addAll([
+      TalkerDioLogger(talker: talker),
+      AuthInterceptor(
+      dio: dio,
+      getTokens: getTokens,
+      saveTokens: saveTokens,
+    ),
+      
+      ]);
     if (apiUrl != null) {
       return AspiroTradeApi(dio, baseUrl: apiUrl);
     }
@@ -45,14 +58,9 @@ abstract class AspiroTradeApi {
   @GET('/tickers')
   Future<List<TickersDto>> fetchAllTickers();
 
-
   @DELETE('/tickers/{id}')
   Future<DeleteTickerDto> deleteTicker(@Path() String id);
 
-
   @PATCH('/tickers/{id}')
   Future<void> updateTickerSignals(@Path() String id);
-
-
-  
 }

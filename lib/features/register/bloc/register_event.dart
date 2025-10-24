@@ -7,6 +7,8 @@ sealed class RegisterEvent extends Equatable {
   List<Object> get props => [];
 }
 
+final class Start extends RegisterEvent{}
+
 class ChangeEmail extends RegisterEvent {
   const ChangeEmail({required this.email});
 

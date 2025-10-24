@@ -56,7 +56,7 @@ class RegisterLoaded extends RegisterState {
   }
 }
 
-final class LoginSuccess extends RegisterState {
+final class RegisterSuccess extends RegisterState {
   @override
   bool get isBuildable => false;
 }

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "376079519781",
+    "project_id": "tradingsignalsapp-80f54",
+    "storage_bucket": "tradingsignalsapp-80f54.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:376079519781:android:13054d9d1f0c1eb2cb2fcc",
+        "android_client_info": {
+          "package_name": "com.aspiro.aspiro_trade"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6qYx6TDHsxCW1xjRsWGMGC3uwV2qeiUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:376079519781:android:d2e871510829f4c5cb2fcc",
+        "android_client_info": {
+          "package_name": "com.yourcompany.tradingapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6qYx6TDHsxCW1xjRsWGMGC3uwV2qeiUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

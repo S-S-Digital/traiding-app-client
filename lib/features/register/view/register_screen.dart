@@ -1,8 +1,12 @@
+import 'package:aspiro_trade/features/register/bloc/bloc.dart';
 import 'package:aspiro_trade/features/register/widgets/widgets.dart';
 import 'package:aspiro_trade/router/app_router.dart';
+
 import 'package:aspiro_trade/ui/ui.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
 
 @RoutePage()
@@ -24,6 +28,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final phoneFocus = FocusNode();
 
   @override
+  void initState() {
+    context.read<RegisterBloc>().add(Start());
+    super.initState();
+  }
+
+  @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
@@ -37,6 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bloc = context.read<RegisterBloc>();
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -61,35 +72,88 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       SizedBox(height: 30),
 
-                      EmailTextField(
-                        emailFocus: emailFocus,
-                        emailController: emailController,
-                        passwordFocus: passwordFocus,
-                        onChanged: (String value) {},
-                      ),
-                      SizedBox(height: 15),
-                      PasswordTextField(
-                        passwordFocus: passwordFocus,
-                        passwordController: passwordController,
-                        textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) =>
-                            FocusScope.of(context).requestFocus(phoneFocus),
-                        onChanged: (String value) {},
-                      ),
-                      SizedBox(height: 15),
-                      PhoneTextField(
-                        phoneController: phoneController,
-                        phoneFocus: phoneFocus,
-                      ),
-                      SizedBox(height: 30),
-                      AuthButton(
-                        isValid: false,
-                        text: 'зарегистрироваться'.toUpperCase(),
-                        onPressed: () {
-                          AutoRouter.of(context).pushAndPopUntil(
-                            HomeRoute(),
-                            predicate: (value) => false,
-                          );
+                      BlocConsumer<RegisterBloc, RegisterState>(
+                        listener: (context, state) {
+                          if (state is RegisterFailure) {
+                            showErrorDialog(context, state.error.toString());
+                          } else if (state is RegisterSuccess) {
+                            AutoRouter.of(context).pushAndPopUntil(
+                              HomeRoute(),
+                              predicate: (value) => false,
+                            );
+                          }
+                        },
+                        buildWhen: (previous, current) => current.isBuildable,
+                        builder: (context, state) {
+                          if (state is RegisterLoading) {
+                            return SizedBox(
+                              height: 300,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+
+                                  children: [
+                                    PlatformProgressIndicator(),
+                                    SizedBox(height: 10),
+                                    Text('Загрузка'),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                          if (state is RegisterLoaded) {
+                            return Column(
+                              children: [
+                                EmailTextField(
+                                  emailFocus: emailFocus,
+                                  emailController: emailController,
+                                  passwordFocus: passwordFocus,
+                                  onChanged: (String value) {
+                                    bloc.add(ChangeEmail(email: value));
+                                  },
+                                ),
+                                SizedBox(height: 15),
+                                PasswordTextField(
+                                  passwordFocus: passwordFocus,
+                                  passwordController: passwordController,
+                                  textInputAction: TextInputAction.next,
+                                  onFieldSubmitted: (_) => FocusScope.of(
+                                    context,
+                                  ).requestFocus(phoneFocus),
+                                  onChanged: (String value) {
+                                    bloc.add(ChangePassword(password: value));
+                                  },
+                                ),
+                                SizedBox(height: 15),
+                                PhoneTextField(
+                                  phoneController: phoneController,
+                                  phoneFocus: phoneFocus,
+                                  onChanged: (String value) {
+                                    bloc.add(ChangePhone(phone: value));
+                                  },
+                                ),
+                                SizedBox(height: 30),
+                                AuthButton(
+                                  isValid: state.isValid,
+                                  text: 'зарегистрироваться'.toUpperCase(),
+                                  onPressed: () {
+                                    if (state.isValid) {
+                                      bloc.add(
+                                        Auth(
+                                          phone: phoneController.text.trim(),
+                                          password: passwordController.text
+                                              .trim(),
+                                          email: emailController.text.trim(),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            );
+                          }
+                          return SizedBox(height: 300);
                         },
                       ),
 

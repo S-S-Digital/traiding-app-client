@@ -13,6 +13,10 @@ class BadRequestException extends AppException {
       : super(statusCode: 400);
 }
 
+final class NetworkException extends AppException {
+  const NetworkException([super.message = 'Нет интернет соединения']) : super(statusCode: null);
+}
+
 class UnauthorizedException extends AppException {
   const UnauthorizedException([super.message = 'Необходима авторизация'])
       : super(statusCode: 401);

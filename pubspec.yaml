@@ -40,6 +40,7 @@ dependencies:
   flutter_secure_storage: ^4.2.1
   flutter_svg: ^2.2.1
   flutter_masked_text2: ^0.9.1
+  firebase_core: ^4.2.0
 
 
 dev_dependencies:

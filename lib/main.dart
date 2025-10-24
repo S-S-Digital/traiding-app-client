@@ -1,9 +1,11 @@
 import 'package:aspiro_trade/api/aspiro_trade_api.dart';
 import 'package:aspiro_trade/app/app_config.dart';
 import 'package:aspiro_trade/app/aspiro_trade_app.dart';
+import 'package:aspiro_trade/firebase_options.dart';
 import 'package:aspiro_trade/repositories/auth/auth.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/repositories/tickers/realm/tickers_local.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +18,8 @@ import 'package:talker_flutter/talker_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await dotenv.load(fileName: ".env");
 
@@ -44,7 +48,14 @@ Future<void> main() async {
     ),
   );
 
-  final api = AspiroTradeApi.create(apiUrl: apiUrl, talker: talker);
+  final api = AspiroTradeApi.create(
+    apiUrl: apiUrl,
+    talker: talker,
+    getTokens: tokenStorage.getTokens,
+
+    saveTokens: (String access, String refresh) =>
+        tokenStorage.saveTokens(access, refresh),
+  );
 
   final config = AppConfig(
     preferences: preferences,
@@ -54,9 +65,6 @@ Future<void> main() async {
     realm: realm,
     tokenStorage: tokenStorage,
   );
-
-
-  
 
   runApp(AspiroTradeApp(config: config));
 }
