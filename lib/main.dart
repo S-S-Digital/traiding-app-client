@@ -66,5 +66,7 @@ Future<void> main() async {
     tokenStorage: tokenStorage,
   );
 
+  
+
   runApp(AspiroTradeApp(config: config));
 }

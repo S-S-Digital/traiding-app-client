@@ -41,12 +41,14 @@ class AuthRepository extends BaseRepository implements AuthRepositoryI {
   });
 
   @override
-  Future<void> refresh(Refresh refresh)=> safeApiCall(() async {
+  Future<String> refresh(Refresh refresh)=> safeApiCall(() async {
 
     final tokens = await api.refresh(refresh);
     
     await tokenStorage.clear();
     await tokenStorage.saveTokens(tokens.accessToken, tokens.refreshToken);
+
+    return tokens.accessToken;
   });
 
   @override

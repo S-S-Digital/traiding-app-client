@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class BaseAppBar extends StatelessWidget {
-  const BaseAppBar({
-    super.key,
-    required this.text,
-  });
+  const BaseAppBar({super.key, required this.text});
 
   final String text;
 
@@ -19,6 +16,15 @@ class BaseAppBar extends StatelessWidget {
         ),
       ),
       centerTitle: false,
+      actions: [
+        ElevatedButton(
+          style: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll(theme.primaryColor),
+          ),
+          onPressed: () {},
+          child: Text('Добавить актив'),
+        ),
+      ],
     );
   }
 }

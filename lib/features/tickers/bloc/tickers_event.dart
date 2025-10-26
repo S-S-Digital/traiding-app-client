@@ -6,3 +6,8 @@ sealed class TickersEvent extends Equatable {
   @override
   List<Object> get props => [];
 }
+
+
+final class Start extends TickersEvent{}
+
+
