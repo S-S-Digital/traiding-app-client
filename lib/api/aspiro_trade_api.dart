@@ -63,4 +63,31 @@ abstract class AspiroTradeApi {
 
   @PATCH('/tickers/{id}')
   Future<void> updateTickerSignals(@Path() String id);
+
+
+
+  // =============== Assets ===============
+
+  @GET('/assets')
+  Future<List<AssetsDto>> fetchAllAssets();
+
+  @GET('/assets/popular')
+  Future<List<AssetsDto>> fetchPopularAssets();
+
+
+  @GET('/assets/search')
+  Future<List<AssetsDto>> searchAssets(@Query('q') String query);
+
+  @GET('/assets/validate/{symbol}')
+  Future<ValidateSymbolDto> validateSymbol(@Path('symbol') String symbol);
+
+
+  @GET('/assets/{symbol}/candles')
+  Future<List<CandlesDto>> fetchCandlesForSymbol(
+    String symbol,
+    String limit,
+    String interval,
+  );
+
+
 }
