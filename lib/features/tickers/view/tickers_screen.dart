@@ -1,5 +1,5 @@
 import 'package:aspiro_trade/features/tickers/bloc/bloc.dart';
-import 'package:aspiro_trade/repositories/core/exceptions/exceptions.dart';
+
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/utils/methods/show_error_dialog.dart';
