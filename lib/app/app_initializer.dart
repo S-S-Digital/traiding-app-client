@@ -1,7 +1,9 @@
 import 'package:aspiro_trade/app/app.dart';
+import 'package:aspiro_trade/features/assets/bloc/assets_bloc.dart';
 import 'package:aspiro_trade/features/login/bloc/login_bloc.dart';
 import 'package:aspiro_trade/features/register/bloc/register_bloc.dart';
 import 'package:aspiro_trade/features/tickers/bloc/tickers_bloc.dart';
+import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/auth/auth.dart';
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +31,9 @@ class AppInitializer extends StatelessWidget {
         RepositoryProvider(
           create: (context) => repositoryContainer.tickersRepository,
         ),
+        RepositoryProvider(
+          create: (context) => repositoryContainer.assetsRepository,
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -45,6 +50,11 @@ class AppInitializer extends StatelessWidget {
             create: (context) => TickersBloc(
               tickersRepository: context.read<TickersRepositoryI>(),
             ),
+          ),
+
+          BlocProvider(
+            create: (context) =>
+                AssetsBloc(assetsRepository: context.read<AssetsRepositoryI>()),
           ),
         ],
         child: child,

@@ -27,7 +27,7 @@ class TickersLoaded extends TickersState {
 class TickersFailure extends TickersState {
   TickersFailure({required this.error}) : timestamp = DateTime.now();
 
-  final Object error;
+  final AppException error;
   final DateTime timestamp;
 
   @override

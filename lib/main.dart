@@ -2,6 +2,7 @@ import 'package:aspiro_trade/api/aspiro_trade_api.dart';
 import 'package:aspiro_trade/app/app_config.dart';
 import 'package:aspiro_trade/app/aspiro_trade_app.dart';
 import 'package:aspiro_trade/firebase_options.dart';
+import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/auth/auth.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/repositories/tickers/realm/tickers_local.dart';
@@ -30,15 +31,11 @@ Future<void> main() async {
   var realmConfig = Configuration.local([
     UserLocal.schema,
     TickersLocal.schema,
+    AssetsLocal.schema
   ]);
   var realm = Realm(realmConfig);
 
-  final talker = TalkerFlutter.init(
-    settings: TalkerSettings(
-      useConsoleLogs: kDebugMode,
-      useHistory: kDebugMode,
-    ),
-  );
+
 
   Bloc.observer = TalkerBlocObserver(
     talker: talker,
@@ -66,7 +63,17 @@ Future<void> main() async {
     tokenStorage: tokenStorage,
   );
 
+
+
   
 
   runApp(AspiroTradeApp(config: config));
 }
+
+
+  final talker = TalkerFlutter.init(
+    settings: TalkerSettings(
+      useConsoleLogs: kDebugMode,
+      useHistory: kDebugMode,
+    ),
+  );

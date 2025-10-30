@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/main.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,9 +21,9 @@ class TickersBloc extends Bloc<TickersEvent, TickersState> {
       final tickers = await _tickersRepository.fetchAllTickers();
       emit(TickersLoaded(tickers: tickers));
     } on AppException catch (error) {
+      talker.error(error);
       emit(TickersFailure(error: error));
-    } catch (error) {
-      emit(TickersFailure(error: error));
-    }
+    } 
+    
   }
 }

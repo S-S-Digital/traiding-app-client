@@ -42,6 +42,7 @@ dependencies:
   flutter_masked_text2: ^0.9.1
   firebase_core: ^4.2.0
   uuid: ^4.4.2
+  candlesticks: ^2.1.0
 
 
 dev_dependencies:

@@ -57,7 +57,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: BlocConsumer<LoginBloc, LoginState>(
                     listener: (context, state) {
                       if (state is LoginFailure) {
-                        showErrorDialog(context, state.error.toString());
+                        showErrorDialog(
+                          context,
+                          state.error.toString(),
+                          'Закрыть',
+                          () => Navigator.of(context).pop(),
+                        );
                       } else if (state is LoginSuccess) {
                         AutoRouter.of(context).pushAndPopUntil(
                           HomeRoute(),
@@ -127,11 +132,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             ForgotPasswordButton(onPressed: () {}),
 
                             AuthButton(
-                              isValid:
-                                  state.isValid,
+                              isValid: state.isValid,
                               text: 'Войти'.toUpperCase(),
                               onPressed: () {
-                                if (state.isValid ) {
+                                if (state.isValid) {
                                   context.read<LoginBloc>().add(
                                     Auth(
                                       email: emailController.text.trim(),

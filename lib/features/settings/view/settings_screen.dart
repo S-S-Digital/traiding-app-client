@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/router/router.dart';
 import 'package:aspiro_trade/ui/widgets/base_app_bar.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';

@@ -11,6 +11,38 @@
 part of 'app_router.dart';
 
 /// generated route for
+/// [AssetDetailsScreen]
+class AssetDetailsRoute extends PageRouteInfo<void> {
+  const AssetDetailsRoute({List<PageRouteInfo>? children})
+    : super(AssetDetailsRoute.name, initialChildren: children);
+
+  static const String name = 'AssetDetailsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const AssetDetailsScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [AssetsScreen]
+class AssetsRoute extends PageRouteInfo<void> {
+  const AssetsRoute({List<PageRouteInfo>? children})
+    : super(AssetsRoute.name, initialChildren: children);
+
+  static const String name = 'AssetsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const AssetsScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [HistoryScreen]
 class HistoryRoute extends PageRouteInfo<void> {
   const HistoryRoute({List<PageRouteInfo>? children})

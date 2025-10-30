@@ -1,6 +1,9 @@
 import 'package:aspiro_trade/features/tickers/bloc/bloc.dart';
+import 'package:aspiro_trade/main.dart';
+import 'package:aspiro_trade/repositories/core/core.dart';
 
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
+import 'package:aspiro_trade/router/app_router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/utils/methods/show_error_dialog.dart';
 import 'package:auto_route/auto_route.dart';
@@ -25,18 +28,26 @@ class _TickersScreenState extends State<TickersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final theme = Theme.of(context);
+    // final size = MediaQuery.of(context).size;
+    // final theme = Theme.of(context);
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          BaseAppBar(text: 'Активы'),
+          BaseAppBar(text: 'Активы',onPressed: () => AutoRouter.of(context).push(AssetsRoute()), ),
 
           BlocConsumer<TickersBloc, TickersState>(
             listener: (context, state) {
               if(state is TickersFailure){
                 
-                  showErrorDialog(context, state.error.toString());
+                  showErrorDialog(context, state.error.message.toString(),'Ок', (){
+                    if(state.error is UnauthorizedException){
+                    
+                      AutoRouter.of(context).pushAndPopUntil(LoginRoute(), predicate: (value)=> false);
+                    }
+                    else{
+                      Navigator.of(context).pop();
+                    }
+                  });
                 
 
               }
@@ -45,7 +56,7 @@ class _TickersScreenState extends State<TickersScreen> {
             builder: (context, state) {
               if(state is TickersLoaded){
               return SliverList.builder(
-                itemCount: 1,
+                itemCount: state.tickers.length,
                 itemBuilder: (context, index) {
                   return TickersItem(tickers: state.tickers[index],);
                 },

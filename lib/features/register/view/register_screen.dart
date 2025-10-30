@@ -75,7 +75,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       BlocConsumer<RegisterBloc, RegisterState>(
                         listener: (context, state) {
                           if (state is RegisterFailure) {
-                            showErrorDialog(context, state.error.toString());
+                            showErrorDialog(
+                              context,
+                              state.error.toString(),
+                              'Закрыть',
+                              () => Navigator.of(context).pop(),
+                            );
                           } else if (state is RegisterSuccess) {
                             AutoRouter.of(context).pushAndPopUntil(
                               HomeRoute(),

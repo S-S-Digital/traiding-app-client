@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 
 class ErrorDialog extends StatelessWidget {
-  const ErrorDialog({super.key, required this.message});
+  const ErrorDialog({
+    super.key,
+    required this.message,
+    required this.title,
+    required this.onPressed,
+  });
   final String message;
+  final String title;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -25,9 +32,7 @@ class ErrorDialog extends StatelessWidget {
       ),
       actions: [
         FilledButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+          onPressed: onPressed,
           style: FilledButton.styleFrom(
             backgroundColor: theme.colorScheme.error,
             shape: RoundedRectangleBorder(
@@ -35,7 +40,7 @@ class ErrorDialog extends StatelessWidget {
             ),
           ),
           child: Text(
-            'Закрыть',
+            title,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onPrimary,
