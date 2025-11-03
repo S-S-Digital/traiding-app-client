@@ -29,13 +29,14 @@ class AssetsRepository extends BaseRepository implements AssetsRepositoryI {
     String interval,
   ) => safeApiCall(() async {
     final response = await api.fetchCandlesForSymbol(symbol, limit, interval);
+    final candlesDto = response.candles;
 
-    final candles = response.map((e) => e.toEntity()).toList();
-
+    final candles = candlesDto.map((e) => e.toEntity()).toList();
+    
     realm.write(() {
       realm.deleteAll<CandlesLocal>();
 
-      realm.addAll(response.map((e) => e.toLocal()), update: true);
+      realm.addAll(candlesDto.map((e) => e.toLocal()), update: true);
     });
 
     return candles;

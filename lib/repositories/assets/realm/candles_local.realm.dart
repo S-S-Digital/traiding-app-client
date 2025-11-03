@@ -21,7 +21,7 @@ class CandlesLocal extends _CandlesLocal
     String volume,
     int closeTime,
     String quoteAssetVolume,
-    String numberOfTrades,
+    int numberOfTrades,
     String takerBuyBaseAssetVolume,
     String takerBuyQuoteAssetVolume,
   ) {
@@ -97,10 +97,10 @@ class CandlesLocal extends _CandlesLocal
       RealmObjectBase.set(this, 'quoteAssetVolume', value);
 
   @override
-  String get numberOfTrades =>
-      RealmObjectBase.get<String>(this, 'numberOfTrades') as String;
+  int get numberOfTrades =>
+      RealmObjectBase.get<int>(this, 'numberOfTrades') as int;
   @override
-  set numberOfTrades(String value) =>
+  set numberOfTrades(int value) =>
       RealmObjectBase.set(this, 'numberOfTrades', value);
 
   @override
@@ -199,7 +199,7 @@ class CandlesLocal extends _CandlesLocal
         SchemaProperty('volume', RealmPropertyType.string),
         SchemaProperty('closeTime', RealmPropertyType.int),
         SchemaProperty('quoteAssetVolume', RealmPropertyType.string),
-        SchemaProperty('numberOfTrades', RealmPropertyType.string),
+        SchemaProperty('numberOfTrades', RealmPropertyType.int),
         SchemaProperty('takerBuyBaseAssetVolume', RealmPropertyType.string),
         SchemaProperty('takerBuyQuoteAssetVolume', RealmPropertyType.string),
       ],

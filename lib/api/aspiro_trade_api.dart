@@ -83,10 +83,10 @@ abstract class AspiroTradeApi {
 
 
   @GET('/assets/{symbol}/candles')
-  Future<List<CandlesDto>> fetchCandlesForSymbol(
-    String symbol,
-    String limit,
-    String interval,
+  Future<CandlesListDto> fetchCandlesForSymbol(
+    @Path('symbol') String symbol,
+    @Query('limit') String limit,
+    @Query('interval') String interval,
   );
 
 

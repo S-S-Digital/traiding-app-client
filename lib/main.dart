@@ -31,7 +31,8 @@ Future<void> main() async {
   var realmConfig = Configuration.local([
     UserLocal.schema,
     TickersLocal.schema,
-    AssetsLocal.schema
+    AssetsLocal.schema,
+    CandlesLocal.schema
   ]);
   var realm = Realm(realmConfig);
 

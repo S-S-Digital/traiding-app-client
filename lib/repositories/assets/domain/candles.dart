@@ -22,7 +22,7 @@ class Candles {
   final String volume;
   final int closeTime;
   final String quoteAssetVolume;
-  final String numberOfTrades;
+  final int numberOfTrades;
   final String takerBuyBaseAssetVolume;
   final String takerBuyQuoteAssetVolume;
 }

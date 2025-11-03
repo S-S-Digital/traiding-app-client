@@ -11,19 +11,97 @@
 part of 'app_router.dart';
 
 /// generated route for
+/// [AddTickersScreen]
+class AddTickersRoute extends PageRouteInfo<AddTickersRouteArgs> {
+  AddTickersRoute({
+    Key? key,
+    required Assets assets,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AddTickersRoute.name,
+         args: AddTickersRouteArgs(key: key, assets: assets),
+         initialChildren: children,
+       );
+
+  static const String name = 'AddTickersRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<AddTickersRouteArgs>();
+      return AddTickersScreen(key: args.key, assets: args.assets);
+    },
+  );
+}
+
+class AddTickersRouteArgs {
+  const AddTickersRouteArgs({this.key, required this.assets});
+
+  final Key? key;
+
+  final Assets assets;
+
+  @override
+  String toString() {
+    return 'AddTickersRouteArgs{key: $key, assets: $assets}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AddTickersRouteArgs) return false;
+    return key == other.key && assets == other.assets;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ assets.hashCode;
+}
+
+/// generated route for
 /// [AssetDetailsScreen]
-class AssetDetailsRoute extends PageRouteInfo<void> {
-  const AssetDetailsRoute({List<PageRouteInfo>? children})
-    : super(AssetDetailsRoute.name, initialChildren: children);
+class AssetDetailsRoute extends PageRouteInfo<AssetDetailsRouteArgs> {
+  AssetDetailsRoute({
+    Key? key,
+    required Assets assets,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AssetDetailsRoute.name,
+         args: AssetDetailsRouteArgs(key: key, assets: assets),
+         initialChildren: children,
+       );
 
   static const String name = 'AssetDetailsRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const AssetDetailsScreen();
+      final args = data.argsAs<AssetDetailsRouteArgs>();
+      return AssetDetailsScreen(key: args.key, assets: args.assets);
     },
   );
+}
+
+class AssetDetailsRouteArgs {
+  const AssetDetailsRouteArgs({this.key, required this.assets});
+
+  final Key? key;
+
+  final Assets assets;
+
+  @override
+  String toString() {
+    return 'AssetDetailsRouteArgs{key: $key, assets: $assets}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AssetDetailsRouteArgs) return false;
+    return key == other.key && assets == other.assets;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ assets.hashCode;
 }
 
 /// generated route for

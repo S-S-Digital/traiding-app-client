@@ -1,32 +1,25 @@
+import 'package:aspiro_trade/features/add_tickers/add_tickers.dart';
+import 'package:aspiro_trade/features/asset_details/bloc/asset_details_bloc.dart';
+
+import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/ui/ui.dart';
+
 import 'package:auto_route/auto_route.dart';
-import 'package:candlesticks/candlesticks.dart';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 @RoutePage()
 class AssetDetailsScreen extends StatefulWidget {
-  const AssetDetailsScreen({super.key});
+  const AssetDetailsScreen({super.key, required this.assets});
+  final Assets assets;
 
   @override
   State<AssetDetailsScreen> createState() => _AssetDetailsScreenState();
 }
 
 class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
-  final candles = [
-    CandleData(
-      open: 112898.44,
-      high: 113643.73,
-      low: 109200.00,
-      close: 110021.29,
-    ),
-    CandleData(
-      open: 110021.30,
-      high: 111592.00,
-      low: 106716.71,
-      close: 106967.78,
-    ),
-  ];
   final filters = [
     '1 мин',
     '3 мин',
@@ -39,13 +32,22 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
   String activeFilter = '1 мин';
 
   @override
+  void initState() {
+    context.read<AssetDetailsBloc>().add(
+      Start(symbol: widget.assets.symbol.toString()),
+    );
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            title: Text('BTC'),
+            title: Text(widget.assets.baseAsset),
             pinned: true,
             surfaceTintColor: Colors.transparent,
           ),
@@ -58,13 +60,13 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                 children: [
                   CryptoListTile(
                     imagePath: 'assets/pictures/bitcoin.png',
-                    title: 'Bitcoin',
-                    subtitle: 'btc'.toUpperCase(),
+                    title: widget.assets.baseAsset,
+                    subtitle: widget.assets.name.toUpperCase(),
                     size: CryptoListTileSize.large,
                   ),
 
                   Text(
-                    '\$68,452.23',
+                    '\$${widget.assets.price}',
                     style: theme.textTheme.headlineLarge?.copyWith(
                       color: theme.colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,
@@ -82,7 +84,7 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                         ),
                       ),
                       Text(
-                        '(+2.35%)',
+                        '(${widget.assets.change24h}%)',
                         style: theme.textTheme.headlineSmall?.copyWith(
                           color: theme.colorScheme.secondary,
                           fontWeight: FontWeight.bold,
@@ -222,10 +224,24 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                     ),
                   ),
 
-                  SignalChart(
-                    height: 300,
-                    color: theme.colorScheme.onSecondary,
-                    candles: candles,
+                  BlocConsumer<AssetDetailsBloc, AssetDetailsState>(
+                    listener: (context, state) {
+                      if (state is AssetDetailsFailure) {}
+                    },
+                    builder: (context, state) {
+                      return BlocBuilder<AssetDetailsBloc, AssetDetailsState>(
+                        builder: (context, state) {
+                          if (state is AssetDetailsLoaded) {
+                            return SignalChart(
+                              height: size.height * 0.3,
+                              color: theme.colorScheme.onSecondary,
+                              candles: state.candles,
+                            );
+                          }
+                          return Center(child: PlatformProgressIndicator());
+                        },
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 20),
@@ -250,7 +266,14 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                       ),
 
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (context) =>
+                                AddTickersScreen(assets: widget.assets),
+                          );
+                        },
                         style: ButtonStyle(
                           backgroundColor: WidgetStatePropertyAll(
                             theme.primaryColor,
@@ -277,20 +300,6 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
   }
 }
 
-class CandleData {
-  final double open;
-  final double close;
-  final double high;
-  final double low;
-
-  CandleData({
-    required this.open,
-    required this.close,
-    required this.high,
-    required this.low,
-  });
-}
-
 class SignalChart extends StatelessWidget {
   const SignalChart({
     super.key,
@@ -301,26 +310,36 @@ class SignalChart extends StatelessWidget {
 
   final double height;
   final Color color;
-  final List<CandleData> candles;
+  final List<Candles> candles;
 
   @override
   Widget build(BuildContext context) {
+    final maxY = candles
+        .map((e) => double.parse(e.high))
+        .reduce((a, b) => a > b ? a : b);
+    final minY = candles
+        .map((e) => double.parse(e.low))
+        .reduce((a, b) => a < b ? a : b);
+
     return Container(
       height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: BarChart(
         BarChartData(
-          alignment: BarChartAlignment.spaceAround,
+          alignment: BarChartAlignment.spaceBetween,
           borderData: FlBorderData(show: false),
           gridData: FlGridData(show: false),
           titlesData: FlTitlesData(show: false),
+          barTouchData: BarTouchData(enabled: true),
+          maxY: maxY * 1.001,
+          minY: minY * 0.999,
           barGroups: _buildBars(),
-          maxY: candles.map((e) => e.high).reduce((a, b) => a > b ? a : b),
-          minY: candles.map((e) => e.low).reduce((a, b) => a < b ? a : b),
         ),
+        swapAnimationDuration: const Duration(milliseconds: 600),
       ),
     );
   }
@@ -328,27 +347,34 @@ class SignalChart extends StatelessWidget {
   List<BarChartGroupData> _buildBars() {
     return List.generate(candles.length, (i) {
       final c = candles[i];
-      final isGrow = c.close >= c.open;
-      final bodyTop = isGrow ? c.close : c.open;
-      final bodyBottom = isGrow ? c.open : c.close;
+      final open = double.parse(c.open);
+      final close = double.parse(c.close);
+      final high = double.parse(c.high);
+      final low = double.parse(c.low);
+
+      final isGrow = close >= open;
+      final bodyTop = isGrow ? close : open;
+      final bodyBottom = isGrow ? open : close;
 
       return BarChartGroupData(
         x: i,
+        barsSpace: 0,
         barRods: [
-          // Основная тень (high–low)
+          // тень (high–low)
           BarChartRodData(
-            toY: c.high,
-            fromY: c.low,
+            toY: high,
+            fromY: low,
             width: 1.5,
-            color: Colors.grey.shade400,
+            color: Colors.grey.shade500,
+            borderRadius: BorderRadius.zero,
           ),
-          // Тело свечи (open–close)
+          // тело свечи
           BarChartRodData(
             toY: bodyTop,
             fromY: bodyBottom,
-            width: 10,
-            color: isGrow ? Colors.green : Colors.red,
-            borderRadius: BorderRadius.zero,
+            width: 6,
+            color: isGrow ? AppColors.darkAccentGreen : AppColors.darkAccentRed,
+            borderRadius: BorderRadius.circular(1),
           ),
         ],
       );

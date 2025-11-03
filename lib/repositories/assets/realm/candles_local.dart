@@ -14,7 +14,7 @@ class _CandlesLocal {
   late String volume;
   late int closeTime;
   late String quoteAssetVolume;
-  late String numberOfTrades;
+  late int numberOfTrades;
   late String takerBuyBaseAssetVolume;
   late String takerBuyQuoteAssetVolume;
 }

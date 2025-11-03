@@ -1,4 +1,6 @@
 import 'package:aspiro_trade/app/app.dart';
+import 'package:aspiro_trade/features/add_tickers/bloc/add_tickers_bloc.dart';
+import 'package:aspiro_trade/features/asset_details/bloc/asset_details_bloc.dart';
 import 'package:aspiro_trade/features/assets/bloc/assets_bloc.dart';
 import 'package:aspiro_trade/features/login/bloc/login_bloc.dart';
 import 'package:aspiro_trade/features/register/bloc/register_bloc.dart';
@@ -49,12 +51,27 @@ class AppInitializer extends StatelessWidget {
           BlocProvider(
             create: (context) => TickersBloc(
               tickersRepository: context.read<TickersRepositoryI>(),
+              assetsRepository: context.read<AssetsRepositoryI>(),
             ),
           ),
 
           BlocProvider(
             create: (context) =>
                 AssetsBloc(assetsRepository: context.read<AssetsRepositoryI>()),
+          ),
+
+          BlocProvider(
+            create: (context) => AssetDetailsBloc(
+              assetsRepository: context.read<AssetsRepositoryI>(),
+              tickersRepository: context.read<TickersRepositoryI>(),
+            ),
+          ),
+
+          BlocProvider(
+            create: (context) => AddTickersBloc(
+              tickersRepository: context.read<TickersRepositoryI>(),
+              assetsRepository: context.read<AssetsRepositoryI>(),
+            ),
           ),
         ],
         child: child,

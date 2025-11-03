@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/features/add_tickers/view/view.dart';
 import 'package:aspiro_trade/features/assets/bloc/assets_bloc.dart';
 import 'package:aspiro_trade/repositories/core/exceptions/app_exception.dart';
 import 'package:aspiro_trade/router/app_router.dart';
@@ -35,8 +36,6 @@ class _AssetsScreenState extends State<AssetsScreen> {
       context.read<AssetsBloc>().add(SearchAsset(symbol: query));
     }
   }
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +141,9 @@ class _AssetsScreenState extends State<AssetsScreen> {
                   itemBuilder: (context, index) {
                     final asset = state.assets[index];
                     return GestureDetector(
-                      onTap: () => AutoRouter.of(context).push(AssetDetailsRoute()),
+                      onTap: () => AutoRouter.of(
+                        context,
+                      ).push(AssetDetailsRoute(assets: asset)),
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: ConstrainedBox(
@@ -153,7 +154,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(8.0),
                             width: double.infinity,
-                      
+
                             decoration: BoxDecoration(
                               color: theme.cardColor,
                               borderRadius: BorderRadius.circular(12),
@@ -167,15 +168,17 @@ class _AssetsScreenState extends State<AssetsScreen> {
                                     Image.network(
                                       asset.logoUrl,
                                       height: size.height * 0.06,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return const Icon(
-                                          Icons.image_not_supported_outlined,
-                                          size: 40,
-                                        );
-                                      },
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return const Icon(
+                                              Icons
+                                                  .image_not_supported_outlined,
+                                              size: 40,
+                                            );
+                                          },
                                     ),
                                     SizedBox(width: 10),
-                      
+
                                     Column(
                                       mainAxisSize: MainAxisSize.min,
                                       crossAxisAlignment:
@@ -200,7 +203,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                                             ),
                                           ],
                                         ),
-                      
+
                                         Text(
                                           '\$${asset.price}',
                                           style: theme.textTheme.bodyLarge
@@ -214,17 +217,16 @@ class _AssetsScreenState extends State<AssetsScreen> {
                                     ),
                                   ],
                                 ),
-                      
+
                                 Row(
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(2),
-                      
+
                                       decoration: BoxDecoration(
                                         color: asset.change24h[0] == '-'
-                                            ? theme.colorScheme.error.withValues(
-                                                alpha: 0.18,
-                                              )
+                                            ? theme.colorScheme.error
+                                                  .withValues(alpha: 0.18)
                                             : theme.colorScheme.secondary
                                                   .withValues(alpha: 0.18),
                                         borderRadius: BorderRadius.circular(4),
@@ -242,9 +244,16 @@ class _AssetsScreenState extends State<AssetsScreen> {
                                       ),
                                     ),
                                     SizedBox(width: 10),
-                      
+
                                     ElevatedButton(
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          builder: (context) =>
+                                              AddTickersScreen(assets: asset),
+                                        );
+                                      },
                                       style: ButtonStyle(
                                         backgroundColor: WidgetStatePropertyAll(
                                           theme.colorScheme.primary,
@@ -253,7 +262,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                                           const Size(50, 50),
                                         ),
                                       ),
-                      
+
                                       child: Icon(Icons.add),
                                     ),
                                   ],
@@ -295,7 +304,6 @@ class SearchTextField extends StatefulWidget {
 class _SearchTextFieldState extends State<SearchTextField> {
   bool _showSuffix = false;
 
-
   @override
   void initState() {
     super.initState();
@@ -314,11 +322,13 @@ class _SearchTextFieldState extends State<SearchTextField> {
       setState(() => _showSuffix = hasText);
     }
   }
-    void _clearText(bool value) {
+
+  void _clearText(bool value) {
     widget.controller.clear();
     widget.onClearTap?.call();
     setState(() => _showSuffix = !value);
   }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -326,7 +336,7 @@ class _SearchTextFieldState extends State<SearchTextField> {
       controller: widget.controller,
       textInputAction: TextInputAction.search,
       onSubmitted: widget.onSubmitted,
-    
+
       decoration: InputDecoration(
         enabledBorder: const OutlineInputBorder(
           borderSide: BorderSide.none,
@@ -334,18 +344,16 @@ class _SearchTextFieldState extends State<SearchTextField> {
         ),
         hintText: 'Поиск монет...',
         fillColor: theme.cardColor,
-    
+
         border: OutlineInputBorder(borderSide: BorderSide.none),
-    
+
         suffixIcon: _showSuffix
             ? IconButton(
-                onPressed: ()=>_clearText(_showSuffix),
+                onPressed: () => _clearText(_showSuffix),
                 icon: Icon(Icons.close, size: 22),
               )
             : null,
       ),
     );
   }
-
-
 }

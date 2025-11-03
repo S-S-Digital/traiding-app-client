@@ -15,7 +15,7 @@ CandlesDto _$CandlesDtoFromJson(Map<String, dynamic> json) => CandlesDto(
   volume: json['volume'] as String,
   closeTime: (json['closeTime'] as num).toInt(),
   quoteAssetVolume: json['quoteAssetVolume'] as String,
-  numberOfTrades: json['numberOfTrades'] as String,
+  numberOfTrades: (json['numberOfTrades'] as num).toInt(),
   takerBuyBaseAssetVolume: json['takerBuyBaseAssetVolume'] as String,
   takerBuyQuoteAssetVolume: json['takerBuyQuoteAssetVolume'] as String,
 );
