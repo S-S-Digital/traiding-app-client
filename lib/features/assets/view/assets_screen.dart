@@ -205,7 +205,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                                         ),
 
                                         Text(
-                                          '\$${asset.price}',
+                                          '\$${asset.formatPriceLogic(asset.price)}',
                                           style: theme.textTheme.bodyLarge
                                               ?.copyWith(
                                                 color:
@@ -247,11 +247,15 @@ class _AssetsScreenState extends State<AssetsScreen> {
 
                                     ElevatedButton(
                                       onPressed: () {
+                                        
                                         showModalBottomSheet(
                                           context: context,
                                           isScrollControlled: true,
                                           builder: (context) =>
-                                              AddTickersScreen(assets: asset),
+                                              AddTickersScreen(
+                                                assets: asset,
+                                                
+                                              ),
                                         );
                                       },
                                       style: ButtonStyle(

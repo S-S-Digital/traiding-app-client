@@ -35,3 +35,13 @@ class AddNewTicker extends AssetDetailsEvent {
   List<Object> get props =>
       super.props..addAll([symbol, timeframe, notifyBuy, notifySell]);
 }
+
+
+final class SelectTimeframe extends AssetDetailsEvent {
+  const SelectTimeframe({required this.timeframe, required this.symbol});
+  final Timeframes timeframe;
+  final String symbol;
+
+  @override
+  List<Object> get props => super.props..add(timeframe);
+}

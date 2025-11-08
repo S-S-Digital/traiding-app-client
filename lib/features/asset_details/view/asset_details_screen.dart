@@ -1,12 +1,11 @@
 import 'package:aspiro_trade/features/add_tickers/add_tickers.dart';
 import 'package:aspiro_trade/features/asset_details/bloc/asset_details_bloc.dart';
-
+import 'package:aspiro_trade/main.dart';
 import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/ui/ui.dart';
-
 import 'package:auto_route/auto_route.dart';
+import 'package:candlesticks/candlesticks.dart';
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -20,14 +19,16 @@ class AssetDetailsScreen extends StatefulWidget {
 }
 
 class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
-  final filters = [
-    '1 мин',
-    '3 мин',
-    '5 мин',
-    '15 мин',
-    '1 час',
-    '4 часа',
-    '1 день',
+  
+
+  final List<Timeframes> timeframes = [
+    Timeframes(title: '1 мин', value: '1m'),
+    Timeframes(title: '3 мин', value: '3m'),
+    Timeframes(title: '5 мин', value: '5m'),
+    Timeframes(title: '15 мин', value: '15m'),
+    Timeframes(title: '1 час', value: '1h'),
+    Timeframes(title: '4 часа', value: '4h'),
+    Timeframes(title: '1 день', value: '1d'),
   ];
   String activeFilter = '1 мин';
 
@@ -66,7 +67,7 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                   ),
 
                   Text(
-                    '\$${widget.assets.price}',
+                    '\$${widget.assets.formatPriceLogic(widget.assets.price)}',
                     style: theme.textTheme.headlineLarge?.copyWith(
                       color: theme.colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,
@@ -151,7 +152,7 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                             child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 3),
                               child: Text(
-                                '\$69,123',
+                                '\$${widget.assets.formatPriceLogic(widget.assets.high24h)}',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onPrimary,
                                   fontWeight: FontWeight.bold,
@@ -163,7 +164,7 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                             child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 3),
                               child: Text(
-                                '\$66,892',
+                                '\$${widget.assets.formatPriceLogic(widget.assets.low24h)}',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onPrimary,
                                   fontWeight: FontWeight.bold,
@@ -175,7 +176,7 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                             child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 3),
                               child: Text(
-                                '\$28.5B',
+                                '\$${widget.assets.formatPriceLogic(widget.assets.volume24h)}',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -193,33 +194,45 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
 
                   SizedBox(
                     height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
+                    child: BlocBuilder<AssetDetailsBloc, AssetDetailsState>(
+                      builder: (context, state) {
+                        if (state is AssetDetailsLoaded) {
+                          return ListView.builder(
+                            scrollDirection: Axis.horizontal,
 
-                      itemCount: filters.length,
-                      itemBuilder: (context, index) {
-                        final filter = filters[index];
-                        final isActive = filter == activeFilter;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: ChoiceChip(
-                            backgroundColor: theme.cardColor,
-                            label: Text(
-                              filter,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            showCheckmark: false,
-                            selected: isActive,
+                            itemCount: timeframes.length,
+                            itemBuilder: (context, index) {
+                              final tf = timeframes[index];
+                              final isSelected = state.selectedTimeframe == tf;
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                child: ChoiceChip(
+                                  backgroundColor: theme.cardColor,
+                                  label: Text(
+                                    tf.title,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.colorScheme.onPrimary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  showCheckmark: false,
+                                  selected: isSelected,
 
-                            onSelected: (_) {
-                              setState(() => activeFilter = filter);
+                                  onSelected: (_) {
+                                    talker.error(tf);
+                                    context.read<AssetDetailsBloc>().add(
+                                      SelectTimeframe(timeframe:tf, symbol: widget.assets.symbol),
+                                    );
+                                  },
+                                  selectedColor: theme.primaryColor,
+                                ),
+                              );
                             },
-                            selectedColor: theme.primaryColor,
-                          ),
-                        );
+                          );
+                        }
+                        return SizedBox();
                       },
                     ),
                   ),
@@ -234,7 +247,7 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                           if (state is AssetDetailsLoaded) {
                             return SignalChart(
                               height: size.height * 0.3,
-                              color: theme.colorScheme.onSecondary,
+                              // color: theme.colorScheme.onSecondary,
                               candles: state.candles,
                             );
                           }
@@ -246,48 +259,30 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
 
                   const SizedBox(height: 20),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStatePropertyAll(
-                            theme.cardColor,
-                          ),
-                        ),
-                        child: Text(
-                          'Отслеживать',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                  ElevatedButton(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (context) =>
+                            AddTickersScreen(assets: widget.assets),
+                      );
+                    },
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStatePropertyAll(
+                        theme.primaryColor,
                       ),
-
-                      ElevatedButton(
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            builder: (context) =>
-                                AddTickersScreen(assets: widget.assets),
-                          );
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStatePropertyAll(
-                            theme.primaryColor,
-                          ),
-                        ),
-                        child: Text(
-                          'В портфель',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                      minimumSize: WidgetStatePropertyAll(
+                        Size(size.width, size.height * 0.07),
                       ),
-                    ],
+                    ),
+                    child: Text(
+                      'Добавить тикер',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                   SizedBox(height: 50),
                 ],
@@ -301,83 +296,43 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
 }
 
 class SignalChart extends StatelessWidget {
-  const SignalChart({
-    super.key,
-    required this.height,
-    required this.color,
-    required this.candles,
-  });
+  const SignalChart({super.key, required this.height, required this.candles});
 
   final double height;
-  final Color color;
   final List<Candles> candles;
 
   @override
   Widget build(BuildContext context) {
-    final maxY = candles
-        .map((e) => double.parse(e.high))
-        .reduce((a, b) => a > b ? a : b);
-    final minY = candles
-        .map((e) => double.parse(e.low))
-        .reduce((a, b) => a < b ? a : b);
+    if (candles.isEmpty) {
+      return Container(
+        height: height,
+        alignment: Alignment.center,
+        child: const Text('Нет данных', style: TextStyle(color: Colors.grey)),
+      );
+    }
+
+    final candleData = candles
+        .map((c) {
+          return Candle(
+            date: DateTime.fromMillisecondsSinceEpoch(c.openTime),
+            high: double.parse(c.high),
+            low: double.parse(c.low),
+            open: double.parse(c.open),
+            close: double.parse(c.close),
+            volume: double.parse(c.volume),
+          );
+        })
+        .toList()
+        .reversed
+        .toList();
 
     return Container(
       height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceBetween,
-          borderData: FlBorderData(show: false),
-          gridData: FlGridData(show: false),
-          titlesData: FlTitlesData(show: false),
-          barTouchData: BarTouchData(enabled: true),
-          maxY: maxY * 1.001,
-          minY: minY * 0.999,
-          barGroups: _buildBars(),
-        ),
-        swapAnimationDuration: const Duration(milliseconds: 600),
-      ),
+      child: Candlesticks(candles: candleData),
     );
-  }
-
-  List<BarChartGroupData> _buildBars() {
-    return List.generate(candles.length, (i) {
-      final c = candles[i];
-      final open = double.parse(c.open);
-      final close = double.parse(c.close);
-      final high = double.parse(c.high);
-      final low = double.parse(c.low);
-
-      final isGrow = close >= open;
-      final bodyTop = isGrow ? close : open;
-      final bodyBottom = isGrow ? open : close;
-
-      return BarChartGroupData(
-        x: i,
-        barsSpace: 0,
-        barRods: [
-          // тень (high–low)
-          BarChartRodData(
-            toY: high,
-            fromY: low,
-            width: 1.5,
-            color: Colors.grey.shade500,
-            borderRadius: BorderRadius.zero,
-          ),
-          // тело свечи
-          BarChartRodData(
-            toY: bodyTop,
-            fromY: bodyBottom,
-            width: 6,
-            color: isGrow ? AppColors.darkAccentGreen : AppColors.darkAccentRed,
-            borderRadius: BorderRadius.circular(1),
-          ),
-        ],
-      );
-    });
   }
 }

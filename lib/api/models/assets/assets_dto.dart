@@ -15,6 +15,10 @@ class AssetsDto extends Equatable {
     required this.price,
     required this.change24h,
     required this.logoUrl,
+    required this.volume24h,
+    required this.high24h,
+    required this.low24h,
+    required this.priceChangePercent,
   });
 
   final String symbol;
@@ -24,6 +28,10 @@ class AssetsDto extends Equatable {
   final String price;
   final String change24h;
   final String logoUrl;
+  final String volume24h;
+  final String high24h;
+  final String low24h;
+  final String priceChangePercent;
 
   factory AssetsDto.fromJson(Map<String, dynamic> json) =>
       _$AssetsDtoFromJson(json);
@@ -38,6 +46,10 @@ class AssetsDto extends Equatable {
     price: price,
     change24h: change24h,
     logoUrl: logoUrl,
+    volume24h: volume24h,
+    high24h: high24h,
+    low24h: low24h,
+    priceChangePercent: priceChangePercent,
   );
 
   AssetsLocal toLocal() {
@@ -64,5 +76,9 @@ class AssetsDto extends Equatable {
     price,
     change24h,
     logoUrl,
+    volume24h,
+    high24h,
+    low24h,
+    priceChangePercent,
   ];
 }

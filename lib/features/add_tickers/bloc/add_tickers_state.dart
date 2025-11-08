@@ -2,7 +2,7 @@ part of 'add_tickers_bloc.dart';
 
 sealed class AddTickersState extends Equatable {
   const AddTickersState();
-
+  bool get isBuildable => true;
   @override
   List<Object> get props => [];
 }
@@ -18,13 +18,13 @@ class AddTickersLoaded extends AddTickersState {
     this.selectedTimeframe,
   });
   final bool isValid;
-  final String? selectedOption;
-  final String? selectedTimeframe;
+  final Options? selectedOption;
+  final Timeframes? selectedTimeframe;
 
   AddTickersLoaded copyWith({
     bool? isValid,
-    String? selectedOption,
-    String? selectedTimeframe,
+    Options? selectedOption,
+    Timeframes? selectedTimeframe,
   }) {
     return AddTickersLoaded(
       isValid: isValid ?? this.isValid,
@@ -45,5 +45,15 @@ class AddTickersFailure extends AddTickersState {
   final DateTime timestamp;
 
   @override
+  
+  bool get isBuildable => false;
+
+  @override
   List<Object> get props => super.props..addAll([error, timestamp]);
+}
+
+
+class Close extends AddTickersState{
+  @override
+  bool get isBuildable => false;
 }

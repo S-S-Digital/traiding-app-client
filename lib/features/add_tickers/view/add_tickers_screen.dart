@@ -1,6 +1,13 @@
 import 'package:aspiro_trade/features/add_tickers/bloc/add_tickers_bloc.dart';
+import 'package:aspiro_trade/features/add_tickers/models/models.dart';
+import 'package:aspiro_trade/features/tickers/bloc/bloc.dart' as tickersBloc;
+
+
 import 'package:aspiro_trade/repositories/assets/assets.dart';
+import 'package:aspiro_trade/repositories/core/core.dart';
+import 'package:aspiro_trade/router/router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,37 +22,57 @@ class AddTickersScreen extends StatefulWidget {
 }
 
 class _AddTickersScreenState extends State<AddTickersScreen> {
-  final List<Map<String, String>> options = const [
-    {
-      'title': 'Покупка и продажа',
-      'subtitle': 'уведомления о всех типах сигналов',
-    },
-    {
-      'title': 'Только покупка',
-      'subtitle': 'Уведомления только о сигналах покупки',
-    },
-    {
-      'title': 'Только продажа',
-      'subtitle': 'Уведомления только о сигналах продажи',
-    },
+  final List<Options> options = [
+    Options(
+      title: 'Покупка и продажа',
+      subtitle: 'уведомления о всех типах сигналов',
+      notifyBuy: true,
+      notifySell: true,
+    ),
+    Options(
+      title: 'Только покупка',
+      subtitle: 'Уведомления только о сигналах покупки',
+      notifyBuy: true,
+      notifySell: false,
+    ),
+    Options(
+      title: 'Только продажа',
+      subtitle: 'Уведомления только о сигналах продажи',
+      notifyBuy: false,
+      notifySell: true,
+    ),
   ];
+  final List<Timeframes> timeframeOptions = [
+    Timeframes(title: '1 час', value: '1h'),
+    Timeframes(title: '2 часа', value: '2h'),
+    Timeframes(title: '4 часа', value: '4h'),
+    Timeframes(title: '1 день', value: '1d'),
+    Timeframes(title: '2 дня', value: '2d'),
+  ];
+  
 
   @override
   void initState() {
     context.read<AddTickersBloc>().add(Start(symbol: widget.assets.symbol));
     super.initState();
   }
+  
 
   @override
   void dispose() {
     context.read<AddTickersBloc>().close();
     super.dispose();
   }
+  
+
+
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
+    
+
     return Container(
       padding: const EdgeInsets.all(10),
       width: double.infinity,
@@ -54,7 +81,26 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
         borderRadius: BorderRadius.circular(25),
       ),
       child: BlocConsumer<AddTickersBloc, AddTickersState>(
-        listener: (context, state) {},
+        listener: (context, state) {
+          if (state is AddTickersFailure) {
+            if (state.error is AppException) {
+              final currentState = state as AppException;
+
+              showErrorDialog(context, 'Ok', currentState.message, () {
+                if (currentState is UnauthorizedException) {
+                  AutoRouter.of(
+                    context,
+                  ).pushAndPopUntil(LoginRoute(), predicate: (value) => false);
+                } else {
+                  Navigator.of(context).pop();
+                }
+              });
+            }
+          } else if (state is Close) {
+            AutoRouter.of(context).pop(HomeRoute());
+            context.read<tickersBloc.TickersBloc>().add(tickersBloc.Start());
+          }
+        },
         builder: (context, state) {
           if (state is AddTickersLoading) {
             return Column(
@@ -92,8 +138,8 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: state.isValid
-                        ? theme.colorScheme.secondary.withOpacity(0.3)
-                        : theme.colorScheme.error.withOpacity(0.3),
+                        ? theme.colorScheme.secondary.withValues(alpha: 0.3)
+                        : theme.colorScheme.error.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: state.isValid
@@ -122,8 +168,6 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                 Divider(),
                 const SizedBox(height: 10),
 
-                
-
                 Text(
                   'Выберите таймфрейм'.toUpperCase(),
                   style: theme.textTheme.bodyLarge?.copyWith(
@@ -133,16 +177,16 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                 const SizedBox(height: 16),
 
                 SizedBox(
-                  height: 40, // высота карточки/чипа
+                  height: 40,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: ['1 час', '4 часа', '1 день', '2 день'].length,
+                    itemCount: timeframeOptions.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 10),
                     itemBuilder: (context, index) {
-                      final tf = ['1 час', '4 часа', '1 день', '2 день'][index];
+                      final tf = timeframeOptions[index];
                       final isSelected = state.selectedTimeframe == tf;
                       return ChoiceChip(
-                        label: Text(tf),
+                        label: Text(tf.title),
                         selected: isSelected,
                         onSelected: (_) {
                           context.read<AddTickersBloc>().add(
@@ -178,10 +222,10 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                   itemCount: options.length,
                   itemBuilder: (context, index) {
                     final option = options[index];
-                    final isSelected = state.selectedOption == option['title'];
+                    final isSelected = state.selectedOption == option;
                     return GestureDetector(
                       onTap: () => context.read<AddTickersBloc>().add(
-                        SelectOption(option: option['title']!),
+                        SelectOption(option: option),
                       ),
                       child: Card(
                         color: theme.cardColor,
@@ -200,18 +244,18 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                           child: Row(
                             children: [
                               Radio<String>(
-                                value: option['title']!,
-                                groupValue: state.selectedOption,
+                                value: option.title,
+                                groupValue: state.selectedOption?.title,
                                 onChanged: (value) => context
                                     .read<AddTickersBloc>()
-                                    .add(SelectOption(option: value!)),
+                                    .add(SelectOption(option: option)),
                               ),
 
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    option['title']!,
+                                    option.title,
                                     style: theme.textTheme.bodyLarge?.copyWith(
                                       fontWeight: isSelected
                                           ? FontWeight.bold
@@ -221,7 +265,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                                   ),
 
                                   Text(
-                                    option['subtitle']!,
+                                    option.subtitle,
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       fontWeight: isSelected
                                           ? FontWeight.bold
@@ -248,7 +292,9 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                       Size(size.width, size.height * 0.07),
                     ),
                     backgroundColor: WidgetStatePropertyAll(
-                      state.isValid && state.selectedOption != null
+                      state.isValid &&
+                              state.selectedOption != null &&
+                              state.selectedTimeframe != null
                           ? theme.colorScheme.primary
                           : theme.cardColor,
                     ),
@@ -258,7 +304,20 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                       ),
                     ),
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    state.isValid &&
+                            state.selectedOption != null &&
+                            state.selectedTimeframe != null
+                        ? context.read<AddTickersBloc>().add(
+                            AddNewTicker(
+                              symbol: widget.assets.symbol,
+                              timeframe: state.selectedTimeframe!.value,
+                              notifyBuy: state.selectedOption!.notifyBuy,
+                              notifySell: state.selectedOption!.notifySell,
+                            ),
+                          )
+                        : null;
+                  },
                   child: Text('Добавить тикер'),
                 ),
                 SizedBox(height: 20),

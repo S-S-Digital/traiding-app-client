@@ -20,7 +20,6 @@ class AuthRepository extends BaseRepository implements AuthRepositoryI {
   Future<User> login(Login login) => safeApiCall(() async {
     final userDto = await api.login(login);
 
-
     await tokenStorage.saveTokens(userDto.accessToken, userDto.refreshToken);
 
     realm.write(() {
@@ -41,10 +40,15 @@ class AuthRepository extends BaseRepository implements AuthRepositoryI {
   });
 
   @override
-  Future<String> refresh(Refresh refresh)=> safeApiCall(() async {
+  Future<String> refresh() => safeApiCall(() async {
+    final (_, refresh) = await tokenStorage.getTokens();
 
-    final tokens = await api.refresh(refresh);
-    
+    if (refresh == null || refresh.isEmpty) {
+      throw UnauthorizedException('Необходимо переавторизоваться!');
+    }
+
+    final tokens = await api.refresh(Refresh(refreshToken: refresh));
+
     await tokenStorage.clear();
     await tokenStorage.saveTokens(tokens.accessToken, tokens.refreshToken);
 
@@ -54,7 +58,6 @@ class AuthRepository extends BaseRepository implements AuthRepositoryI {
   @override
   Future<User> register(Register register) => safeApiCall(() async {
     final userDto = await api.register(register);
-
 
     await tokenStorage.saveTokens(userDto.accessToken, userDto.refreshToken);
 

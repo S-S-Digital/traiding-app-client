@@ -65,7 +65,7 @@ Future<void> main() async {
   );
 
 
-
+  
   
 
   runApp(AspiroTradeApp(config: config));

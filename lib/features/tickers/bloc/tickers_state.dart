@@ -14,9 +14,9 @@ final class TickersLoading extends TickersState {}
 
 class TickersLoaded extends TickersState {
   const TickersLoaded({required this.tickers});
-  final List<Tickers> tickers;
+  final List<CombinedTicker> tickers;
 
-  TickersLoaded copyWith({List<Tickers>? tickers}) {
+  TickersLoaded copyWith({List<CombinedTicker>? tickers}) {
     return TickersLoaded(tickers: tickers ?? this.tickers);
   }
 

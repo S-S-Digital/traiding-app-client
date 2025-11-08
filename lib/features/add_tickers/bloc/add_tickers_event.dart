@@ -34,7 +34,7 @@ class AddNewTicker extends AddTickersEvent {
 
 final class SelectOption extends AddTickersEvent {
   const SelectOption({required this.option});
-  final String option;
+  final Options option;
 
   @override
   List<Object> get props => super.props..add(option);
@@ -43,7 +43,7 @@ final class SelectOption extends AddTickersEvent {
 
 final class SelectTimeframe extends AddTickersEvent {
   const SelectTimeframe({required this.timeframe});
-  final String timeframe;
+  final Timeframes timeframe;
 
   @override
   List<Object> get props => super.props..add(timeframe);

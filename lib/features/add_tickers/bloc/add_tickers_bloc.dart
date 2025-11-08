@@ -1,3 +1,5 @@
+import 'package:aspiro_trade/features/add_tickers/models/models.dart';
+
 import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/core/exceptions/exceptions.dart';
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
@@ -15,6 +17,7 @@ class AddTickersBloc extends Bloc<AddTickersEvent, AddTickersState> {
        _tickersRepository = tickersRepository,
        super(AddTickersInitial()) {
     on<Start>(_start);
+    on<AddNewTicker>(_addNewTicker);
     on<SelectOption>((event, emit) {
       final currentState = state;
       if (currentState is AddTickersLoaded) {
@@ -44,6 +47,26 @@ class AddTickersBloc extends Bloc<AddTickersEvent, AddTickersState> {
     } on AppException catch (error) {
       emit(AddTickersFailure(error: error));
     } catch (error) {
+      emit(AddTickersFailure(error: error));
+    }
+  }
+
+  Future<void> _addNewTicker(
+    AddNewTicker event,
+    Emitter<AddTickersState> emit,
+  ) async {
+    try {
+      await _tickersRepository.addNewTicker(
+        AddTicker(
+          symbol: event.symbol,
+          timeframe: event.timeframe,
+          notifyBuy: event.notifyBuy,
+          notifySell: event.notifySell,
+        ),
+      );
+
+      emit(Close());
+    } on AppException catch (error) {
       emit(AddTickersFailure(error: error));
     }
   }

@@ -52,6 +52,7 @@ class AppInitializer extends StatelessWidget {
             create: (context) => TickersBloc(
               tickersRepository: context.read<TickersRepositoryI>(),
               assetsRepository: context.read<AssetsRepositoryI>(),
+              authRepository: context.read<AuthRepositoryI>()
             ),
           ),
 
