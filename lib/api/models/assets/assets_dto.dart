@@ -20,18 +20,28 @@ class AssetsDto extends Equatable {
     required this.low24h,
     required this.priceChangePercent,
   });
-
-  final String symbol;
-  final String name;
-  final String baseAsset;
-  final String quoteAsset;
-  final String price;
-  final String change24h;
-  final String logoUrl;
-  final String volume24h;
-  final String high24h;
-  final String low24h;
-  final String priceChangePercent;
+  @JsonKey(defaultValue: '')
+  final String? symbol;
+  @JsonKey(defaultValue: '')
+  final String? name;
+  @JsonKey(defaultValue: '')
+  final String? baseAsset;
+  @JsonKey(defaultValue: '')
+  final String? quoteAsset;
+  @JsonKey(defaultValue: '')
+  final String? price;
+  @JsonKey(defaultValue: '')
+  final String? change24h;
+  @JsonKey(defaultValue: '')
+  final String? logoUrl;
+  @JsonKey(defaultValue: '')
+  final String? volume24h;
+  @JsonKey(defaultValue: '')
+  final String? high24h;
+  @JsonKey(defaultValue: '')
+  final String? low24h;
+  @JsonKey(defaultValue: '')
+  final String? priceChangePercent;
 
   factory AssetsDto.fromJson(Map<String, dynamic> json) =>
       _$AssetsDtoFromJson(json);
@@ -39,31 +49,31 @@ class AssetsDto extends Equatable {
   Map<String, dynamic> toJson() => _$AssetsDtoToJson(this);
 
   Assets toEntity() => Assets(
-    symbol: symbol,
-    name: name,
-    baseAsset: baseAsset,
-    quoteAsset: quoteAsset,
-    price: price,
-    change24h: change24h,
-    logoUrl: logoUrl,
-    volume24h: volume24h,
-    high24h: high24h,
-    low24h: low24h,
-    priceChangePercent: priceChangePercent,
+    symbol: symbol ?? '',
+    name: name ?? '',
+    baseAsset: baseAsset ?? '',
+    quoteAsset: quoteAsset ?? '',
+    price: price ?? '',
+    change24h: change24h ?? '',
+    logoUrl: logoUrl ?? '',
+    volume24h: volume24h ?? '',
+    high24h: high24h ?? '',
+    low24h: low24h ?? '',
+    priceChangePercent: priceChangePercent?? '',
   );
 
   AssetsLocal toLocal() {
-    var uuid = Uuid();
+    var uuid = const Uuid();
 
     return AssetsLocal(
       uuid.v4(),
-      symbol,
-      name,
-      baseAsset,
-      quoteAsset,
-      price,
-      change24h,
-      logoUrl,
+      symbol ?? '',
+      name ?? '',
+      baseAsset ?? '',
+      quoteAsset ?? '',
+      price ?? '',
+      change24h ?? '',
+      logoUrl ?? '',
     );
   }
 

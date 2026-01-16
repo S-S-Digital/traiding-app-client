@@ -22,6 +22,11 @@ class UnauthorizedException extends AppException {
       : super(statusCode: 401);
 }
 
+class FordibenException extends AppException {
+  const FordibenException([super.message = 'Недостаточно прав!'])
+      : super(statusCode: 403);
+}
+
 class ConflictException extends AppException {
   const ConflictException([super.message = 'Конфликт данных'])
       : super(statusCode: 409);
@@ -35,4 +40,9 @@ class InternalServerErrorException extends AppException {
 class UnknownException extends AppException {
   const UnknownException([super.message = 'Неизвестная ошибка'])
       : super();
+}
+
+class TimeoutException extends AppException {
+  const TimeoutException([super.message = 'Сервер не отвечает. Попробуйте позже.'])
+      : super(statusCode: null);
 }

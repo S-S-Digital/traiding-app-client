@@ -13,4 +13,5 @@ class AppColors {
   static const Color darkAccentBlue = Color(0xFF2962FF); // --accent-blue
   static const Color darkBorderColor = Color(0xFF363A45); // --border-color
   static const Color darkShadow = Color.fromRGBO(0, 0, 0, 0.3); // --shadow
+  static const Color darkAccentGold = Color(0xFFF59E0B);
 }

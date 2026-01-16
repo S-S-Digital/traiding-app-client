@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 enum CryptoListTileSize { small, medium, large }
@@ -44,10 +47,26 @@ class CryptoListTile extends StatelessWidget {
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Image.asset(
+      leading: Image.network(
         imagePath,
-        width: _imageSize,
         height: _imageSize,
+        width: _imageSize,
+        // Настраиваем подгонку изображения, чтобы оно не искажалось
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return SizedBox(
+            height: _imageSize,
+            width: _imageSize,
+            child: Icon(
+              Platform.isIOS
+                  ? CupertinoIcons.photo
+                  : Icons.broken_image_outlined,
+
+              size: _imageSize * 0.8,
+              color: Colors.grey.withValues(alpha: 0.5),
+            ),
+          );
+        },
       ),
       title: Text(
         title,
@@ -59,9 +78,7 @@ class CryptoListTile extends StatelessWidget {
       ),
       subtitle: Text(
         subtitle,
-        style: theme.textTheme.bodySmall?.copyWith(
-          fontSize: _fontSize - 2,
-        ),
+        style: theme.textTheme.bodySmall?.copyWith(fontSize: _fontSize - 2),
       ),
     );
   }

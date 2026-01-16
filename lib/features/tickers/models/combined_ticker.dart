@@ -1,27 +1,43 @@
 import 'package:aspiro_trade/repositories/assets/assets.dart';
+import 'package:aspiro_trade/repositories/signals/signals.dart' as signal;
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
 
 class CombinedTicker {
   final Assets assets;
-  final List<Candles> candles;
   final Tickers tickers;
+  final signal.Signals? signals;
 
   CombinedTicker({
     required this.assets,
-    required this.candles,
     required this.tickers,
+    this.signals,
   });
 
-  // Фабричный метод
   factory CombinedTicker.fromSources({
     required Assets assets,
-    required List<Candles> candles,
+    required signal.Signals? signals,
     required Tickers tickers,
   }) {
     return CombinedTicker(
       assets: assets,
-      candles: candles,
       tickers: tickers,
+      signals: signals,
+    );
+  }
+
+  static const _sentinel = Object();
+
+  CombinedTicker copyWith({
+    Assets? assets,
+    Tickers? tickers,
+    Object? signals = _sentinel, // ключевой момент
+  }) {
+    return CombinedTicker(
+      assets: assets ?? this.assets,
+      tickers: tickers ?? this.tickers,
+      signals: signals == _sentinel
+          ? this.signals        // оставить как есть
+          : signals as signal.Signals?, // заменить или поставить null
     );
   }
 }

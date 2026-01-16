@@ -7,17 +7,17 @@ part of 'assets_dto.dart';
 // **************************************************************************
 
 AssetsDto _$AssetsDtoFromJson(Map<String, dynamic> json) => AssetsDto(
-  symbol: json['symbol'] as String,
-  name: json['name'] as String,
-  baseAsset: json['baseAsset'] as String,
-  quoteAsset: json['quoteAsset'] as String,
-  price: json['price'] as String,
-  change24h: json['change24h'] as String,
-  logoUrl: json['logoUrl'] as String,
-  volume24h: json['volume24h'] as String,
-  high24h: json['high24h'] as String,
-  low24h: json['low24h'] as String,
-  priceChangePercent: json['priceChangePercent'] as String,
+  symbol: json['symbol'] as String? ?? '',
+  name: json['name'] as String? ?? '',
+  baseAsset: json['baseAsset'] as String? ?? '',
+  quoteAsset: json['quoteAsset'] as String? ?? '',
+  price: json['price'] as String? ?? '',
+  change24h: json['change24h'] as String? ?? '',
+  logoUrl: json['logoUrl'] as String? ?? '',
+  volume24h: json['volume24h'] as String? ?? '',
+  high24h: json['high24h'] as String? ?? '',
+  low24h: json['low24h'] as String? ?? '',
+  priceChangePercent: json['priceChangePercent'] as String? ?? '',
 );
 
 Map<String, dynamic> _$AssetsDtoToJson(AssetsDto instance) => <String, dynamic>{

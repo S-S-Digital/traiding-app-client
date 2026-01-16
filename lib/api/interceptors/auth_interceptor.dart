@@ -13,8 +13,10 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    
-    if (options.path.contains('/auth/')) {
+    // Пропускаем только login/register/refresh
+    if (options.path == '/auth/login' ||
+        options.path == '/auth/register' ||
+        options.path == '/auth/refresh') {
       return handler.next(options);
     }
 
@@ -28,16 +30,15 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    
     if (err.response?.statusCode == 401 &&
         !err.requestOptions.path.contains('/auth/refresh')) {
+
       final (_, refreshToken) = await getTokens();
       if (refreshToken == null || refreshToken.isEmpty) {
-        return handler.next(err); 
+        return handler.next(err);
       }
 
       try {
-        
         final response = await dio.post(
           '/auth/refresh',
           data: {'refreshToken': refreshToken},
@@ -51,7 +52,6 @@ class AuthInterceptor extends Interceptor {
           return handler.next(err);
         }
 
-        
         await saveTokens(newAccess, newRefresh);
 
         final retryResponse = await dio.request(
@@ -68,13 +68,11 @@ class AuthInterceptor extends Interceptor {
         );
 
         return handler.resolve(retryResponse);
-      } catch (e) {
-        
+      } catch (_) {
         return handler.next(err);
       }
     }
 
-    
     handler.next(err);
   }
 }

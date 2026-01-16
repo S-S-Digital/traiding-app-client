@@ -29,7 +29,7 @@ class PasswordTextField extends StatelessWidget {
         onChanged(value);
       },
       obscureText: true,
-      decoration: InputDecoration(hintText: 'Введите пароль'),
+      decoration: const InputDecoration(hintText: 'Введите пароль'),
     );
   }
 }

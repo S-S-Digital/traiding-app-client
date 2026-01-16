@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyB6qYx6TDHsxCW1xjRsWGMGC3uwV2qeiUE',
-    appId: '1:376079519781:android:13054d9d1f0c1eb2cb2fcc',
+    appId: '1:376079519781:android:0b4aa29858d1afaccb2fcc',
     messagingSenderId: '376079519781',
     projectId: 'tradingsignalsapp-80f54',
     storageBucket: 'tradingsignalsapp-80f54.firebasestorage.app',
@@ -59,10 +59,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDgQmarcebWm5hotXZWkMST9stqS35Pg3g',
-    appId: '1:376079519781:ios:f5b33c0e32318f43cb2fcc',
+    appId: '1:376079519781:ios:6beca5ae92a949fccb2fcc',
     messagingSenderId: '376079519781',
     projectId: 'tradingsignalsapp-80f54',
     storageBucket: 'tradingsignalsapp-80f54.firebasestorage.app',
-    iosBundleId: 'com.aspiro.aspiroTrade',
+    iosBundleId: 'com.aspiro.trade',
   );
+
 }

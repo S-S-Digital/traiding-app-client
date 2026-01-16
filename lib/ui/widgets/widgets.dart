@@ -7,3 +7,4 @@ export 'password_text_field.dart';
 export 'welcome_header.dart';
 export 'platform_progress_indicator.dart';
 export 'error_dialog.dart';
+export 'delete_ticker_dialog.dart';

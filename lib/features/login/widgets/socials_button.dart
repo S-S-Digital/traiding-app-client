@@ -16,7 +16,7 @@ class SocialsButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
 
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
@@ -29,7 +29,7 @@ class SocialsButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               SvgPicture.asset(picturePath, height: 23),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Text(
                 text,
                 style: theme.textTheme.bodyLarge?.copyWith(

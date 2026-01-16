@@ -13,3 +13,8 @@ class SearchAsset extends AssetsEvent {
   const SearchAsset({required this.symbol});
   final String symbol;
 }
+
+
+final class UpdateAsset extends AssetsEvent {}
+
+final class StopTimer extends AssetsEvent{}

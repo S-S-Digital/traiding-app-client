@@ -1,9 +1,11 @@
 import 'package:aspiro_trade/features/register/bloc/bloc.dart';
 import 'package:aspiro_trade/features/register/widgets/widgets.dart';
+import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/router/app_router.dart';
 
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/utils/utils.dart';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -58,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                   decoration: BoxDecoration(
                     color: theme.cardColor,
                     borderRadius: BorderRadius.circular(15),
@@ -66,24 +68,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      WelcomeHeader(
+                      const WelcomeHeader(
                         title: 'Создать аккаунт',
                         subtitle: 'Присоединяйтесь к нам',
                       ),
-                      SizedBox(height: 30),
+                      const SizedBox(height: 30),
 
                       BlocConsumer<RegisterBloc, RegisterState>(
                         listener: (context, state) {
                           if (state is RegisterFailure) {
-                            showErrorDialog(
-                              context,
-                              state.error.toString(),
-                              'Закрыть',
-                              () => Navigator.of(context).pop(),
-                            );
+                            if (state.error is AppException) {
+                          context.handleException(
+                            state.error as AppException,
+                            context,
+                          );
+                        } else {
+                          context.showBusinessErrorSnackbar(
+                            state.error.toString(),
+                            () {
+                              context.read<RegisterBloc>().add(Start());
+                            },
+                          );
+                        }
                           } else if (state is RegisterSuccess) {
                             AutoRouter.of(context).pushAndPopUntil(
-                              HomeRoute(),
+                              const HomeRoute(),
                               predicate: (value) => false,
                             );
                           }
@@ -91,7 +100,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         buildWhen: (previous, current) => current.isBuildable,
                         builder: (context, state) {
                           if (state is RegisterLoading) {
-                            return SizedBox(
+                            return const SizedBox(
                               height: 300,
                               child: Center(
                                 child: Column(
@@ -118,7 +127,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     bloc.add(ChangeEmail(email: value));
                                   },
                                 ),
-                                SizedBox(height: 15),
+                                const SizedBox(height: 15),
                                 PasswordTextField(
                                   passwordFocus: passwordFocus,
                                   passwordController: passwordController,
@@ -130,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     bloc.add(ChangePassword(password: value));
                                   },
                                 ),
-                                SizedBox(height: 15),
+                                const SizedBox(height: 15),
                                 PhoneTextField(
                                   phoneController: phoneController,
                                   phoneFocus: phoneFocus,
@@ -138,7 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     bloc.add(ChangePhone(phone: value));
                                   },
                                 ),
-                                SizedBox(height: 30),
+                                const SizedBox(height: 30),
                                 AuthButton(
                                   isValid: state.isValid,
                                   text: 'зарегистрироваться'.toUpperCase(),
@@ -158,7 +167,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ],
                             );
                           }
-                          return SizedBox(height: 300);
+                          return const SizedBox(height: 300);
                         },
                       ),
 

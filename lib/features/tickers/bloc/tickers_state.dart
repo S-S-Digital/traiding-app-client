@@ -27,7 +27,7 @@ class TickersLoaded extends TickersState {
 class TickersFailure extends TickersState {
   TickersFailure({required this.error}) : timestamp = DateTime.now();
 
-  final AppException error;
+  final Object error;
   final DateTime timestamp;
 
   @override
@@ -36,3 +36,5 @@ class TickersFailure extends TickersState {
   @override
   List<Object> get props => super.props..add(timestamp);
 }
+
+

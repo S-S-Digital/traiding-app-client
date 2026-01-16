@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:aspiro_trade/features/login/bloc/bloc.dart';
 import 'package:aspiro_trade/features/login/widgets/widgets.dart';
+import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/router/router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
+import 'package:aspiro_trade/utils/extensions/app_exception_handler.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -33,12 +36,14 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     context.read<LoginBloc>().add(LoginStart());
+
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -49,7 +54,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 30,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.cardColor,
                     borderRadius: BorderRadius.circular(15),
@@ -57,15 +65,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: BlocConsumer<LoginBloc, LoginState>(
                     listener: (context, state) {
                       if (state is LoginFailure) {
-                        showErrorDialog(
-                          context,
-                          state.error.toString(),
-                          'Закрыть',
-                          () => Navigator.of(context).pop(),
-                        );
+                        if (state.error is AppException) {
+                          context.handleException(
+                            state.error as AppException,
+                            context,
+                          );
+                        } else {
+                          context.showBusinessErrorSnackbar(
+                            state.error.toString(),
+                            () {
+                              context.read<LoginBloc>().add(LoginStart());
+                            },
+                          );
+                        }
                       } else if (state is LoginSuccess) {
                         AutoRouter.of(context).pushAndPopUntil(
-                          HomeRoute(),
+                          const HomeRoute(),
                           predicate: (value) => false,
                         );
                       }
@@ -73,40 +88,53 @@ class _LoginScreenState extends State<LoginScreen> {
                     buildWhen: (previous, current) => current.isBuildable,
                     builder: (context, state) {
                       if (state is LoginLoading) {
-                        return Scaffold(
+                        return const Scaffold(
                           body: Center(child: PlatformProgressIndicator()),
                         );
                       } else if (state is LoginLoaded) {
                         return Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            WelcomeHeader(
+                            const WelcomeHeader(
                               title: 'Добро пожаловать',
                               subtitle: 'Войдите в свой аккаунт',
                             ),
 
-                            SizedBox(height: 10),
+                            const SizedBox(height: 10),
+
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                SocialsButton(
-                                  text: 'Apple',
-                                  picturePath: 'assets/svg/apple_logo.svg',
-                                  onTap: () {},
-                                ),
-                                SocialsButton(
-                                  text: 'Google',
-                                  picturePath: 'assets/svg/google_logo.svg',
-                                  onTap: () {},
-                                ),
+                                if (Platform.isIOS)
+                                  SocialsButton(
+                                    text: 'Apple',
+                                    picturePath: 'assets/svg/apple_logo.svg',
+                                    onTap: () {
+                                      context.read<LoginBloc>().add(
+                                        LoginWithApple(),
+                                      );
+                                    },
+                                  ),
+
+                                // Google показываем и на iOS, и на Android
+                                if (Platform.isIOS || Platform.isAndroid)
+                                  SocialsButton(
+                                    text: 'Google',
+                                    picturePath: 'assets/svg/google_logo.svg',
+                                    onTap: () async {
+                                      context.read<LoginBloc>().add(
+                                        LoginWithGoogle(),
+                                      );
+                                    },
+                                  ),
                               ],
                             ),
 
-                            SizedBox(height: 20),
+                            const SizedBox(height: 20),
 
-                            DividerWithText(),
+                            const DividerWithText(),
 
-                            SizedBox(height: 20),
+                            const SizedBox(height: 20),
 
                             EmailTextField(
                               emailFocus: emailFocus,
@@ -118,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 );
                               },
                             ),
-                            SizedBox(height: 20),
+                            const SizedBox(height: 20),
                             PasswordTextField(
                               passwordFocus: passwordFocus,
                               passwordController: passwordController,
@@ -148,13 +176,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             AuthFooter(
                               firstText: 'Нет аккаунта?',
                               secondText: 'Зарегистрироваться',
-                              onPressed: () =>
-                                  AutoRouter.of(context).push(RegisterRoute()),
+                              onPressed: () => AutoRouter.of(
+                                context,
+                              ).push(const RegisterRoute()),
                             ),
                           ],
                         );
                       }
-                      return SizedBox();
+                      return const SizedBox();
                     },
                   ),
                 ),

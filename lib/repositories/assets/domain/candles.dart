@@ -13,7 +13,6 @@ class Candles {
     required this.takerBuyQuoteAssetVolume,
   });
 
-  
   final int openTime;
   final String open;
   final String high;
@@ -25,4 +24,21 @@ class Candles {
   final int numberOfTrades;
   final String takerBuyBaseAssetVolume;
   final String takerBuyQuoteAssetVolume;
+}
+
+extension CandlesExtension on Candles {
+ 
+  static Candles empty(String symbol) => Candles(
+    openTime: 0,
+    open: '',
+    high: '',
+    low: '',
+    close: '',
+    volume: '',
+    closeTime: 0,
+    quoteAssetVolume: '',
+    numberOfTrades: 0,
+    takerBuyBaseAssetVolume: '',
+    takerBuyQuoteAssetVolume: '',
+  );
 }

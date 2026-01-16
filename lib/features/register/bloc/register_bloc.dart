@@ -16,7 +16,7 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     on<Auth>(_register);
     on<Start>((event, emit) {
       emit(RegisterLoading());
-      emit(RegisterLoaded(email: '', password: '', phone: '', isValid: false));
+      emit(const RegisterLoaded(email: '', password: '', phone: '', isValid: false));
     },);
   }
 

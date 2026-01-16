@@ -12,8 +12,6 @@ sealed class LoginState extends Equatable {
 final class LoginInitial extends LoginState {}
 
 final class LoginLoading extends LoginState {
-  @override
-  bool get isBuildable => true;
 }
 
 class LoginLoaded extends LoginState {

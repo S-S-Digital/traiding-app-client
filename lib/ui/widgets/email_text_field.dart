@@ -28,7 +28,7 @@ class EmailTextField extends StatelessWidget {
         onChanged(value);
       },
 
-      decoration: InputDecoration(hintText: 'user@example.com'),
+      decoration: const InputDecoration(hintText: 'user@example.com'),
     );
   }
 }

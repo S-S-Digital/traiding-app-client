@@ -1,11 +1,8 @@
 import 'package:aspiro_trade/app/app.dart';
-import 'package:aspiro_trade/repositories/auth/models/models.dart';
-import 'package:aspiro_trade/repositories/core/exceptions/app_exception.dart';
-import 'package:aspiro_trade/router/router.dart' as router;
+
 import 'package:aspiro_trade/router/router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:flutter/material.dart';
-
 
 
 class AspiroTradeApp extends StatefulWidget {
@@ -19,15 +16,12 @@ class AspiroTradeApp extends StatefulWidget {
 
 class _AspiroTradeAppState extends State<AspiroTradeApp>
     with WidgetsBindingObserver {
-  // final _appRouter = AppRouter();
-  late final router.AppRouter appRouter;
-  
+  final _appRouter = AppRouter();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initializeApp();
   }
 
   @override
@@ -37,22 +31,6 @@ class _AspiroTradeAppState extends State<AspiroTradeApp>
     super.dispose();
   }
 
-  Future<void> _initializeApp() async {
-    appRouter = router.AppRouter();
-  try {
-    final (_, refreshToken) = await widget.config.tokenStorage.getTokens();
-    final result = await widget.config.api.refresh(Refresh(refreshToken: refreshToken ?? ''));
-    await widget.config.tokenStorage.clear();
-    await widget.config.tokenStorage.saveTokens(result.accessToken, result.refreshToken);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      appRouter.replace(const HomeRoute());
-    });
-  } on UnauthorizedException catch (_) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      appRouter.replace(const LoginRoute());
-    });
-  }
-}
 
 
   @override
@@ -65,7 +43,7 @@ class _AspiroTradeAppState extends State<AspiroTradeApp>
         debugShowCheckedModeBanner: false,
         title: 'Aspiro trade',
         theme: darkTheme,
-        routerConfig: appRouter.config(),
+        routerConfig: _appRouter.config(),
       ),
     );
   }

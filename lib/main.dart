@@ -2,49 +2,38 @@ import 'package:aspiro_trade/api/aspiro_trade_api.dart';
 import 'package:aspiro_trade/app/app_config.dart';
 import 'package:aspiro_trade/app/aspiro_trade_app.dart';
 import 'package:aspiro_trade/firebase_options.dart';
-import 'package:aspiro_trade/repositories/assets/assets.dart';
-import 'package:aspiro_trade/repositories/auth/auth.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
-import 'package:aspiro_trade/repositories/tickers/realm/tickers_local.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:realm/realm.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:talker_bloc_logger/talker_bloc_logger.dart';
-import 'package:talker_flutter/talker_flutter.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final app = await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  final firebaseAuth = FirebaseAuth.instanceFor(app: app);
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await dotenv.load(fileName: ".env");
 
   final apiUrl = dotenv.env['API_URL'];
+  await PreferencesInitializer.init();
+  await RealmInitializer.init();
+  BlocInitializer.init();
 
-  final preferences = await SharedPreferences.getInstance();
   final tokenStorage = TokenStorage();
-  var realmConfig = Configuration.local([
-    UserLocal.schema,
-    TickersLocal.schema,
-    AssetsLocal.schema,
-    CandlesLocal.schema
-  ]);
-  var realm = Realm(realmConfig);
+  final realm = RealmInitializer.instance;
+  final preferences = PreferencesInitializer.instance;
 
-
-
-  Bloc.observer = TalkerBlocObserver(
-    talker: talker,
-    settings: const TalkerBlocLoggerSettings(
-      printEventFullData: true,
-      printStateFullData: true,
-    ),
-  );
+  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  final firebaseMessaging = FirebaseMessaging.instance;
 
   final api = AspiroTradeApi.create(
     apiUrl: apiUrl,
@@ -62,19 +51,10 @@ Future<void> main() async {
     api: api,
     realm: realm,
     tokenStorage: tokenStorage,
+    firebaseMessaging: firebaseMessaging,
+    localNotificationsPlugin: flutterLocalNotificationsPlugin,
+    firebaseAuth: firebaseAuth
   );
-
-
-  
-  
 
   runApp(AspiroTradeApp(config: config));
 }
-
-
-  final talker = TalkerFlutter.init(
-    settings: TalkerSettings(
-      useConsoleLogs: kDebugMode,
-      useHistory: kDebugMode,
-    ),
-  );

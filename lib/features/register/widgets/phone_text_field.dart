@@ -22,7 +22,7 @@ class PhoneTextField extends StatelessWidget {
       textInputAction: TextInputAction.done,
       keyboardType: TextInputType.phone,
       onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
-      decoration: InputDecoration(hintText: 'Введите номер телефона'),
+      decoration: const InputDecoration(hintText: 'Введите номер телефона'),
       onChanged: (value) => onChanged(value),
     );
   }

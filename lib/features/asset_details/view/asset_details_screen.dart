@@ -1,11 +1,14 @@
+import 'dart:io' show Platform;
 import 'package:aspiro_trade/features/add_tickers/add_tickers.dart';
 import 'package:aspiro_trade/features/asset_details/bloc/asset_details_bloc.dart';
-import 'package:aspiro_trade/main.dart';
+import 'package:aspiro_trade/features/assets/bloc/assets_bloc.dart'
+    as assets_bloc;
 import 'package:aspiro_trade/repositories/assets/assets.dart';
+import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/ui/ui.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:candlesticks/candlesticks.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -19,8 +22,6 @@ class AssetDetailsScreen extends StatefulWidget {
 }
 
 class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
-  
-
   final List<Timeframes> timeframes = [
     Timeframes(title: '1 мин', value: '1m'),
     Timeframes(title: '3 мин', value: '3m'),
@@ -51,6 +52,17 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
             title: Text(widget.assets.baseAsset),
             pinned: true,
             surfaceTintColor: Colors.transparent,
+            automaticallyImplyLeading: false,
+            leading: IconButton(
+              onPressed: () {
+                context.read<AssetDetailsBloc>().add(StopTimer());
+                context.read<assets_bloc.AssetsBloc>().add(assets_bloc.Start());
+                AutoRouter.of(context).back();
+              },
+              icon: Icon(
+                Platform.isIOS ? Icons.arrow_back_ios : Icons.arrow_back,
+              ),
+            ),
           ),
 
           SliverToBoxAdapter(
@@ -59,141 +71,72 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CryptoListTile(
-                    imagePath: 'assets/pictures/bitcoin.png',
-                    title: widget.assets.baseAsset,
-                    subtitle: widget.assets.name.toUpperCase(),
-                    size: CryptoListTileSize.large,
+                  BlocConsumer<AssetDetailsBloc, AssetDetailsState>(
+                    listener: (context, state) {
+                      if (state is AssetDetailsFailure) {
+                        if (state.error is AppException) {
+                          final error = state.error as AppException;
+                          context.handleException(error, context);
+                        }
+                      }
+                    },
+                    buildWhen: (previous, current) => current.isBuildable,
+                    builder: (context, state) {
+                      if (state is AssetDetailsLoaded) {
+                        return Column(
+                          children: [
+                            CryptoListTile(
+                              imagePath: state.assets.logoUrl,
+                              title: state.assets.baseAsset,
+                              subtitle: state.assets.name.toUpperCase(),
+                              size: CryptoListTileSize.large,
+                            ),
+
+                            Row(
+                              children: [
+                                Text(
+                                  state.assets.price.isEmpty
+                                      ? 'Нет данных'
+                                      : '\$${state.assets.formatPriceLogic(state.assets.price)}',
+                                  style: theme.textTheme.headlineLarge
+                                      ?.copyWith(
+                                        color: theme.colorScheme.onPrimary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  state.assets.price.isEmpty
+                                      ? ''
+                                      : '(${state.assets.formatPriceLogic(state.assets.priceChangePercent)}%)',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    color: state.assets.change24h[0] == '-'
+                                        ? theme.colorScheme.error
+                                        : theme.colorScheme.secondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 10),
+                            Divider(color: theme.dividerColor),
+                            const SizedBox(height: 10),
+
+                            PriceTable(assets: state.assets),
+                          ],
+                        );
+                      }
+                      return const SizedBox();
+                    },
                   ),
 
-                  Text(
-                    '\$${widget.assets.formatPriceLogic(widget.assets.price)}',
-                    style: theme.textTheme.headlineLarge?.copyWith(
-                      color: theme.colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  const SizedBox(height: 10),
+                  Divider(color: theme.dividerColor),
                   const SizedBox(height: 10),
 
-                  Row(
-                    children: [
-                      Text(
-                        '+\$1,605.78',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: theme.colorScheme.secondary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '(${widget.assets.change24h}%)',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: theme.colorScheme.secondary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  Divider(color: theme.dividerColor),
-                  SizedBox(height: 10),
-
-                  Table(
-                    // border: TableBorder.symmetric(
-                    //   inside: BorderSide(width: 0.2, color: Colors.grey),
-                    // ),
-                    columnWidths: const {
-                      0: FlexColumnWidth(0.8),
-                      1: FlexColumnWidth(0.8),
-                      2: FlexColumnWidth(0.8),
-                    },
-
-                    children: [
-                      TableRow(
-                        children: [
-                          Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 3),
-                              child: Text(
-                                '24ч Макс',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 3),
-                              child: Text(
-                                '24ч Мин',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 3),
-                              child: Text(
-                                'Объём',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      TableRow(
-                        children: [
-                          Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 3),
-                              child: Text(
-                                '\$${widget.assets.formatPriceLogic(widget.assets.high24h)}',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 3),
-                              child: Text(
-                                '\$${widget.assets.formatPriceLogic(widget.assets.low24h)}',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 3),
-                              child: Text(
-                                '\$${widget.assets.formatPriceLogic(widget.assets.volume24h)}',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 10),
-                  Divider(color: theme.dividerColor),
-                  SizedBox(height: 10),
-
                   SizedBox(
-                    height: 100,
+                    height: 70,
                     child: BlocBuilder<AssetDetailsBloc, AssetDetailsState>(
                       builder: (context, state) {
                         if (state is AssetDetailsLoaded) {
@@ -204,35 +147,15 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                             itemBuilder: (context, index) {
                               final tf = timeframes[index];
                               final isSelected = state.selectedTimeframe == tf;
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                ),
-                                child: ChoiceChip(
-                                  backgroundColor: theme.cardColor,
-                                  label: Text(
-                                    tf.title,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onPrimary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  showCheckmark: false,
-                                  selected: isSelected,
-
-                                  onSelected: (_) {
-                                    talker.error(tf);
-                                    context.read<AssetDetailsBloc>().add(
-                                      SelectTimeframe(timeframe:tf, symbol: widget.assets.symbol),
-                                    );
-                                  },
-                                  selectedColor: theme.primaryColor,
-                                ),
+                              return AssetTimeframe(
+                                tf: tf,
+                                isSelected: isSelected,
+                                symbol: widget.assets.symbol,
                               );
                             },
                           );
                         }
-                        return SizedBox();
+                        return const SizedBox();
                       },
                     ),
                   ),
@@ -245,19 +168,24 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                       return BlocBuilder<AssetDetailsBloc, AssetDetailsState>(
                         builder: (context, state) {
                           if (state is AssetDetailsLoaded) {
-                            return SignalChart(
-                              height: size.height * 0.3,
-                              // color: theme.colorScheme.onSecondary,
-                              candles: state.candles,
-                            );
+                            if (state.candles.isEmpty) {
+                              return const SizedBox();
+                            } else {
+                              return SignalChart(
+                                height: size.height * 0.3,
+                                candles: state.candles,
+                              );
+                            }
                           }
-                          return Center(child: PlatformProgressIndicator());
+                          return const Center(
+                            child: PlatformProgressIndicator(),
+                          );
                         },
                       );
                     },
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 50),
 
                   ElevatedButton(
                     onPressed: () {
@@ -284,13 +212,152 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 50),
+                  const SizedBox(height: 50),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class AssetTimeframe extends StatelessWidget {
+  const AssetTimeframe({
+    super.key,
+
+    required this.tf,
+    required this.isSelected,
+    required this.symbol,
+  });
+
+  final Timeframes tf;
+  final bool isSelected;
+  final String symbol;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ChoiceChip(
+        backgroundColor: theme.cardColor,
+        label: Text(
+          tf.title,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        showCheckmark: false,
+        selected: isSelected,
+
+        onSelected: (_) {
+          talker.error(tf);
+          context.read<AssetDetailsBloc>().add(
+            SelectTimeframe(timeframe: tf, symbol: symbol),
+          );
+        },
+        selectedColor: theme.primaryColor,
+      ),
+    );
+  }
+}
+
+class PriceTable extends StatelessWidget {
+  const PriceTable({super.key, required this.assets});
+  final Assets assets;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Table(
+      columnWidths: const {
+        0: FlexColumnWidth(0.8),
+        1: FlexColumnWidth(0.8),
+        2: FlexColumnWidth(0.8),
+      },
+
+      children: [
+        TableRow(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Text(
+                  '24ч Макс',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Text(
+                  '24ч Мин',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Text(
+                  'Объём',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        TableRow(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Text(
+                  '\$${assets.formatPriceLogic(assets.high24h)}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Text(
+                  '\$${assets.formatPriceLogic(assets.low24h)}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Text(
+                  '\$${assets.formatPriceLogic(assets.volume24h)}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

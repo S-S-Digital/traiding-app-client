@@ -32,7 +32,7 @@ class AssetsRepository extends BaseRepository implements AssetsRepositoryI {
     final candlesDto = response.candles;
 
     final candles = candlesDto.map((e) => e.toEntity()).toList();
-    
+
     realm.write(() {
       realm.deleteAll<CandlesLocal>();
 
@@ -58,4 +58,16 @@ class AssetsRepository extends BaseRepository implements AssetsRepositoryI {
   @override
   Future<ValidateSymbolDto> validateSymbol(String symbol) =>
       safeApiCall(() => api.validateSymbol(symbol));
+
+  @override
+  Future<Assets> fetchAssetsBySymbol(String symbol) => safeApiCall(() async {
+    final response = await api.fetchAssetsBySymbol(symbol);
+
+  if (response.symbol == null || response.symbol!.isEmpty) {
+    talker.debug('Бэкенд вернул ошибку для символа: $symbol');
+    return Assets.empty(symbol);
+  }
+
+    return response.toEntity();
+  });
 }

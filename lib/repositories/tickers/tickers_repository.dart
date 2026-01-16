@@ -44,20 +44,20 @@ class TickersRepository extends BaseRepository implements TickersRepositoryI {
     realm.write(() {
       realm.deleteAll<TickersLocal>();
 
-      for (var ticker in tickersDto) {
+      for (final ticker in tickersDto) {
         realm.add(ticker.toLocal(), update: true);
       }
     });
 
-    for (var ticker in tickersDto) {
+    for (final ticker in tickersDto) {
       tickers.add(ticker.toEntity());
     }
     return tickers;
   });
 
   @override
-  Future<void> updateTickerSignals(String id) =>
-      safeApiCall(() => api.updateTickerSignals(id));
+  Future<void> updateTickerSignals(String id, AddTicker ticker) =>
+      safeApiCall(() => api.updateTickerSignals(id, ticker));
 
   @override
   Future<List<Tickers>> fetchAllLocalTickers() async {
@@ -71,5 +71,3 @@ class TickersRepository extends BaseRepository implements TickersRepositoryI {
     }
   }
 }
-
-

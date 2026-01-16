@@ -1,7 +1,6 @@
 import 'package:aspiro_trade/features/add_tickers/bloc/add_tickers_bloc.dart';
 import 'package:aspiro_trade/features/add_tickers/models/models.dart';
-import 'package:aspiro_trade/features/tickers/bloc/bloc.dart' as tickersBloc;
-
+import 'package:aspiro_trade/features/tickers/bloc/bloc.dart' as tickers_bloc;
 
 import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
@@ -9,6 +8,7 @@ import 'package:aspiro_trade/router/router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -43,35 +43,23 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
     ),
   ];
   final List<Timeframes> timeframeOptions = [
+    Timeframes(title: '15 минут', value: '15m'),
     Timeframes(title: '1 час', value: '1h'),
-    Timeframes(title: '2 часа', value: '2h'),
-    Timeframes(title: '4 часа', value: '4h'),
     Timeframes(title: '1 день', value: '1d'),
-    Timeframes(title: '2 дня', value: '2d'),
+    Timeframes(title: '1 неделя', value: '1w'),
+    Timeframes(title: '1 месяц', value: '1M'),
   ];
-  
 
   @override
   void initState() {
     context.read<AddTickersBloc>().add(Start(symbol: widget.assets.symbol));
     super.initState();
   }
-  
-
-  @override
-  void dispose() {
-    context.read<AddTickersBloc>().close();
-    super.dispose();
-  }
-  
-
-
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
-    
 
     return Container(
       padding: const EdgeInsets.all(10),
@@ -84,30 +72,71 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
         listener: (context, state) {
           if (state is AddTickersFailure) {
             if (state.error is AppException) {
-              final currentState = state as AppException;
-
-              showErrorDialog(context, 'Ok', currentState.message, () {
-                if (currentState is UnauthorizedException) {
-                  AutoRouter.of(
-                    context,
-                  ).pushAndPopUntil(LoginRoute(), predicate: (value) => false);
-                } else {
-                  Navigator.of(context).pop();
-                }
-              });
+              final error = state.error as AppException;
+              if (error is ConflictException) {
+                showErrorDialog(
+                  context,
+                  'Видимо вы уже добавили этот тикер с таким таймфреймом',
+                  'ok',
+                  () {
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                      context.read<AddTickersBloc>().add(
+                        Start(symbol: widget.assets.symbol),
+                      );
+                    }
+                  },
+                );
+              } else if (error is FordibenException) {
+                showErrorDialog(
+                  context,
+                  'Чтобы добавить новый тикер, вам необходимо оформить подписку или расширить лимиты текущего тарифного плана.',
+                  'ok',
+                  () {
+                    if (context.mounted) {
+                      // Navigator.of(context).pop();
+                      AutoRouter.of(context).pushAndPopUntil(
+                        const HomeRoute(),
+                        predicate: (value) => false,
+                      );
+                    }
+                  },
+                );
+              } else {
+                showErrorDialog(context, error.message, 'ok', () {
+                  if (error is UnauthorizedException) {
+                    if (context.mounted) {
+                      AutoRouter.of(context).pushAndPopUntil(
+                        const LoginRoute(),
+                        predicate: (value) => false,
+                      );
+                    }
+                  } else {
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  }
+                });
+              }
             }
           } else if (state is Close) {
-            AutoRouter.of(context).pop(HomeRoute());
-            context.read<tickersBloc.TickersBloc>().add(tickersBloc.Start());
+            if (context.mounted) {
+              context.read<tickers_bloc.TickersBloc>().add(
+                tickers_bloc.Start(),
+              );
+
+              AutoRouter.of(context).pop(const HomeRoute());
+            }
           }
         },
+        buildWhen: (previous, current) => current.isBuildable,
         builder: (context, state) {
           if (state is AddTickersLoading) {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                PlatformProgressIndicator(),
-                SizedBox(height: 16),
+                const PlatformProgressIndicator(),
+                const SizedBox(height: 16),
                 Text(
                   'Загрузка...',
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -115,7 +144,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
               ],
             );
           }
@@ -125,7 +154,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CryptoListTile(
-                  imagePath: 'assets/pictures/bitcoin.png',
+                  imagePath: widget.assets.logoUrl,
                   title: widget.assets.baseAsset,
                   subtitle: widget.assets.name.toUpperCase(),
                   size: CryptoListTileSize.large,
@@ -140,7 +169,9 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                     color: state.isValid
                         ? theme.colorScheme.secondary.withValues(alpha: 0.3)
                         : theme.colorScheme.error.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16)),
                     border: Border.all(
                       color: state.isValid
                           ? theme.colorScheme.secondary
@@ -162,10 +193,10 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                     ),
                   ),
                 ),
-
+                // TickerStatus(isValid: state.isValid),
                 const SizedBox(height: 10),
 
-                Divider(),
+                const Divider(),
                 const SizedBox(height: 10),
 
                 Text(
@@ -318,9 +349,9 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                           )
                         : null;
                   },
-                  child: Text('Добавить тикер'),
+                  child: const Text('Добавить тикер'),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
               ],
             );
           }
@@ -332,7 +363,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                 size: 48,
                 color: theme.colorScheme.error,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 'Не удалось загрузить данные',
                 style: theme.textTheme.bodyLarge?.copyWith(
@@ -340,7 +371,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 'Попробуйте еще раз!',
                 style: theme.textTheme.bodyLarge?.copyWith(
@@ -348,7 +379,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 style: ButtonStyle(
                   minimumSize: WidgetStatePropertyAll(
@@ -366,13 +397,84 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                 onPressed: () => context.read<AddTickersBloc>().add(
                   Start(symbol: widget.assets.symbol),
                 ),
-                child: Text('Попробовать еще раз'),
+                child: const Text('Попробовать еще раз'),
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+
+
+class TickerStatus extends StatefulWidget {
+  final bool isValid;
+  const TickerStatus({super.key, required this.isValid});
+
+  @override
+  State<TickerStatus> createState() => _TickerStatusState();
+}
+
+class _TickerStatusState extends State<TickerStatus>
+    with SingleTickerProviderStateMixin {
+
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+      lowerBound: 0.4,
+      upperBound: 1.0,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return FadeTransition(
+      opacity: _controller,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: widget.isValid
+              ? theme.colorScheme.secondary.withValues(alpha: 0.3)
+              : theme.colorScheme.error.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: widget.isValid
+                ? theme.colorScheme.secondary
+                : theme.colorScheme.error,
+            width: 2,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            widget.isValid
+                ? 'Тикер найден на бирже'
+                : 'Тикер не найден на бирже',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: widget.isValid
+                  ? theme.colorScheme.secondary
+                  : theme.colorScheme.error,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }

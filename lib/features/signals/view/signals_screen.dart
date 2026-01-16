@@ -1,7 +1,11 @@
-
+import 'package:aspiro_trade/features/signals/bloc/signals_bloc.dart';
+import 'package:aspiro_trade/features/signals/widgets/widgets.dart';
+import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/ui/ui.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 @RoutePage()
 class SignalsScreen extends StatefulWidget {
@@ -16,247 +20,121 @@ class _SignalsScreenState extends State<SignalsScreen> {
   String activeFilter = 'Все';
 
   @override
+  void initState() {
+    context.read<SignalsBloc>().add(Start());
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          BaseAppBar(text: 'Aктивные сигналы'),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context.read<SignalsBloc>().add(Start());
+        },
+        child: CustomScrollView(
+          slivers: [
+            const BaseAppBar(text: 'Aктивные сигналы'),
 
-          SliverToBoxAdapter(child: SizedBox(height: 20)),
+            const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 50,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: filters.length,
-                itemBuilder: (context, index) {
-                  final filter = filters[index];
-                  final isActive = filter == activeFilter;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: ChoiceChip(
-                      backgroundColor: AppColors.darkBorderColor,
-                      label: Text(filter),
-                      showCheckmark: false,
-                      selected: isActive,
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 50,
+                child: BlocBuilder<SignalsBloc, SignalsState>(
+                  builder: (context, state) {
+                    if (state is! SignalsLoaded || state.signals.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
 
-                      onSelected: (_) {
-                        setState(() => activeFilter = filter);
+                    final activeFilter = state.activeFilter;
+
+                    return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: filters.length,
+                      itemBuilder: (context, index) {
+                        final filter = filters[index];
+                        final isActive = filter == activeFilter;
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: ChoiceChip(
+                            backgroundColor: AppColors.darkBorderColor,
+                            label: Text(filter),
+                            showCheckmark: false,
+                            selected: isActive,
+                            onSelected: (_) {
+                              context.read<SignalsBloc>().add(
+                                ChangeFilter(filter),
+                              );
+                            },
+                            selectedColor: theme.primaryColor,
+                            labelStyle: TextStyle(
+                              color: isActive ? Colors.white : Colors.grey,
+                            ),
+                            side: BorderSide.none,
+                          ),
+                        );
                       },
-                      selectedColor: theme.primaryColor,
-                      labelStyle: TextStyle(
-                        color: isActive ? Colors.white : Colors.grey,
-                      ),
-                      side: BorderSide.none,
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
-          ),
 
-          SliverList.builder(
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: size.height * 0.3,
-                    maxHeight: size.height * 0.6,
-                  ),
-                  child: Container(
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: theme.cardColor,
-                      borderRadius: BorderRadius.circular(12),
+            BlocConsumer<SignalsBloc, SignalsState>(
+              listener: (context, state) {
+                if (state is SignalsFailure) {
+                  if (state.error is AppException) {
+                    final error = state.error as AppException;
+                    context.handleException(error, context);
+                  }
+                }
+              },
+              builder: (context, state) {
+                if (state is SignalsLoading) {
+                  return const SliverFillRemaining(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        PlatformProgressIndicator(),
+                        Text('Загрузка...'),
+                      ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                  );
+                }
+                if (state is SignalsLoaded) {
+                  final filteredSignals = state.signals.where((signal) {
+                    if (state.activeFilter == 'Все') {
+                      return true;
+                    }
 
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.secondary.withValues(
-                                    alpha: 0.25,
-                                  ),
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                child: Text(
-                                  'покупка'.toUpperCase(),
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: theme.colorScheme.secondary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Text('12:18'),
-                            ],
-                          ),
+                    if (state.activeFilter == 'Покупка') {
+                      return signal.signal.direction.toLowerCase() == 'buy';
+                    }
 
-                          CryptoListTile(
-                            imagePath: 'assets/pictures/bitcoin.png',
-                            title: 'BTC/USDT',
-                            subtitle: 'Binance',
-                            size: CryptoListTileSize.medium,
-                          ),
+                    if (state.activeFilter == 'Продажа') {
+                      return signal.signal.direction.toLowerCase() == 'sell';
+                    }
 
-                          ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minHeight: size.height * 0.05,
-                              maxHeight: size.height * 0.3,
-                            ),
-                            child: Container(
-                              width: size.width,
-                              decoration: BoxDecoration(
-                                color: theme.scaffoldBackgroundColor.withValues(
-                                  alpha: 0.8,
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10.0,
-                                  vertical: 5,
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          'Цена входа:',
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                                color:
-                                                    theme.colorScheme.onPrimary,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                        ),
-                                        Text(
-                                          '121,850.00',
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                                color:
-                                                    theme.colorScheme.onPrimary,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          'Текущая цена:',
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                                color:
-                                                    theme.colorScheme.onPrimary,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                        ),
-                                        Text(
-                                          '121,850.00',
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                                color:
-                                                    theme.colorScheme.onPrimary,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          'Изменение:',
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                                color:
-                                                    theme.colorScheme.onPrimary,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                        ),
-                                        Text(
-                                          '+0.50% (+606.54)',
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                                color:
-                                                    theme.colorScheme.secondary,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 10),
+                    return true;
+                  }).toList();
 
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  minimumSize: Size(
-                                    size.width * 0.42,
-                                    48,
-                                  ), // индивидуальная длина
-                                ),
-                                onPressed: () {},
-                                child: Text(
-                                  'Закрыть',
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: theme.colorScheme.onPrimary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: theme.primaryColor,
-                                  minimumSize: Size(
-                                    size.width * 0.42,
-                                    48,
-                                  ), // индивидуальная длина
-                                ),
-                                onPressed: () {},
-                                child: Text(
-                                  'Детали',
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: theme.colorScheme.onPrimary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+                  return SliverList.builder(
+                    itemCount: filteredSignals.length,
+                    itemBuilder: (context, index) {
+                      return SignalsItem(signal: filteredSignals[index]);
+                    },
+                  );
+                }
+                return const SliverToBoxAdapter();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,4 @@
-import 'app_exception.dart';
+import 'package:aspiro_trade/repositories/core/core.dart';
 
 final class AppExceptionFactory {
   const AppExceptionFactory._();
@@ -12,6 +12,8 @@ final class AppExceptionFactory {
         return BadRequestException(_mapMessage(msg) ?? 'Некорректный запрос');
       case 401:
         return UnauthorizedException(_mapMessage(msg) ?? 'Необходима авторизация');
+      case 403:
+        return FordibenException(_mapMessage(msg) ?? 'Недостаточно прав!');
       case 409:
         return ConflictException(_mapMessage(msg) ?? 'Конфликт данных');
       case 500:

@@ -22,16 +22,16 @@ final darkTheme = ThemeData(
   dividerColor: AppColors.darkBorderColor,
   shadowColor: AppColors.darkShadow,
   inputDecorationTheme: InputDecorationTheme(
-    hintStyle: TextStyle(color: AppColors.darkTextSecondary),
+    hintStyle: const TextStyle(color: AppColors.darkTextSecondary),
     fillColor: AppColors.darkSecondaryBackground,
     filled: true,
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: AppColors.darkBackgroundColor, width: 1.0),
+      borderSide: const BorderSide(color: AppColors.darkBackgroundColor, width: 1.0),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: AppColors.darkAccentBlue, width: 1.5),
+      borderSide: const BorderSide(color: AppColors.darkAccentBlue, width: 1.5),
     ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),

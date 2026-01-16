@@ -26,3 +26,9 @@ class Auth extends LoginEvent {
   final String email;
   final String password;
 }
+
+
+class LoginWithGoogle extends LoginEvent {
+}
+
+class LoginWithApple extends LoginEvent {}

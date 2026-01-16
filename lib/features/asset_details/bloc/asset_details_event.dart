@@ -45,3 +45,8 @@ final class SelectTimeframe extends AssetDetailsEvent {
   @override
   List<Object> get props => super.props..add(timeframe);
 }
+
+final class UpdateAsset extends AssetDetailsEvent {}
+
+
+final class StopTimer extends AssetDetailsEvent{}

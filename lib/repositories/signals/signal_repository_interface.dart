@@ -1,5 +1,0 @@
-
-
-abstract interface class SignalRepositoryI{
-  
-}

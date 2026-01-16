@@ -169,6 +169,22 @@ class LoginRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [ProfileScreen]
+class ProfileRoute extends PageRouteInfo<void> {
+  const ProfileRoute({List<PageRouteInfo>? children})
+    : super(ProfileRoute.name, initialChildren: children);
+
+  static const String name = 'ProfileRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const ProfileScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [RegisterScreen]
 class RegisterRoute extends PageRouteInfo<void> {
   const RegisterRoute({List<PageRouteInfo>? children})
@@ -217,6 +233,38 @@ class SignalsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [SplashScreen]
+class SplashRoute extends PageRouteInfo<void> {
+  const SplashRoute({List<PageRouteInfo>? children})
+    : super(SplashRoute.name, initialChildren: children);
+
+  static const String name = 'SplashRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const SplashScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [SubscriptionScreen]
+class SubscriptionRoute extends PageRouteInfo<void> {
+  const SubscriptionRoute({List<PageRouteInfo>? children})
+    : super(SubscriptionRoute.name, initialChildren: children);
+
+  static const String name = 'SubscriptionRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const SubscriptionScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [TickersScreen]
 class TickersRoute extends PageRouteInfo<void> {
   const TickersRoute({List<PageRouteInfo>? children})
@@ -230,4 +278,51 @@ class TickersRoute extends PageRouteInfo<void> {
       return const TickersScreen();
     },
   );
+}
+
+/// generated route for
+/// [UpdateTickersScreen]
+class UpdateTickersRoute extends PageRouteInfo<UpdateTickersRouteArgs> {
+  UpdateTickersRoute({
+    Key? key,
+    required CombinedTicker tickers,
+    List<PageRouteInfo>? children,
+  }) : super(
+         UpdateTickersRoute.name,
+         args: UpdateTickersRouteArgs(key: key, tickers: tickers),
+         initialChildren: children,
+       );
+
+  static const String name = 'UpdateTickersRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<UpdateTickersRouteArgs>();
+      return UpdateTickersScreen(key: args.key, tickers: args.tickers);
+    },
+  );
+}
+
+class UpdateTickersRouteArgs {
+  const UpdateTickersRouteArgs({this.key, required this.tickers});
+
+  final Key? key;
+
+  final CombinedTicker tickers;
+
+  @override
+  String toString() {
+    return 'UpdateTickersRouteArgs{key: $key, tickers: $tickers}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! UpdateTickersRouteArgs) return false;
+    return key == other.key && tickers == other.tickers;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ tickers.hashCode;
 }

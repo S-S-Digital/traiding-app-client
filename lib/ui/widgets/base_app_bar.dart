@@ -1,3 +1,6 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class BaseAppBar extends StatelessWidget {
@@ -20,17 +23,17 @@ class BaseAppBar extends StatelessWidget {
       actions: [
         onPressed != null
             ? Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: ElevatedButton(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: ElevatedButton(
                   style: ButtonStyle(
                     backgroundColor: WidgetStatePropertyAll(theme.primaryColor),
-                    minimumSize: WidgetStatePropertyAll(const Size(50, 50))
+                    minimumSize: const WidgetStatePropertyAll(Size(50, 50)),
                   ),
                   onPressed: onPressed,
-                  child: Icon(Icons.add)
+                  child: Icon(Platform.isIOS ? CupertinoIcons.add : Icons.add),
                 ),
-            )
-            : SizedBox(),
+              )
+            : const SizedBox(),
       ],
     );
   }

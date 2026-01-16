@@ -11,8 +11,8 @@ class PlatformProgressIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (theme.isCupertino) {
-      return CupertinoActivityIndicator();
+      return const CupertinoActivityIndicator();
     }
-    return CircularProgressIndicator();
+    return const CircularProgressIndicator();
   }
 }

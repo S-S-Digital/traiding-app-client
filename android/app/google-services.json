@@ -12,7 +12,12 @@
           "package_name": "com.aspiro.aspiro_trade"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "376079519781-joj733eav2prvlsd3h5sde6n9qi0b577.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB6qYx6TDHsxCW1xjRsWGMGC3uwV2qeiUE"
@@ -20,7 +25,65 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "376079519781-joj733eav2prvlsd3h5sde6n9qi0b577.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "376079519781-hhrmeo6g2fa7ivktb00eesjeqpi1udjp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.aspiro.trade",
+                "app_store_id": "6756765160"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:376079519781:android:0b4aa29858d1afaccb2fcc",
+        "android_client_info": {
+          "package_name": "com.aspiro.trade"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "376079519781-fn4h4ebsql8194588ub4dqrndgesss4k.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aspiro.trade",
+            "certificate_hash": "9abd41ead857789c009f329d281ab3da64783025"
+          }
+        },
+        {
+          "client_id": "376079519781-joj733eav2prvlsd3h5sde6n9qi0b577.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6qYx6TDHsxCW1xjRsWGMGC3uwV2qeiUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "376079519781-joj733eav2prvlsd3h5sde6n9qi0b577.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "376079519781-hhrmeo6g2fa7ivktb00eesjeqpi1udjp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.aspiro.trade",
+                "app_store_id": "6756765160"
+              }
+            }
+          ]
         }
       }
     },
@@ -31,7 +94,12 @@
           "package_name": "com.yourcompany.tradingapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "376079519781-joj733eav2prvlsd3h5sde6n9qi0b577.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB6qYx6TDHsxCW1xjRsWGMGC3uwV2qeiUE"
@@ -39,7 +107,20 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "376079519781-joj733eav2prvlsd3h5sde6n9qi0b577.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "376079519781-hhrmeo6g2fa7ivktb00eesjeqpi1udjp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.aspiro.trade",
+                "app_store_id": "6756765160"
+              }
+            }
+          ]
         }
       }
     }

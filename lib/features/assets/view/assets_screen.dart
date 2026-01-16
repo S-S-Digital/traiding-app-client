@@ -1,12 +1,14 @@
-import 'package:aspiro_trade/features/add_tickers/view/view.dart';
+import 'package:aspiro_trade/features/add_tickers/add_tickers.dart';
 import 'package:aspiro_trade/features/assets/bloc/assets_bloc.dart';
-import 'package:aspiro_trade/repositories/core/exceptions/app_exception.dart';
+import 'package:aspiro_trade/features/assets/widgets/widgets.dart';
 import 'package:aspiro_trade/router/app_router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
-import 'package:aspiro_trade/utils/methods/methods.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:io' show Platform;
 
 @RoutePage()
 class AssetsScreen extends StatefulWidget {
@@ -27,6 +29,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+
+    if (context.mounted) {}
     super.dispose();
   }
 
@@ -40,7 +44,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -59,6 +63,19 @@ class _AssetsScreenState extends State<AssetsScreen> {
             pinned: true,
             snap: true,
             floating: true,
+            automaticallyImplyLeading: false,
+            leading: IconButton(
+              onPressed: () {
+                context.read<AssetsBloc>().add(StopTimer());
+                AutoRouter.of(context).pushAndPopUntil(
+                  const HomeRoute(),
+                  predicate: (value) => false,
+                );
+              },
+              icon: Icon(
+                Platform.isIOS ? Icons.arrow_back_ios : Icons.arrow_back,
+              ),
+            ),
             surfaceTintColor: Colors.transparent,
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(95),
@@ -93,7 +110,13 @@ class _AssetsScreenState extends State<AssetsScreen> {
                           color: theme.primaryColor,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(Icons.search),
+                        child: Icon(
+                          Platform.isIOS
+                              ? CupertinoIcons.search
+                              : Icons.search_outlined,
+
+                          size: 24,
+                        ),
                       ),
                     ),
                   ],
@@ -117,21 +140,14 @@ class _AssetsScreenState extends State<AssetsScreen> {
           BlocConsumer<AssetsBloc, AssetsState>(
             listener: (context, state) {
               if (state is AssetsFailure) {
-                showErrorDialog(context, state.error.message, 'Ок', () {
-                  if (state.error is UnauthorizedException) {
-                    AutoRouter.of(context).pushAndPopUntil(
-                      LoginRoute(),
-                      predicate: (value) => false,
-                    );
-                  } else {
-                    Navigator.of(context).pop();
-                  }
-                });
+                final error = state.error;
+                context.handleException(error, context);
               }
             },
+            buildWhen: (previous, current) => current.isBuildable,
             builder: (context, state) {
               if (state is AssetsLoading) {
-                return SliverToBoxAdapter(
+                return const SliverToBoxAdapter(
                   child: Center(child: PlatformProgressIndicator()),
                 );
               }
@@ -140,223 +156,30 @@ class _AssetsScreenState extends State<AssetsScreen> {
                   itemCount: state.assets.length,
                   itemBuilder: (context, index) {
                     final asset = state.assets[index];
-                    return GestureDetector(
-                      onTap: () => AutoRouter.of(
-                        context,
-                      ).push(AssetDetailsRoute(assets: asset)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: size.height * 0.08,
-                            maxHeight: size.height * 0.4,
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.all(8.0),
-                            width: double.infinity,
-
-                            decoration: BoxDecoration(
-                              color: theme.cardColor,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Image.network(
-                                      asset.logoUrl,
-                                      height: size.height * 0.06,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return const Icon(
-                                              Icons
-                                                  .image_not_supported_outlined,
-                                              size: 40,
-                                            );
-                                          },
-                                    ),
-                                    SizedBox(width: 10),
-
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              asset.symbol,
-                                              style: theme.textTheme.bodyLarge
-                                                  ?.copyWith(
-                                                    color: theme
-                                                        .colorScheme
-                                                        .onPrimary,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                            ),
-                                            SizedBox(width: 7),
-                                            Text(
-                                              asset.baseAsset,
-                                              style: theme.textTheme.bodyMedium,
-                                            ),
-                                          ],
-                                        ),
-
-                                        Text(
-                                          '\$${asset.formatPriceLogic(asset.price)}',
-                                          style: theme.textTheme.bodyLarge
-                                              ?.copyWith(
-                                                color:
-                                                    theme.colorScheme.onPrimary,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(2),
-
-                                      decoration: BoxDecoration(
-                                        color: asset.change24h[0] == '-'
-                                            ? theme.colorScheme.error
-                                                  .withValues(alpha: 0.18)
-                                            : theme.colorScheme.secondary
-                                                  .withValues(alpha: 0.18),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        '${asset.change24h}%',
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                              color: asset.change24h[0] == '-'
-                                                  ? theme.colorScheme.error
-                                                        .withValues(alpha: 0.7)
-                                                  : theme.colorScheme.secondary,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 10),
-
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          builder: (context) =>
-                                              AddTickersScreen(
-                                                assets: asset,
-                                                
-                                              ),
-                                        );
-                                      },
-                                      style: ButtonStyle(
-                                        backgroundColor: WidgetStatePropertyAll(
-                                          theme.colorScheme.primary,
-                                        ),
-                                        minimumSize: WidgetStatePropertyAll(
-                                          const Size(50, 50),
-                                        ),
-                                      ),
-
-                                      child: Icon(Icons.add),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                    return AssetsItem(
+                      asset: asset,
+                      onTap: () {
+                        context.read<AssetsBloc>().add(StopTimer());
+                        AutoRouter.of(
+                          context,
+                        ).push(AssetDetailsRoute(assets: asset));
+                      },
+                      openDrawer: () {
+                        context.read<AssetsBloc>().add(StopTimer());
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (context) => AddTickersScreen(assets: asset),
+                        );
+                      },
                     );
                   },
                 );
               }
-              return SliverToBoxAdapter();
+              return const SliverToBoxAdapter();
             },
           ),
         ],
-      ),
-    );
-  }
-}
-
-class SearchTextField extends StatefulWidget {
-  const SearchTextField({
-    super.key,
-    required this.controller,
-    required this.onClearTap,
-    required this.onSubmitted,
-  });
-
-  final TextEditingController controller;
-  final ValueChanged<String>? onSubmitted;
-  final VoidCallback? onClearTap;
-
-  @override
-  State<SearchTextField> createState() => _SearchTextFieldState();
-}
-
-class _SearchTextFieldState extends State<SearchTextField> {
-  bool _showSuffix = false;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_onTextChanged);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onTextChanged);
-    super.dispose();
-  }
-
-  void _onTextChanged() {
-    final hasText = widget.controller.text.isNotEmpty;
-    if (hasText != _showSuffix) {
-      setState(() => _showSuffix = hasText);
-    }
-  }
-
-  void _clearText(bool value) {
-    widget.controller.clear();
-    widget.onClearTap?.call();
-    setState(() => _showSuffix = !value);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return TextField(
-      controller: widget.controller,
-      textInputAction: TextInputAction.search,
-      onSubmitted: widget.onSubmitted,
-
-      decoration: InputDecoration(
-        enabledBorder: const OutlineInputBorder(
-          borderSide: BorderSide.none,
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-        ),
-        hintText: 'Поиск монет...',
-        fillColor: theme.cardColor,
-
-        border: OutlineInputBorder(borderSide: BorderSide.none),
-
-        suffixIcon: _showSuffix
-            ? IconButton(
-                onPressed: () => _clearText(_showSuffix),
-                icon: Icon(Icons.close, size: 22),
-              )
-            : null,
       ),
     );
   }

@@ -54,7 +54,7 @@ class CandlesDto extends Equatable {
   );
 
   CandlesLocal toLocal() {
-    var uuid = Uuid();
+    var uuid = const Uuid();
     return CandlesLocal(
       uuid.v4(),
       openTime,
