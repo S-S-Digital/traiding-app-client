@@ -108,6 +108,7 @@ class AuthRepository extends BaseRepository implements AuthRepositoryI {
 
   @override
   Future<User> googleSignIn(GoogleAuth googleAuth) => safeApiCall(() async {
+    talker.debug(googleAuth.toJson());
     final response = await api.googleSignIn(googleAuth);
 
     await tokenStorage.saveTokens(response.accessToken, response.refreshToken);
@@ -119,3 +120,5 @@ class AuthRepository extends BaseRepository implements AuthRepositoryI {
     return response.user.toEntity();
   });
 }
+
+

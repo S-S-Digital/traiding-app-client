@@ -16,8 +16,10 @@ final class SettingsLoading extends SettingsState {
 
 class SettingsLoaded extends SettingsState {
   final Users users;
+  final String appVersion;
+  final String build;
 
-  const SettingsLoaded({required this.users});
+  const SettingsLoaded({required this.users, this.build = '1', this.appVersion = '1.0.0'});
 
   @override
   List<Object> get props => super.props..add(users);

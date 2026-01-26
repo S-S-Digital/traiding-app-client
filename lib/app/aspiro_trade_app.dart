@@ -4,7 +4,6 @@ import 'package:aspiro_trade/router/router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:flutter/material.dart';
 
-
 class AspiroTradeApp extends StatefulWidget {
   const AspiroTradeApp({super.key, required this.config});
 
@@ -31,8 +30,6 @@ class _AspiroTradeAppState extends State<AspiroTradeApp>
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final repositoryContainer = RepositoryContainer.prod(config: widget.config);
@@ -40,6 +37,7 @@ class _AspiroTradeAppState extends State<AspiroTradeApp>
       config: widget.config,
       repositoryContainer: repositoryContainer,
       child: MaterialApp.router(
+        
         debugShowCheckedModeBanner: false,
         title: 'Aspiro trade',
         theme: darkTheme,

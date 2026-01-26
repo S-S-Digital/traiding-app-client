@@ -1,46 +1,33 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
+
 part of 'signals_bloc.dart';
 
-sealed class SignalsState extends Equatable {
-  const SignalsState();
-  bool get isBuildable => true;
+class SignalsState extends Equatable {
+  const SignalsState({
+    this.status = Status.initial,
+    this.signals = const [],
+    this.activeFilter = '',
+    this.error,
+  });
 
-  @override
-  List<Object> get props => [];
-}
+  final Status status;
+  final List<CombinedSignal> signals;
+  final String activeFilter;
+  final Object? error;
 
-final class SignalsInitial extends SignalsState {}
-
-final class SignalsLoading extends SignalsState {}
-
-class SignalsLoaded extends SignalsState {
-  const SignalsLoaded({required this.signals, this.activeFilter = 'Все'});
-
-  SignalsLoaded copyWith({
+  SignalsState copyWith({
+    Status? status,
     List<CombinedSignal>? signals,
     String? activeFilter,
+    Object? error,
   }) {
-    return SignalsLoaded(
+    return SignalsState(
+      status: status ?? this.status,
       signals: signals ?? this.signals,
       activeFilter: activeFilter ?? this.activeFilter,
+      error: error ?? this.error,
     );
   }
 
-  final List<CombinedSignal> signals;
-  final String activeFilter;
-
   @override
-  List<Object> get props => super.props..add([signals, activeFilter]);
-}
-
-class SignalsFailure extends SignalsState {
-  SignalsFailure({required this.error}) : timestamp = DateTime.now();
-  final Object error;
-  final DateTime timestamp;
-
-  @override
-  List<Object> get props => [timestamp];
-
-  @override
-  bool get isBuildable => false;
+  List<Object?> get props => [status, signals, activeFilter, error];
 }

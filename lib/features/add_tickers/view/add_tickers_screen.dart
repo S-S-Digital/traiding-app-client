@@ -70,7 +70,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
       ),
       child: BlocConsumer<AddTickersBloc, AddTickersState>(
         listener: (context, state) {
-          if (state is AddTickersFailure) {
+          if (state.status == Status.failure) {
             if (state.error is AppException) {
               final error = state.error as AppException;
               if (error is ConflictException) {
@@ -119,7 +119,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                 });
               }
             }
-          } else if (state is Close) {
+          } else if (state.status == Status.success) {
             if (context.mounted) {
               context.read<tickers_bloc.TickersBloc>().add(
                 tickers_bloc.Start(),
@@ -129,9 +129,9 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
             }
           }
         },
-        buildWhen: (previous, current) => current.isBuildable,
+        buildWhen: (previous, current) => current.status.isBuildable,
         builder: (context, state) {
-          if (state is AddTickersLoading) {
+          if (state.status == Status.loading) {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -148,7 +148,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
               ],
             );
           }
-          if (state is AddTickersLoaded) {
+          if (state.status != Status.initial) {
             return Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,14 +166,14 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: state.isValid
+                    color: state.status == Status.submit
                         ? theme.colorScheme.secondary.withValues(alpha: 0.3)
                         : theme.colorScheme.error.withValues(alpha: 0.3),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16)),
                     border: Border.all(
-                      color: state.isValid
+                      color: state.status == Status.submit
                           ? theme.colorScheme.secondary
                           : theme.colorScheme.error,
                       width: 2,
@@ -181,11 +181,11 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      state.isValid
+                      state.status == Status.submit
                           ? 'Тикер найден на бирже'
                           : 'Тикер не найден на бирже',
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: state.isValid
+                        color: state.status == Status.submit
                             ? theme.colorScheme.secondary
                             : theme.colorScheme.error,
                         fontWeight: FontWeight.bold,
@@ -323,7 +323,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                       Size(size.width, size.height * 0.07),
                     ),
                     backgroundColor: WidgetStatePropertyAll(
-                      state.isValid &&
+                      state.status == Status.submit &&
                               state.selectedOption != null &&
                               state.selectedTimeframe != null
                           ? theme.colorScheme.primary
@@ -336,7 +336,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                     ),
                   ),
                   onPressed: () {
-                    state.isValid &&
+                    state.status == Status.submit &&
                             state.selectedOption != null &&
                             state.selectedTimeframe != null
                         ? context.read<AddTickersBloc>().add(

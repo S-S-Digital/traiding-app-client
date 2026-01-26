@@ -19,4 +19,11 @@ class UsersRepository extends BaseRepository implements UsersRepositoryI {
 
     return response.toEntity();
   });
+  
+  @override
+  Future<void> deleteAccount() => safeApiCall(()async{
+    await api.deleteAccount();
+  });
+
+  
 }

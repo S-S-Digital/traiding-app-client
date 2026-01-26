@@ -1,7 +1,6 @@
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
 
 class Tickers {
-
   Tickers({
     required this.id,
     required this.userId,
@@ -22,8 +21,7 @@ class Tickers {
   final bool isActive;
   final DateTime addedAt;
 
-
-    String get formatTimeframe{
+  String get formatTimeframe {
     switch (timeframe) {
       case '15m':
         return '15 минут';
@@ -36,12 +34,23 @@ class Tickers {
       case '1M':
         return '1 месяц';
       default:
-        return timeframe; 
+        return timeframe;
     }
   }
 
+  factory Tickers.empty() {
+    return Tickers(
+      id: '',
+      userId: '',
+      symbol: '',
+      timeframe: '',
+      notifyBuy: false,
+      notifySell: false,
+      isActive: false,
+      addedAt: DateTime.fromMillisecondsSinceEpoch(0),
+    );
+  }
 }
-
 
 extension TickersLocalMapper on TickersLocal {
   Tickers toEntity() {
@@ -56,7 +65,4 @@ extension TickersLocalMapper on TickersLocal {
       addedAt: addedAt,
     );
   }
-
-
-
 }

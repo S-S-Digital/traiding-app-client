@@ -22,4 +22,12 @@ class ProfileCubit extends Cubit<ProfileState> {
       emit(ProfileFailure(error: error));
     }
   }
-}
+
+  Future<void> deleteAccount()async{
+    try{
+      await _usersRepository.deleteAccount();
+
+      emit(DeleteSuccess());
+    }catch(error){emit(ProfileFailure(error: error));}
+  }
+ }

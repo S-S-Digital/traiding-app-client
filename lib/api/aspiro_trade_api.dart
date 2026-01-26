@@ -35,6 +35,9 @@ abstract class AspiroTradeApi {
   @POST('/auth/register')
   Future<AuthDto> register(@Body() Register register);
 
+
+  
+
   @POST('/auth/login')
   Future<AuthDto> login(@Body() Login login);
 
@@ -48,10 +51,10 @@ abstract class AspiroTradeApi {
   Future<void> logout();
 
   @POST('/auth/google/mobile')
-  Future<AuthDto> googleSignIn(GoogleAuth googleAuth);
+  Future<AuthDto> googleSignIn(@Body() GoogleAuth googleAuth);
 
   @POST('/auth/apple/mobile')
-  Future<AuthDto> appleSignIn(AppleAuth appleAuth);
+  Future<AuthDto> appleSignIn(@Body() AppleAuth appleAuth);
 
   // =============== Tickers ===============
 
@@ -146,4 +149,8 @@ abstract class AspiroTradeApi {
 
   @GET('/users/limits')
   Future<LimitsDto> getLimits();
+
+
+  @DELETE('/users/account')
+  Future<void> deleteAccount();
 }

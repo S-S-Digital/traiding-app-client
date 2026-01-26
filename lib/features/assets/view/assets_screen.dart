@@ -1,6 +1,7 @@
 import 'package:aspiro_trade/features/add_tickers/add_tickers.dart';
 import 'package:aspiro_trade/features/assets/bloc/assets_bloc.dart';
 import 'package:aspiro_trade/features/assets/widgets/widgets.dart';
+import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/router/app_router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/utils/utils.dart';
@@ -139,19 +140,22 @@ class _AssetsScreenState extends State<AssetsScreen> {
 
           BlocConsumer<AssetsBloc, AssetsState>(
             listener: (context, state) {
-              if (state is AssetsFailure) {
-                final error = state.error;
-                context.handleException(error, context);
+              if (state.status == Status.failure) {
+                if (state.error is AppException) {
+                  final error = state.error as AppException;
+                  context.handleException(error, context);
+                }
               }
             },
-            buildWhen: (previous, current) => current.isBuildable,
+            buildWhen: (previous, current) => current.status.isBuildable,
             builder: (context, state) {
-              if (state is AssetsLoading) {
-                return const SliverToBoxAdapter(
+              if (state.status == Status.loading) {
+                return const SliverFillRemaining(
                   child: Center(child: PlatformProgressIndicator()),
                 );
               }
-              if (state is AssetsLoaded) {
+              if (state.status != Status.initial) {
+                
                 return SliverList.builder(
                   itemCount: state.assets.length,
                   itemBuilder: (context, index) {

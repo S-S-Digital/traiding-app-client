@@ -38,12 +38,12 @@ class Users {
   // Оставляем только цифры
   final digits = phone.replaceAll(RegExp(r'\D'), '');
 
-  // Для Казахстана: +7 XXX XXX XX XX → всего 11 цифр
+  
   if (digits.length != 11) {
-    return phone; // возвращаем как есть, чтобы не ломать UI
+    return phone; 
   }
 
-  // digits: 7 777 777 77 77
+
   final country = digits.substring(0, 1);     // 7
   final block1 = digits.substring(1, 4);      // 777
   final block2 = digits.substring(4, 7);      // 777

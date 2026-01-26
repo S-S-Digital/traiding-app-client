@@ -1,62 +1,36 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 part of 'register_bloc.dart';
 
-sealed class RegisterState extends Equatable {
-  const RegisterState();
-  bool get isBuildable => true;
-  @override
-  List<Object> get props => [];
-}
-
-final class RegisterInitial extends RegisterState {}
-
-final class RegisterLoading extends RegisterState {}
-
-class RegisterFailure extends RegisterState {
-  final Object error;
-  final DateTime timestamp;
-
-  RegisterFailure({required this.error}) : timestamp = DateTime.now();
-
-  @override
-  List<Object> get props => super.props..add(timestamp);
-  @override
-  bool get isBuildable => false;
-}
-
-class RegisterLoaded extends RegisterState {
-  const RegisterLoaded({
-    required this.email,
-    required this.password,
-    required this.phone,
-    required this.isValid,
+class RegisterState extends Equatable {
+  const RegisterState({
+    this.status = Status.initial,
+    this.email = '',
+    this.password = '',
+    this.phone = '',
+    this.error,
   });
 
+  final Status status;
   final String email;
   final String password;
   final String phone;
-  final bool isValid;
+  final Object? error;
 
-  @override
-  List<Object> get props =>
-      super.props..addAll([email, password, phone, isValid]);
-
-  RegisterLoaded copyWith({
+  RegisterState copyWith({
+    Status? status,
     String? email,
     String? password,
     String? phone,
-    bool? isValid,
+    Object? error,
   }) {
-    return RegisterLoaded(
+    return RegisterState(
+      status: status ?? this.status,
       email: email ?? this.email,
       password: password ?? this.password,
       phone: phone ?? this.phone,
-      isValid: isValid ?? this.isValid,
+      error: error ?? this.error,
     );
   }
-}
 
-final class RegisterSuccess extends RegisterState {
   @override
-  bool get isBuildable => false;
+  List<Object?> get props => [status, email, password, phone, error];
 }

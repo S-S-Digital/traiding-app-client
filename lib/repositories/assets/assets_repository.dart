@@ -63,11 +63,32 @@ class AssetsRepository extends BaseRepository implements AssetsRepositoryI {
   Future<Assets> fetchAssetsBySymbol(String symbol) => safeApiCall(() async {
     final response = await api.fetchAssetsBySymbol(symbol);
 
-  if (response.symbol == null || response.symbol!.isEmpty) {
-    talker.debug('Бэкенд вернул ошибку для символа: $symbol');
-    return Assets.empty(symbol);
-  }
+    if (response.symbol == null || response.symbol!.isEmpty) {
+      talker.debug('Бэкенд вернул ошибку для символа: $symbol');
+      return Assets.empty(symbol);
+    }
 
     return response.toEntity();
   });
+  @override
+  Stream<List<Assets>> watchAssets(
+    List<String> symbols,
+    Duration interval,
+  ) async* {
+    while (true) {
+      try {
+        // Выполняем запросы параллельно
+        final results = await Future.wait(
+          symbols.map((symbol) => fetchAssetsBySymbol(symbol)),
+        );
+        yield results;
+      } catch (e, stack) {
+        // [C.L.A.R.I.T.Y.] Graceful error handling:
+        // Пробрасываем ошибку в поток, но не прерываем цикл while(true).
+        // Это позволяет стриму "выжить" после сбоя сети.
+        talker.error("Polling error", e, stack);
+      }
+      await Future.delayed(interval);
+    }
+  }
 }

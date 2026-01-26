@@ -17,6 +17,7 @@ class AuthDto extends Equatable {
   final UserDto user;
   final String accessToken;
   final String refreshToken;
+  
 
   
 

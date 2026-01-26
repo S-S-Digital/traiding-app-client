@@ -9,6 +9,6 @@ final realmSchemas = [
   TickersLocal.schema,
   AssetsLocal.schema,
   CandlesLocal.schema,
-  SubscriptionPlansLocal.schema,
+  // SubscriptionPlansLocal.schema,
   SignalsLocal.schema,
 ];

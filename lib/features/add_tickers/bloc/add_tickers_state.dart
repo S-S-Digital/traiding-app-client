@@ -1,59 +1,32 @@
 part of 'add_tickers_bloc.dart';
 
-sealed class AddTickersState extends Equatable {
-  const AddTickersState();
-  bool get isBuildable => true;
-  @override
-  List<Object> get props => [];
-}
-
-final class AddTickersInitial extends AddTickersState {}
-
-final class AddTickersLoading extends AddTickersState {}
-
-class AddTickersLoaded extends AddTickersState {
-  const AddTickersLoaded({
-    required this.isValid,
+class AddTickersState extends Equatable {
+  const AddTickersState({
+    this.status = Status.initial,
     this.selectedOption,
     this.selectedTimeframe,
+    this.error,
   });
-  final bool isValid;
+
+  final Status status;
   final Options? selectedOption;
   final Timeframes? selectedTimeframe;
+  final Object? error;
 
-  AddTickersLoaded copyWith({
-    bool? isValid,
+  AddTickersState copyWith({
+    Status? status,
     Options? selectedOption,
     Timeframes? selectedTimeframe,
+    Object? error,
   }) {
-    return AddTickersLoaded(
-      isValid: isValid ?? this.isValid,
+    return AddTickersState(
+      status: status ?? this.status,
       selectedOption: selectedOption ?? this.selectedOption,
       selectedTimeframe: selectedTimeframe ?? this.selectedTimeframe,
+      error: error ?? this.error,
     );
   }
 
   @override
-  List<Object> get props =>
-      super.props..add([isValid, selectedOption, selectedTimeframe]);
-}
-
-class AddTickersFailure extends AddTickersState {
-  AddTickersFailure({required this.error}) : timestamp = DateTime.now();
-
-  final Object error;
-  final DateTime timestamp;
-
-  @override
-  
-  bool get isBuildable => false;
-
-  @override
-  List<Object> get props => super.props..addAll([error, timestamp]);
-}
-
-
-class Close extends AddTickersState{
-  @override
-  bool get isBuildable => false;
+  List<Object?> get props => [status, selectedOption, selectedTimeframe, error];
 }

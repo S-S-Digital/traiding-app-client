@@ -30,3 +30,5 @@ final class UpdatePurchaseStatus extends SubscriptionEvent {
   @override
   List<Object> get props => super.props..addAll([purchases, timestamp]);
 }
+
+final class RestorePurchases extends SubscriptionEvent{}

@@ -170,4 +170,76 @@ extension AppExceptionHandler on BuildContext {
       );
     }
   }
+
+  /// Главная функция вызова, разделяющая логику на две платформы
+  Future<bool?> showDeleteAccountDialog(BuildContext context) async {
+    if (Platform.isIOS) {
+      return _showIOSDeleteDialog(context);
+    } else {
+      return _showAndroidDeleteDialog(context);
+    }
+  }
+
+  /// Реализация для iOS (Cupertino Style)
+  /// Apple ожидает стандартный размытый фон и характерную типографику.
+  Future<bool?> _showIOSDeleteDialog(BuildContext context) {
+    return showCupertinoDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: Text(
+          'Удаление аккаунта',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Ваш профиль и все связанные данные будут стерты. Вы действительно хотите продолжить?',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
+        ),
+        actions: <CupertinoDialogAction>[
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Отмена'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction:
+                true, // Делает текст красным и выделяет значимость
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Удалить'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Реализация для Android (Material 3 Style)
+  /// Используется стандартный AlertDialog с закругленными углами.
+  Future<bool?> _showAndroidDeleteDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Удаление учетной записи'),
+        content: const Text(
+          'Ваш профиль и все связанные данные будут стерты. Вы действительно хотите продолжить?',
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('ОТМЕНА'),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('УДАЛИТЬ'),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+  }
 }

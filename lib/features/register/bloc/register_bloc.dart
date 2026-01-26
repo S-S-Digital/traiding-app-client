@@ -1,5 +1,5 @@
 import 'package:aspiro_trade/repositories/auth/auth.dart';
-import 'package:aspiro_trade/repositories/core/core.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -9,26 +9,22 @@ part 'register_state.dart';
 class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
   RegisterBloc({required AuthRepositoryI authRepository})
     : _authRepository = authRepository,
-      super(RegisterInitial()) {
+      super(const RegisterState()) {
     on<ChangeEmail>(_onChangeField);
     on<ChangePassword>(_onChangeField);
     on<ChangePhone>(_onChangeField);
     on<Auth>(_register);
     on<Start>((event, emit) {
-      emit(RegisterLoading());
-      emit(const RegisterLoaded(email: '', password: '', phone: '', isValid: false));
-    },);
+      emit(state.copyWith(status: Status.loaded));
+    });
   }
 
   final AuthRepositoryI _authRepository;
 
   void _onChangeField<T>(RegisterEvent event, Emitter<RegisterState> emit) {
-    final currentState = state;
-    if (currentState is! RegisterLoaded) return;
-
-    String phone = _normalizePhone( currentState.phone);
-    String email = currentState.email;
-    String password = currentState.password;
+    String phone = _normalizePhone(state.phone);
+    String email = state.email;
+    String password = state.password;
 
     if (event is ChangeEmail) {
       email = event.email;
@@ -45,11 +41,11 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     );
 
     emit(
-      currentState.copyWith(
+      state.copyWith(
         phone: phone,
         email: email,
         password: password,
-        isValid: isValid,
+        status: isValid ? Status.submit : Status.loaded,
       ),
     );
   }
@@ -64,11 +60,9 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
         ),
       );
 
-      emit(RegisterSuccess());
-    } on AppException catch (error) {
-      emit(RegisterFailure(error: error));
+      emit(state.copyWith(status: Status.success));
     } catch (error) {
-      emit(RegisterFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 

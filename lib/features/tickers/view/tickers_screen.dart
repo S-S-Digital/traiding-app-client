@@ -31,8 +31,6 @@ class _TickersScreenState extends State<TickersScreen> {
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -52,19 +50,16 @@ class _TickersScreenState extends State<TickersScreen> {
 
             BlocConsumer<TickersBloc, TickersState>(
               listener: (context, state) {
-                if (state is TickersFailure) {
+                if (state.status == Status.failure) {
                   if (state.error is AppException) {
                     final error = state.error as AppException;
                     context.handleException(error, context);
                   }
-                  
                 }
               },
-              buildWhen: (previous, current) => current.isBuildable,
+              buildWhen: (previous, current) => current.status.isBuildable,
               builder: (context, state) {
-                
-
-                if (state is TickersLoading) {
+                if (state.status == Status.loading) {
                   return const SliverFillRemaining(
                     child: Center(
                       child: Column(
@@ -76,7 +71,7 @@ class _TickersScreenState extends State<TickersScreen> {
                       ),
                     ),
                   );
-                } else if (state is TickersLoaded) {
+                } else if (state.status == Status.loaded) {
                   if (state.tickers.isEmpty) {
                     return SliverFillRemaining(
                       child: Center(
@@ -146,7 +141,9 @@ class _TickersScreenState extends State<TickersScreen> {
                     },
                   );
                 }
-                return const SliverToBoxAdapter(child: Center(child: Text('data')));
+                return const SliverToBoxAdapter(
+                  child: Center(child: Text('data')),
+                );
               },
             ),
           ],

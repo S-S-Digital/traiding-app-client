@@ -73,16 +73,29 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                 children: [
                   BlocConsumer<AssetDetailsBloc, AssetDetailsState>(
                     listener: (context, state) {
-                      if (state is AssetDetailsFailure) {
+                      if (state.status == Status.failure) {
                         if (state.error is AppException) {
                           final error = state.error as AppException;
                           context.handleException(error, context);
                         }
                       }
                     },
-                    buildWhen: (previous, current) => current.isBuildable,
+                    buildWhen: (previous, current) =>
+                        current.status.isBuildable,
                     builder: (context, state) {
-                      if (state is AssetDetailsLoaded) {
+                      if (state.status == Status.loading) {
+                        return const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              PlatformProgressIndicator(),
+                              Text('загрузка...'),
+                            ],
+                          ),
+                        );
+                      }
+                      if (state.status != Status.initial) {
                         return Column(
                           children: [
                             CryptoListTile(
@@ -139,7 +152,10 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
                     height: 70,
                     child: BlocBuilder<AssetDetailsBloc, AssetDetailsState>(
                       builder: (context, state) {
-                        if (state is AssetDetailsLoaded) {
+                        if (state.status == Status.loading) {
+                          return const SizedBox.shrink();
+                        }
+                        if (state.status != Status.initial) {
                           return ListView.builder(
                             scrollDirection: Axis.horizontal,
 
@@ -162,12 +178,21 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
 
                   BlocConsumer<AssetDetailsBloc, AssetDetailsState>(
                     listener: (context, state) {
-                      if (state is AssetDetailsFailure) {}
+                      if (state.status == Status.failure) {
+                        if (state.error is AppException) {
+                          final error = state.error as AppException;
+                          context.handleException(error, context);
+                        }
+                      }
                     },
                     builder: (context, state) {
                       return BlocBuilder<AssetDetailsBloc, AssetDetailsState>(
                         builder: (context, state) {
-                          if (state is AssetDetailsLoaded) {
+                          if (state.status == Status.loading) {
+                            return const SizedBox.shrink();
+                          }
+
+                          if (state.status != Status.initial) {
                             if (state.candles.isEmpty) {
                               return const SizedBox();
                             } else {

@@ -14,5 +14,10 @@ abstract interface class AssetsRepositoryI {
     String interval,
   );
 
+  Stream<List<Assets>> watchAssets(
+    List<String> symbols,
+    Duration interval,
+  );
+
   
 }

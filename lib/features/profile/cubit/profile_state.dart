@@ -33,3 +33,6 @@ class ProfileFailure extends ProfileState {
   @override
   List<Object> get props => super.props..addAll([error, timestamp]);
 }
+
+
+final class DeleteSuccess extends ProfileState{}

@@ -4,6 +4,7 @@ import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/repositories/signals/signals.dart';
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -14,135 +15,133 @@ class TickersBloc extends Bloc<TickersEvent, TickersState> {
   TickersBloc({
     required TickersRepositoryI tickersRepository,
     required AssetsRepositoryI assetsRepository,
-    required SignalsRepositoryI signalsRepository
+    required SignalsRepositoryI signalsRepository,
   }) : _tickersRepository = tickersRepository,
        _assetsRepository = assetsRepository,
        _signalsRepository = signalsRepository,
-      
-       super(TickersInitial()) {
-    on<Start>(_start);
-    on<DeleteTicker>(_deleteTicker);
-    on<Refresh>(_refresh);
-    on<UpdateAsset>(_updateAsset);
-    on<StopTimer>((event, emit) {
-      timer?.cancel();
-    });
+       super(const TickersState()) {
+    on<Start>(_onStart);
+    on<Refresh>(_onRefresh);
+    on<DeleteTicker>(_onDeleteTicker);
+    on<UpdateAsset>(_onUpdateAsset);
+    on<StopTimer>(_onStopPolling);
   }
-  Timer? timer;
 
   final TickersRepositoryI _tickersRepository;
   final AssetsRepositoryI _assetsRepository;
-  final SignalsRepositoryI _signalsRepository; 
+  final SignalsRepositoryI _signalsRepository;
 
-  Future<void> _start(Start event, Emitter<TickersState> emit) async {
+  // Заменяем Timer на подписку
+  StreamSubscription<List<Assets>>? _assetsSubscription;
+
+  Future<void> _onStart(Start event, Emitter<TickersState> emit) async {
     try {
-      emit(TickersLoading());
-      
+      emit(state.copyWith(status: Status.loading));
 
-      List<CombinedTicker> combinedTicker = [];
-
-      var tickers = await _tickersRepository.fetchAllTickers();
-
-      
+      final List<CombinedTicker> combinedTickers = [];
+      final tickers = await _tickersRepository.fetchAllTickers();
 
       for (final i in tickers) {
-        
         final asset = await _assetsRepository.fetchAssetsBySymbol(i.symbol);
-        final signal = await _signalsRepository.fetchSignalsByTickerId(i.id, 1, 20, i.symbol, i.timeframe, '', '');
-        
+        final signals = await _signalsRepository.fetchSignalsByTickerId(
+          i.id,
+          1,
+          20,
+          i.symbol,
+          i.timeframe,
+          '',
+          '',
+        );
 
-        combinedTicker.add(
-          CombinedTicker(assets: asset, tickers: i, signals: signal.isEmpty? null: signal.first ),
+        combinedTickers.add(
+          CombinedTicker(
+            assets: asset,
+            tickers: i,
+            signals: signals.isEmpty ? null : signals.first,
+          ),
         );
       }
 
-      emit(TickersLoaded(tickers: combinedTicker));
-      if (timer == null || !timer!.isActive) {
-        timer = Timer.periodic(const Duration(seconds: 15), (_) {
-          add(UpdateAsset());
-        });
-      }
+      emit(state.copyWith(tickers: combinedTickers, status: Status.loaded));
+
+      // После успешной загрузки запускаем стрим-опрос
+      _startPolling(combinedTickers.map((e) => e.tickers.symbol).toList());
     } on AppException catch (error) {
-      talker.error(error);
-      emit(TickersFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     } catch (error) {
-      talker.debug(error.toString());
-      emit(TickersFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 
-  Future<void> _updateAsset(
+  /// Метод для инициализации стрима
+  void _startPolling(List<String> symbols) {
+    if (symbols.isEmpty) return;
+
+    _assetsSubscription?.cancel();
+    _assetsSubscription = _assetsRepository
+        .watchAssets(symbols, const Duration(seconds: 20))
+        .listen(
+          (newAssets) => add(UpdateAsset(newAssets: newAssets)),
+          onError: (error) => talker.error("Polling stream error: $error"),
+        );
+  }
+
+  /// Обработка новых данных из стрима
+  Future<void> _onUpdateAsset(
     UpdateAsset event,
     Emitter<TickersState> emit,
   ) async {
-    try {
-      final currentState = state;
+    final currentTickers = state.tickers;
 
-      if (currentState is TickersLoaded) {
-      
-        final updatedTickers = await Future.wait(
-          currentState.tickers.map((t) async {
-            final newAsset = await _assetsRepository.fetchAssetsBySymbol(
-              t.assets.symbol,
-            );
+    final updatedList = currentTickers.map((ticker) {
+      // Ищем обновленный актив в списке пришедшем из события
+      final matchingAsset = event.newAssets.firstWhere(
+        (a) => a.symbol == ticker.tickers.symbol,
+        orElse: () => ticker.assets,
+      );
 
-            return t.copyWith(assets: newAsset);
-          }),
-        );
+      return ticker.copyWith(assets: matchingAsset);
+    }).toList();
 
-        emit(currentState.copyWith(tickers: updatedTickers));
-      }
-    } on AppException catch (error) {
-      emit(TickersFailure(error: error));
+    // Эмиттим состояние только если данные реально изменились
+    // (благодаря Equatable в CombinedTicker)
+    if (updatedList != state.tickers) {
+      emit(state.copyWith(tickers: updatedList));
     }
   }
 
-  Future<void> _deleteTicker(
+  Future<void> _onDeleteTicker(
     DeleteTicker event,
     Emitter<TickersState> emit,
   ) async {
     try {
-      final currentState = state;
+      await _tickersRepository.deleteTicker(event.id);
 
-      if (currentState is TickersLoaded) {
-        await _tickersRepository.deleteTicker(event.id);
+      final updatedTickers = state.tickers
+          .where((t) => t.tickers.id != event.id)
+          .toList();
 
-        // создаём новый список, чтобы не мутировать старый
-        final updatedTickers = List.of(currentState.tickers);
+      emit(state.copyWith(tickers: updatedTickers));
 
-        updatedTickers.removeWhere((ticker) => ticker.tickers.id == event.id);
-
-        emit(currentState.copyWith(tickers: updatedTickers));
-      }
+      // Перезапускаем опрос с новым списком символов
+      _startPolling(updatedTickers.map((e) => e.tickers.symbol).toList());
     } on AppException catch (error) {
-      emit(TickersFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 
-  Future<void> _refresh(Refresh event, Emitter<TickersState> emit) async {
-    try {
-      emit(TickersLoading());
-      List<CombinedTicker> combinedTicker = [];
+  Future<void> _onRefresh(Refresh event, Emitter<TickersState> emit) async {
+    _assetsSubscription?.cancel();
+    add(Start()); // Переиспользуем логику Start для полного рефреша
+  }
 
-      var tickers = await _tickersRepository.fetchAllTickers();
-      for (final i in tickers) {
-        final asset = await _assetsRepository.fetchAssetsBySymbol(i.symbol);
-        
-        combinedTicker.add(
-          CombinedTicker(assets: asset, tickers: i),
-        );
-      }
-
-      emit(TickersLoaded(tickers: combinedTicker));
-    } on AppException catch (error) {
-      talker.error(error);
-      emit(TickersFailure(error: error));
-    }
+  void _onStopPolling(StopTimer event, Emitter<TickersState> emit) {
+    _assetsSubscription?.cancel();
   }
 
   @override
   Future<void> close() {
-    timer?.cancel();
+    _assetsSubscription?.cancel();
     return super.close();
   }
 }

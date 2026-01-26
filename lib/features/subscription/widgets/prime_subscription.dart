@@ -82,7 +82,7 @@ class PrimeSubscription extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      plans.price,
+                      plans.price.toString(),
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.onPrimary,

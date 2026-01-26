@@ -36,14 +36,14 @@ class SubscriptionItem extends StatelessWidget {
                 color: theme.colorScheme.onPrimary,
               ),
             ),
-
+    
             Text(
               plans.description,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
               ),
             ),
-
+    
             Container(
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.all(10),
@@ -64,7 +64,7 @@ class SubscriptionItem extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    plans.price,
+                    plans.price.toString(),
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onPrimary,
@@ -111,9 +111,9 @@ class SubscriptionItem extends StatelessWidget {
                 );
               }).toList(),
             ),
-
+    
             const SizedBox(height: 20),
-
+    
             Container(
               width: double.infinity,
               height: 50,
@@ -156,9 +156,9 @@ class SubscriptionItem extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            if(!plans.price.contains('0'))
-
+    
+            if(plans.price != 0)
+    
               ElevatedButton(
                 onPressed: () {},
                 style: ButtonStyle(

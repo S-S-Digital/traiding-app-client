@@ -2,6 +2,7 @@ import 'package:aspiro_trade/features/add_tickers/models/models.dart';
 import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/notifications/notifications.dart';
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -17,20 +18,14 @@ class AddTickersBloc extends Bloc<AddTickersEvent, AddTickersState> {
   }) : _assetsRepository = assetsRepository,
        _tickersRepository = tickersRepository,
        _notificationsRepository = notificationsRepository,
-       super(AddTickersInitial()) {
+       super(const AddTickersState()) {
     on<Start>(_start);
     on<AddNewTicker>(_addNewTicker);
     on<SelectOption>((event, emit) {
-      final currentState = state;
-      if (currentState is AddTickersLoaded) {
-        emit(currentState.copyWith(selectedOption: event.option));
-      }
+      emit(state.copyWith(selectedOption: event.option));
     });
     on<SelectTimeframe>((event, emit) {
-      final currentState = state;
-      if (currentState is AddTickersLoaded) {
-        emit(currentState.copyWith(selectedTimeframe: event.timeframe));
-      }
+      emit(state.copyWith(selectedTimeframe: event.timeframe));
     });
   }
 
@@ -40,15 +35,17 @@ class AddTickersBloc extends Bloc<AddTickersEvent, AddTickersState> {
 
   Future<void> _start(Start event, Emitter<AddTickersState> emit) async {
     try {
-      emit(AddTickersLoading());
-
-      
+      emit(state.copyWith(status: Status.loading));
 
       final validate = await _assetsRepository.validateSymbol(event.symbol);
 
-      emit(AddTickersLoaded(isValid: validate.isValid));
+      emit(
+        state.copyWith(
+          status: validate.isValid ? Status.submit : Status.loaded,
+        ),
+      );
     } catch (error) {
-      emit(AddTickersFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 
@@ -57,8 +54,8 @@ class AddTickersBloc extends Bloc<AddTickersEvent, AddTickersState> {
     Emitter<AddTickersState> emit,
   ) async {
     try {
-      emit(AddTickersLoading());
-     await _tickersRepository.addNewTicker(
+      emit(state.copyWith(status: Status.loading));
+      await _tickersRepository.addNewTicker(
         AddTicker(
           symbol: event.symbol,
           timeframe: event.timeframe,
@@ -67,13 +64,16 @@ class AddTickersBloc extends Bloc<AddTickersEvent, AddTickersState> {
         ),
       );
 
-      await _notificationsRepository.showLocalNotification(Notification(title: 'Тикер добавлен', message: 'Тикер ${event.symbol} успешно добавлен в наблюдение.'));
-      
+      await _notificationsRepository.showLocalNotification(
+        Notification(
+          title: 'Тикер добавлен',
+          message: 'Тикер ${event.symbol} успешно добавлен в наблюдение.',
+        ),
+      );
 
-      emit(Close());
-    }
-    catch (error) {
-      emit(AddTickersFailure(error: error));
+      emit(state.copyWith(status: Status.success));
+    } catch (error) {
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 }

@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:aspiro_trade/features/signals/bloc/signals_bloc.dart';
 import 'package:aspiro_trade/features/signals/widgets/widgets.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -45,7 +48,8 @@ class _SignalsScreenState extends State<SignalsScreen> {
                 height: 50,
                 child: BlocBuilder<SignalsBloc, SignalsState>(
                   builder: (context, state) {
-                    if (state is! SignalsLoaded || state.signals.isEmpty) {
+                    if (state.status != Status.initial &&
+                        state.signals.isEmpty) {
                       return const SizedBox.shrink();
                     }
 
@@ -87,15 +91,16 @@ class _SignalsScreenState extends State<SignalsScreen> {
 
             BlocConsumer<SignalsBloc, SignalsState>(
               listener: (context, state) {
-                if (state is SignalsFailure) {
+                if (state.status == Status.failure) {
                   if (state.error is AppException) {
                     final error = state.error as AppException;
                     context.handleException(error, context);
                   }
                 }
               },
+              buildWhen: (previous, current) => current.status.isBuildable,
               builder: (context, state) {
-                if (state is SignalsLoading) {
+                if (state.status == Status.loading) {
                   return const SliverFillRemaining(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -106,7 +111,8 @@ class _SignalsScreenState extends State<SignalsScreen> {
                     ),
                   );
                 }
-                if (state is SignalsLoaded) {
+                if (state.status != Status.initial &&
+                    state.signals.isNotEmpty) {
                   final filteredSignals = state.signals.where((signal) {
                     if (state.activeFilter == 'Все') {
                       return true;
@@ -130,6 +136,48 @@ class _SignalsScreenState extends State<SignalsScreen> {
                     },
                   );
                 }
+                if (state.signals.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Platform.isIOS
+                                  ? CupertinoIcons.waveform_path_ecg
+                                  : Icons.show_chart,
+                              size: 64,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Сигналов пока нет',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Добавьте тикер, чтобы начать получать торговые сигналы',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
                 return const SliverToBoxAdapter();
               },
             ),

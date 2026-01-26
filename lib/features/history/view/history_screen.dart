@@ -37,7 +37,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 height: 70,
                 child: BlocBuilder<HistoryBloc, HistoryState>(
                   builder: (context, state) {
-                    if (state is HistoryLoaded) {
+                    if (state.status != Status.initial) {
                       return ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: state.stats.length,
@@ -56,15 +56,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
         
             BlocConsumer<HistoryBloc, HistoryState>(
               listener: (context, state) {
-                if(state is HistoryFailure){
+                if(state.status == Status.failure){
                   if (state.error is AppException) {
                     final error = state.error as AppException;
                     context.handleException(error, context);
                   }
                 }
               },
+              buildWhen: (previous, current) => current.status.isBuildable,
               builder: (context, state) {
-                if (state is HistoryLoading) {
+                if (state.status == Status.loading) {
                   return const SliverFillRemaining(
                     child: Center(
                       child: Column(
@@ -76,7 +77,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       ),
                     ),
                   );
-                } else if (state is HistoryLoaded) {
+                } else if (state.status != Status.initial) {
                   return SliverList.builder(
                     itemCount: state.histories.length,
                     itemBuilder: (context, index) {

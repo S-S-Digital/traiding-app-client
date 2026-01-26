@@ -13,10 +13,10 @@ class PaymentsRepository extends BaseRepository implements PaymentsRepositoryI {
     final response = await api.fetchAllPlans();
     final subcriptions = response.map((e) => e.toEntity()).toList();
 
-    realm.write(() {
-      realm.deleteAll<SubscriptionPlansLocal>();
-      realm.addAll(response.map((e) => e.toLocal()), update: true);
-    });
+    // realm.write(() {
+    //   realm.deleteAll<SubscriptionPlansLocal>();
+    //   realm.addAll(response.map((e) => e.toLocal()), update: true);
+    // });
 
     return subcriptions;
   });

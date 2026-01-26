@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/features/privacy_policy/view/privacy_policy_screen.dart';
 import 'package:aspiro_trade/features/settings/bloc/settings_bloc.dart';
 import 'package:aspiro_trade/features/settings/models/models.dart';
 import 'package:aspiro_trade/features/settings/widgets/widgets.dart';
@@ -32,13 +33,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       isSwitch: false,
     ),
     SettingsItems(
-      title: 'Поддержка',
+      title: 'Условия использования',
       subtitle: '',
       switchValue: false,
       isSwitch: false,
     ),
     SettingsItems(
-      title: 'Условия использования',
+      title: 'Политика конфиденциальности',
       subtitle: '',
       switchValue: false,
       isSwitch: false,
@@ -109,6 +110,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         AutoRouter.of(context).push(const ProfileRoute());
                         break;
                       case 1:
+                        AutoRouter.of(context).push(const TermsOfUseRoute());
+                        break;
+                      case 2:
+                        AutoRouter.of(context).push(const PrivacyPolicyRoute());
                         break;
                       case 3:
                         AutoRouter.of(context).push(const SubscriptionRoute());
@@ -121,6 +126,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
               );
+            },
+          ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 70)),
+
+          BlocBuilder<SettingsBloc, SettingsState>(
+            builder: (context, state) {
+              if (state is SettingsLoaded) {
+                return SliverToBoxAdapter(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Версия: ${state.appVersion}'),
+                      Text('(сборка: ${state.build})'),
+                    ],
+                  ),
+                );
+              }
+              return const SliverToBoxAdapter();
             },
           ),
         ],

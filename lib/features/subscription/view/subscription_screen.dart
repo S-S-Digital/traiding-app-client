@@ -9,7 +9,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-
 @RoutePage()
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -62,19 +61,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   context.read<SubscriptionBloc>().add(Start());
                   Navigator.of(context).pop();
                 });
-
-
               }
-              
             },
             buildWhen: (previous, current) => current.isBuildable,
             builder: (context, state) {
-              if(state is SubscriptionLoading){
+              if (state is SubscriptionLoading) {
                 return const SliverFillRemaining(
                   child: Center(child: PlatformProgressIndicator()),
                 );
               }
-              else if (state is SubscriptionLoaded) {
+              if (state is SubscriptionPurchasing) {
+                return const ColoredBox(
+                  color: Colors.black26,
+                  child: Center(child: PlatformProgressIndicator()),
+                );
+              } else if (state is SubscriptionLoaded) {
                 return SliverList.builder(
                   itemCount: state.plans.length - 1,
                   itemBuilder: (context, index) {
@@ -114,29 +115,80 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   final error = state.error as AppException;
 
                   showErrorDialog(context, error.message, 'ok', () {});
+                } else {
+                  context.showBusinessErrorSnackbar(
+                    state.error.toString(),
+                    () {},
+                  );
                 }
+              }
+              if (state is SubscriptionRestoreSuccess) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(state.message)));
               }
             },
             buildWhen: (previous, current) => current.isBuildable,
             builder: (context, state) {
               if (state is SubscriptionLoaded) {
-                return PrimeSubscription(plans: state.plans.last, onPay: () {
+                return PrimeSubscription(
+                  plans: state.plans.last,
+                  onPay: () {
+                    final state = context.read<SubscriptionBloc>().state;
+                    if (state is SubscriptionLoaded) {
+                      // Находим ProductDetails, который соответствует нашему плану
+                      final productId = Platform.isIOS
+                          ? state.plans.last.appleProductId
+                          : state.plans.last.googleProductId;
+                      final product = state.productDetails.firstWhere(
+                        (p) => p.id == productId,
+                      );
 
-                  final state = context.read<SubscriptionBloc>().state;
-                        if (state is SubscriptionLoaded) {
-                          // Находим ProductDetails, который соответствует нашему плану
-                          final productId = Platform.isIOS
-                              ? state.plans.last.appleProductId
-                              : state.plans.last.googleProductId;
-                          final product = state.productDetails.firstWhere(
-                            (p) => p.id == productId,
-                          );
+                      context.read<SubscriptionBloc>().add(
+                        PurchasePlan(product),
+                      );
+                    }
+                  },
+                );
+              }
+              return const SliverToBoxAdapter();
+            },
+          ),
 
-                          context.read<SubscriptionBloc>().add(
-                            PurchasePlan(product),
-                          );
-                        }
-                });
+          BlocBuilder<SubscriptionBloc, SubscriptionState>(
+            builder: (context, state) {
+              if (state is SubscriptionLoaded) {
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton.icon(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStatePropertyAll(
+                          theme.colorScheme.surface,
+                        ),
+                      ),
+                      onPressed: () {
+                        context.read<SubscriptionBloc>().add(
+                          RestorePurchases(),
+                        );
+                      },
+                      icon: state.isRestoring
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.restore),
+                      label: Text(
+                        state.isRestoring ? 'Восстановление...' : 'Восстановить покупки',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
               }
               return const SliverToBoxAdapter();
             },

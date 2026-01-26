@@ -4,9 +4,11 @@ import 'package:aspiro_trade/features/assets/assets.dart';
 import 'package:aspiro_trade/features/history/history.dart';
 import 'package:aspiro_trade/features/home/home.dart';
 import 'package:aspiro_trade/features/login/login.dart';
+import 'package:aspiro_trade/features/privacy_policy/privacy_policy.dart';
 import 'package:aspiro_trade/features/profile/profile.dart';
 import 'package:aspiro_trade/features/splash/splash.dart';
 import 'package:aspiro_trade/features/subscription/subscription.dart';
+import 'package:aspiro_trade/features/terms_of_use/terms_of_use.dart';
 import 'package:aspiro_trade/features/tickers/models/models.dart';
 import 'package:aspiro_trade/features/tickers/tickers.dart';
 import 'package:aspiro_trade/features/register/register.dart';
@@ -31,6 +33,8 @@ class AppRouter extends RootStackRouter {
     AutoRoute(page: AddTickersRoute.page),
     AutoRoute(page: SubscriptionRoute.page),
     AutoRoute(page: ProfileRoute.page),
+    AutoRoute(page: PrivacyPolicyRoute.page),
+    AutoRoute(page: TermsOfUseRoute.page),
     AutoRoute(
       page: HomeRoute.page,
       children: [

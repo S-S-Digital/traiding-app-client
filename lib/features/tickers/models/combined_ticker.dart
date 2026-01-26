@@ -7,22 +7,18 @@ class CombinedTicker {
   final Tickers tickers;
   final signal.Signals? signals;
 
-  CombinedTicker({
-    required this.assets,
-    required this.tickers,
-    this.signals,
-  });
+  CombinedTicker({required this.assets, required this.tickers, this.signals});
 
   factory CombinedTicker.fromSources({
     required Assets assets,
     required signal.Signals? signals,
     required Tickers tickers,
   }) {
-    return CombinedTicker(
-      assets: assets,
-      tickers: tickers,
-      signals: signals,
-    );
+    return CombinedTicker(assets: assets, tickers: tickers, signals: signals);
+  }
+
+  factory CombinedTicker.empty() {
+    return CombinedTicker(assets: Assets.empty(), tickers: Tickers.empty());
   }
 
   static const _sentinel = Object();
@@ -36,7 +32,8 @@ class CombinedTicker {
       assets: assets ?? this.assets,
       tickers: tickers ?? this.tickers,
       signals: signals == _sentinel
-          ? this.signals        // оставить как есть
+          ? this
+                .signals // оставить как есть
           : signals as signal.Signals?, // заменить или поставить null
     );
   }

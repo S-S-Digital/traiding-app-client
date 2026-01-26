@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:aspiro_trade/repositories/auth/auth.dart';
-import 'package:aspiro_trade/repositories/core/core.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,9 +16,9 @@ part 'login_state.dart';
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   LoginBloc({required AuthRepositoryI authRepository})
     : _authRepository = authRepository,
-      super(LoginInitial()) {
+      super(const LoginState()) {
     on<LoginStart>((event, emit) async {
-      emit(const LoginLoaded(email: '', password: ''));
+      emit(state.copyWith(status: Status.loaded));
     });
     on<OnChangedEmail>(_onChangeField);
     on<OnChangedPassword>(_onChangeField);
@@ -31,11 +31,8 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
   void _onChangeField<T>(LoginEvent event, Emitter<LoginState> emit) {
     try {
-      final currentState = state;
-      if (currentState is! LoginLoaded) return;
-
-      String email = currentState.email;
-      String password = currentState.password;
+      String email = state.email;
+      String password = state.password;
 
       if (event is OnChangedEmail) {
         email = event.email;
@@ -46,32 +43,32 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       final isValid = _validateCredentials(password: password, email: email);
 
       emit(
-        currentState.copyWith(
+        state.copyWith(
+          status: isValid ? Status.submit : Status.loaded,
           email: email,
           password: password,
-          isValid: isValid,
         ),
       );
     } catch (error) {
-      emit(LoginFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 
   Future<void> _login(Auth event, Emitter<LoginState> emit) async {
     try {
       if (event.email.isEmpty || event.password.isEmpty) {
-        emit(LoginFailure(error: 'заполните все поля'));
+        emit(
+          state.copyWith(status: Status.failure, error: 'заполните все поля'),
+        );
         return;
       }
       await _authRepository.login(
         Login(email: event.email, password: event.password),
       );
 
-      emit(LoginSuccess());
-    } on AppException catch (e) {
-      emit(LoginFailure(error: e.message));
-    } catch (e) {
-      emit(LoginFailure(error: 'Неизвестная ошибка: $e'));
+      emit(state.copyWith(status: Status.success));
+    } catch (error) {
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 
@@ -80,8 +77,6 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     Emitter<LoginState> emit,
   ) async {
     try {
-      // init();
-
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
         return;
@@ -93,7 +88,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         idToken: googleAuth.idToken,
       );
 
-    await _authRepository.googleSignIn(
+      await _authRepository.googleSignIn(
         GoogleAuth(
           provider: 'google.com',
           providerId: credential.providerId,
@@ -105,12 +100,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         ),
       );
 
-      emit(LoginSuccess());
-    } on AppException catch (error) {
-      emit(LoginFailure(error: error));
+      emit(state.copyWith(status: Status.success));
     } catch (error) {
-      talker.error(error);
-      emit(LoginFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 
@@ -129,21 +121,12 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         ],
         nonce: nonce,
       );
-
-      final oauthCredential = OAuthProvider(
+ 
+       OAuthProvider(
         "apple.com",
       ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce);
 
-      talker.debug(appleCredential.identityToken);
-      talker.debug(appleCredential.email);
-      talker.debug(appleCredential.familyName);
-
-      talker.debug(appleCredential.userIdentifier);
-      talker.debug(appleCredential.familyName);
-      talker.debug(appleCredential.givenName);
-      talker.debug(oauthCredential.accessToken);
-
-       await _authRepository.appleSignIn(
+      await _authRepository.appleSignIn(
         AppleAuth(
           provider: 'apple.com',
 
@@ -163,10 +146,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         ),
       );
 
-      emit(LoginSuccess());
+      emit(state.copyWith(status: Status.success));
     } catch (error) {
-      talker.debug(error);
-      emit(LoginFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 

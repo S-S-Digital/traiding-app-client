@@ -1,11 +1,10 @@
 import 'dart:async';
-
 import 'package:aspiro_trade/features/history/models/combined_history.dart';
 import 'package:aspiro_trade/features/history/models/history_statistics.dart';
 import 'package:aspiro_trade/repositories/assets/assets.dart';
-import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/repositories/signals/signals.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -19,7 +18,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     required AssetsRepositoryI assetsRepository,
   }) : _signalsRepository = signalsRepository,
        _assetsRepository = assetsRepository,
-       super(HistoryInitial()) {
+       super(const HistoryState()) {
     on<Start>(_start);
     on<StopTimer>((event, emit) => timer?.cancel());
     on<Update>(_update);
@@ -30,7 +29,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
 
   Future<void> _start(Start event, Emitter<HistoryState> emit) async {
     try {
-      emit(HistoryLoading());
+      emit(state.copyWith(status: Status.loading));
 
       final historyList = await _signalsRepository.fetchHistory(
         1,
@@ -80,24 +79,26 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
         histories = await Future.wait(futures);
       }
 
-      emit(HistoryLoaded(histories: histories, stats: stats));
+      // emit(HistoryLoaded(histories: histories, stats: stats));
+      emit(
+        state.copyWith(
+          status: Status.loaded,
+          histories: histories,
+          stats: stats,
+        ),
+      );
       if (timer == null || !timer!.isActive) {
         timer = Timer.periodic(const Duration(seconds: 15), (_) {
           add(Update());
         });
       }
-    } on AppException catch (error) {
-      emit(HistoryFailure(error: error));
     } catch (error) {
-      emit(HistoryFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 
   Future<void> _update(Update event, Emitter<HistoryState> emit) async {
     try {
-      final currentState = state;
-      if (currentState is! HistoryLoaded) return;
-
       final historyList = await _signalsRepository.fetchHistory(
         1,
         20,
@@ -143,9 +144,9 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
         // ждём все запросы параллельно
         histories = await Future.wait(futures);
       }
-      emit(currentState.copyWith(histories: histories, stats: stats));
+      emit(state.copyWith(histories: histories, stats: stats));
     } catch (error) {
-      emit(HistoryFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -11,7 +12,7 @@ part 'assets_state.dart';
 class AssetsBloc extends Bloc<AssetsEvent, AssetsState> {
   AssetsBloc({required AssetsRepositoryI assetsRepository})
     : _assetsRepository = assetsRepository,
-      super(AssetsInitial()) {
+      super(const AssetsState()) {
     on<Start>(_start);
     on<SearchAsset>(_search);
     on<UpdateAsset>(_updateAsset);
@@ -24,17 +25,17 @@ class AssetsBloc extends Bloc<AssetsEvent, AssetsState> {
 
   Future<void> _start(Start event, Emitter<AssetsState> emit) async {
     try {
-      emit(AssetsLoading());
+      emit(state.copyWith(status: Status.loading));
       final popularAssets = await _assetsRepository.fetchPopularAssets();
 
-      emit(AssetsLoaded(assets: popularAssets));
+      emit(state.copyWith(status: Status.loaded, assets: popularAssets));
       if (timer == null || !timer!.isActive) {
         timer = Timer.periodic(const Duration(seconds: 20), (_) {
           add(UpdateAsset());
         });
       }
-    } on AppException catch (error) {
-      emit(AssetsFailure(error: error));
+    } catch (error) {
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 
@@ -43,50 +44,44 @@ class AssetsBloc extends Bloc<AssetsEvent, AssetsState> {
     Emitter<AssetsState> emit,
   ) async {
     try {
-      final currentState = state;
-      // final random = Random();
+      // Асинхронно обновляем все assets
+      final updatedAssets = await Future.wait(
+        state.assets.map((asset) async {
+          final newAsset = await _assetsRepository.fetchAssetsBySymbol(
+            asset.symbol,
+          );
 
-      if (currentState is AssetsLoaded) {
-        // Асинхронно обновляем все assets
-        final updatedAssets = await Future.wait(
-          currentState.assets.map((asset) async {
-            final newAsset = await _assetsRepository.fetchAssetsBySymbol(
-              asset.symbol,
-            );
+          return asset.copyWith(
+            symbol: newAsset.symbol,
+            name: newAsset.name,
+            baseAsset: newAsset.baseAsset,
+            quoteAsset: newAsset.quoteAsset,
+            price: newAsset.price,
+            change24h: newAsset.change24h,
+            logoUrl: newAsset.logoUrl,
+            volume24h: newAsset.volume24h,
+            high24h: newAsset.high24h,
+            low24h: newAsset.low24h,
+            priceChangePercent: newAsset.priceChangePercent,
+          );
+        }),
+      );
 
-            return asset.copyWith(
-              symbol: newAsset.symbol,
-              name: newAsset.name,
-              baseAsset: newAsset.baseAsset,
-              quoteAsset: newAsset.quoteAsset,
-              price: newAsset.price,
-              change24h: newAsset.change24h,
-              logoUrl: newAsset.logoUrl,
-              volume24h: newAsset.volume24h,
-              high24h: newAsset.high24h,
-              low24h: newAsset.low24h,
-              priceChangePercent: newAsset.priceChangePercent,
-            );
-          }),
-        );
-        // updatedAssets.shuffle(random);
-
-        emit(currentState.copyWith(assets: updatedAssets));
-      }
-    } on AppException catch (error) {
-      emit(AssetsFailure(error: error));
-    } catch (_) {}
+      emit(state.copyWith(assets: updatedAssets));
+    } catch (error) {
+      emit(state.copyWith(status: Status.failure, error: error));
+    }
   }
 
   Future<void> _search(SearchAsset event, Emitter<AssetsState> emit) async {
     try {
-      emit(AssetsLoading());
+      emit(state.copyWith(status: Status.loading));
 
       final assets = await _assetsRepository.searchAssets(event.symbol);
 
-      emit(AssetsLoaded(assets: assets));
+      emit(state.copyWith(status: Status.loaded, assets: assets));
     } on AppException catch (error) {
-      emit(AssetsFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 

@@ -22,7 +22,7 @@ class UsersDto extends Equatable {
   final String id;
   final String email;
   final String passwordHash;
-  final String phone;
+  final String? phone;
   final String? fcmToken;
   final bool isActive;
   final bool isPremium;
@@ -39,7 +39,7 @@ class UsersDto extends Equatable {
     id: id,
     email: email,
     passwordHash: passwordHash,
-    phone: phone,
+    phone: phone ?? '',
     fcmToken: fcmToken ?? '',
     isActive: isActive,
     isPremium: isPremium,

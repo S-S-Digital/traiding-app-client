@@ -145,7 +145,8 @@ class _AspiroTradeApi implements AspiroTradeApi {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
+    final _data = <String, dynamic>{};
+    _data.addAll(googleAuth.toJson());
     final _options = _setStreamType<AuthDto>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
@@ -172,7 +173,8 @@ class _AspiroTradeApi implements AspiroTradeApi {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
+    final _data = <String, dynamic>{};
+    _data.addAll(appleAuth.toJson());
     final _options = _setStreamType<AuthDto>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
@@ -773,6 +775,25 @@ class _AspiroTradeApi implements AspiroTradeApi {
       rethrow;
     }
     return _value;
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<void>(
+      Options(method: 'DELETE', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/users/account',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    await _dio.fetch<void>(_options);
   }
 
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {

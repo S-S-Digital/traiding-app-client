@@ -3,6 +3,7 @@ import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/repositories/users/users.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 part 'settings_event.dart';
 part 'settings_state.dart';
@@ -23,9 +24,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _start(Start event, Emitter<SettingsState> emit) async {
     try {
+      final info = await PackageInfo.fromPlatform();
+
+      final version = info.version;
+      final buildNumber = info.buildNumber;
+      
       final users = await _usersRepository.getCurrentUser();
 
-      emit(SettingsLoaded(users: users));
+      emit(SettingsLoaded(users: users, appVersion: version, build: buildNumber));
     } on AppException catch (error) {
       talker.info(error.toString());
       emit(SettingsFailure(error: error));

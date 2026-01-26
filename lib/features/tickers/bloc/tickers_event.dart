@@ -4,31 +4,36 @@ sealed class TickersEvent extends Equatable {
   const TickersEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 final class Start extends TickersEvent {}
 
+final class Refresh extends TickersEvent {}
+
+final class StopTimer extends TickersEvent {}
+
 class ValidateTicker extends TickersEvent {
   final String symbol;
-
   const ValidateTicker({required this.symbol});
 
   @override
-  List<Object> get props => super.props..add(symbol);
+  List<Object?> get props => [symbol];
 }
 
 class DeleteTicker extends TickersEvent {
-  const DeleteTicker({required this.id});
   final String id;
+  const DeleteTicker({required this.id});
 
-  // @override
-  // List<Object> get props => super.props..add(id);
+  @override
+  List<Object?> get props => [id];
 }
 
-final class Refresh extends TickersEvent {}
+/// Событие обновления, которое теперь несет в себе новые данные
+final class UpdateAsset extends TickersEvent {
+  final List<Assets> newAssets;
+  const UpdateAsset({required this.newAssets});
 
-final class UpdateAsset extends TickersEvent {}
-
-
-final class StopTimer extends TickersEvent{}
+  @override
+  List<Object?> get props => [newAssets];
+}

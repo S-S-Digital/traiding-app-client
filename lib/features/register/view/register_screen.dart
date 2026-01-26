@@ -60,7 +60,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 30,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.cardColor,
                     borderRadius: BorderRadius.circular(15),
@@ -76,30 +79,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       BlocConsumer<RegisterBloc, RegisterState>(
                         listener: (context, state) {
-                          if (state is RegisterFailure) {
+                          if (state.status == Status.failure) {
                             if (state.error is AppException) {
-                          context.handleException(
-                            state.error as AppException,
-                            context,
-                          );
-                        } else {
-                          context.showBusinessErrorSnackbar(
-                            state.error.toString(),
-                            () {
-                              context.read<RegisterBloc>().add(Start());
-                            },
-                          );
-                        }
-                          } else if (state is RegisterSuccess) {
+                              context.handleException(
+                                state.error as AppException,
+                                context,
+                              );
+                            } else {
+                              context.showBusinessErrorSnackbar(
+                                state.error.toString(),
+                                () {
+                                  context.read<RegisterBloc>().add(Start());
+                                },
+                              );
+                            }
+                          } else if (state.status == Status.success) {
                             AutoRouter.of(context).pushAndPopUntil(
                               const HomeRoute(),
                               predicate: (value) => false,
                             );
                           }
                         },
-                        buildWhen: (previous, current) => current.isBuildable,
+                        buildWhen: (previous, current) =>
+                            current.status.isBuildable,
                         builder: (context, state) {
-                          if (state is RegisterLoading) {
+                          if (state.status == Status.loading) {
                             return const SizedBox(
                               height: 300,
                               child: Center(
@@ -116,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             );
                           }
-                          if (state is RegisterLoaded) {
+                          if (state.status != Status.initial) {
                             return Column(
                               children: [
                                 EmailTextField(
@@ -149,10 +153,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 const SizedBox(height: 30),
                                 AuthButton(
-                                  isValid: state.isValid,
+                                  isValid: state.status == Status.submit,
                                   text: 'зарегистрироваться'.toUpperCase(),
                                   onPressed: () {
-                                    if (state.isValid) {
+                                    if (state.status == Status.submit) {
                                       bloc.add(
                                         Auth(
                                           phone: phoneController.text.trim(),

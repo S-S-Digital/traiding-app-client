@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:aspiro_trade/features/signals/models/combined_signal.dart';
 import 'package:aspiro_trade/repositories/assets/assets.dart';
-import 'package:aspiro_trade/repositories/core/exceptions/app_exception.dart';
 import 'package:aspiro_trade/repositories/signals/signals.dart';
+import 'package:aspiro_trade/utils/utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -16,15 +16,12 @@ class SignalsBloc extends Bloc<SignalsEvent, SignalsState> {
   }) : _signalsRepository = signalsRepository,
        _assetsRepository = assetsRepository,
 
-       super(SignalsInitial()) {
+       super(const SignalsState()) {
     on<Start>(_start);
     on<StopTimer>((event, emit) => timer?.cancel());
     on<Update>(_update);
     on<ChangeFilter>((event, emit) {
-      final currentState = state;
-      if (currentState is SignalsLoaded) {
-        emit(currentState.copyWith(activeFilter: event.filter));
-      }
+      emit(state.copyWith(activeFilter: event.filter));
     });
   }
   Timer? timer;
@@ -33,7 +30,7 @@ class SignalsBloc extends Bloc<SignalsEvent, SignalsState> {
 
   Future<void> _start(Start event, Emitter<SignalsState> emit) async {
     try {
-      emit(SignalsLoading());
+      emit(state.copyWith(status: Status.loading));
 
       final signals = await _signalsRepository.fetchAllSignals(
         1,
@@ -58,24 +55,20 @@ class SignalsBloc extends Bloc<SignalsEvent, SignalsState> {
         // ждём все запросы параллельно
         combinedSignals = await Future.wait(futures);
       }
-      emit(SignalsLoaded(signals: combinedSignals));
+      emit(state.copyWith(status: Status.loaded, signals: combinedSignals));
 
       if (timer == null || !timer!.isActive) {
         timer = Timer.periodic(const Duration(seconds: 15), (_) {
           add(Update());
         });
       }
-    } on AppException catch (error) {
-      emit(SignalsFailure(error: error));
     } catch (error) {
-      emit(SignalsFailure(error: error));
+      emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 
   Future<void> _update(Update event, Emitter<SignalsState> emit) async {
     try {
-      final currentState = state;
-      if (currentState is! SignalsLoaded) return;
       final signals = await _signalsRepository.fetchAllSignals(
         1,
         20,
@@ -99,9 +92,9 @@ class SignalsBloc extends Bloc<SignalsEvent, SignalsState> {
         // ждём все запросы параллельно
         combinedSignals = await Future.wait(futures);
       }
-      emit(SignalsLoaded(signals: combinedSignals));
+      emit(state.copyWith( signals: combinedSignals));
     } catch (error) {
-      emit(SignalsFailure(error: error));
+      emit(state.copyWith( status: Status.failure));
     }
   }
 }

@@ -16,7 +16,7 @@ class UserDto extends Equatable {
   
   final String id;
   final String email;
-  final String phone;
+  final String? phone;
   final DateTime? createdAt;
 
   
@@ -30,11 +30,11 @@ class UserDto extends Equatable {
     User toEntity() => User(
     id: id,
     email: email,
-    phone: phone
+    phone: phone ?? ''
   );
 
   UserLocal toLocal() =>
-      UserLocal(id, email, phone);
+      UserLocal(id, email, phone ?? '');
 
   @override
   List<Object?> get props => [id, email, phone, createdAt];

@@ -166,6 +166,48 @@ class Signals {
   String getDirection(String value) =>
       value.toLowerCase().contains('buy') ? 'Покупка' : 'Продажа';
 
+  factory Signals.empty() {
+    return Signals(
+      id: '',
+      tickerId: '',
+      symbol: '',
+      timeframe: '',
+      direction: '',
+      price: 0,
+      entryBarTime: DateTime.fromMillisecondsSinceEpoch(0),
+      takeProfit: 0,
+      stopLoss: 0,
+      prevMove: 0,
+      stochK: 0,
+      stochD: 0,
+      macd: 0,
+      macdSignal: 0,
+      macdHistogram: 0,
+      ema50: 0,
+      ema200: 0,
+      atr: 0,
+      volume: 0,
+      volumeSma: 0,
+      pivotHigh: 0,
+      pivotLow: 0,
+      status: '',
+      closePrice: 0,
+      closeReason: '',
+      closedAt: DateTime.fromMillisecondsSinceEpoch(0),
+      profitLoss: 0,
+      profitLossPct: 0,
+      webhookPayload: '',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
+      currentPrice: 0,
+      progressPct: 0,
+      profitPct: 0,
+      profitUsd: 0,
+      signalStatus: '',
+      indicators: null,
+      ticker: null,
+    );
+  }
 
   String formatTimeframe(String timeframe) {
     switch (timeframe) {
@@ -180,7 +222,7 @@ class Signals {
       case '1M':
         return '1 месяц';
       default:
-        return timeframe; 
+        return timeframe;
     }
   }
 }

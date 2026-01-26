@@ -24,13 +24,12 @@ Future<void> main() async {
   await dotenv.load(fileName: ".env");
 
   final apiUrl = dotenv.env['API_URL'];
-  await PreferencesInitializer.init();
   await RealmInitializer.init();
   BlocInitializer.init();
 
   final tokenStorage = TokenStorage();
   final realm = RealmInitializer.instance;
-  final preferences = PreferencesInitializer.instance;
+
 
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   final firebaseMessaging = FirebaseMessaging.instance;
@@ -45,7 +44,6 @@ Future<void> main() async {
   );
 
   final config = AppConfig(
-    preferences: preferences,
     talker: talker,
     apiUrl: apiUrl ?? '',
     api: api,

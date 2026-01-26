@@ -1,40 +1,25 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 part of 'assets_bloc.dart';
 
-sealed class AssetsState extends Equatable {
-  const AssetsState();
-  bool get isBuildable => true;
-  @override
-  List<Object> get props => [];
-}
-
-final class AssetsInitial extends AssetsState {}
-
-final class AssetsLoading extends AssetsState {}
-
-class AssetsLoaded extends AssetsState {
+class AssetsState extends Equatable {
+  const AssetsState({
+    this.status = Status.initial,
+    this.assets = const [],
+    this.error,
+  });
+  final Status status;
   final List<Assets> assets;
+  final Object? error;
 
-  const AssetsLoaded({required this.assets});
-
-  AssetsLoaded copyWith({List<Assets>? assets}) {
-    return AssetsLoaded(assets: assets ?? this.assets);
+  
+  AssetsState copyWith({Status? status, List<Assets>? assets, Object? error}) {
+    return AssetsState(
+      status: status ?? this.status,
+      assets: assets ?? this.assets,
+      error: error ?? this.error,
+    );
   }
 
   @override
-  List<Object> get props => super.props..add(assets);
-}
-
-class AssetsFailure extends AssetsState {
-  final AppException error;
-  final DateTime timestamp;
-
-  AssetsFailure({required this.error}) : timestamp = DateTime.now();
-
-
-  @override
-  bool get isBuildable => false;
-
-  @override
-  List<Object> get props => super.props..addAll([error, timestamp]);
+  List<Object?> get props => [status, assets, error];
 }
