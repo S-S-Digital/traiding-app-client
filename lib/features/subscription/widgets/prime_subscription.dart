@@ -1,14 +1,21 @@
-
+import 'package:aspiro_trade/api/api.dart';
 import 'package:aspiro_trade/repositories/payments/payments.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:flutter/material.dart';
 
-
 class PrimeSubscription extends StatelessWidget {
-  const PrimeSubscription({super.key, required this.plans, required this.onPay});
+  const PrimeSubscription({
+    super.key,
+    required this.plans,
+    required this.onPay,
+    this.subscriptions,
+    this.isLoading = false,
+  });
 
   final SubscriptionPlans plans;
+  final SubscriptionsDto? subscriptions;
   final VoidCallback onPay;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +119,7 @@ class PrimeSubscription extends StatelessWidget {
                 child: Wrap(
                   spacing: 50,
                   runSpacing: 8,
-                  children: plans.features.map((feature) {
+                  children: plans.readableFeatures.map((feature) {
                     return Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -184,62 +191,104 @@ class PrimeSubscription extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              // SizedBox(
-              //   width: double.infinity,
-              //   height: size.height * 0.07,
-              //   child: ApplePayButton(
-              //     paymentConfiguration: applePayConfig,
-              //     paymentItems: paymentItems,
-                  
-              //     style: theme.brightness == Brightness.light? ApplePayButtonStyle.white : ApplePayButtonStyle.black,
-              //     type: ApplePayButtonType.buy,
-              //     cornerRadius: 15,
-              //     margin: const EdgeInsets.only(top: 15),
-              //     onPaymentResult: onApplePayResult,
-              //     loadingIndicator: const Center(
-              //       child: PlatformProgressIndicator(),
-              //     ),
-              //   ),
-              // ),
-
-              Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFFF59E0B), // gold
-                      Color(0xFFFFC107), // lighter gold tone
+              if (subscriptions != null)
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFF59E0B), // gold
+                        Color(0xFFFFC107), // lighter gold tone
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppColors.darkShadow,
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: AppColors.darkShadow,
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent, // прозрачный фон
+                      shadowColor:
+                          Colors.transparent, // убираем стандартную тень
+                      minimumSize: Size(size.width, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent, // прозрачный фон
-                    shadowColor: Colors.transparent, // убираем стандартную тень
-                    minimumSize: Size(size.width, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    onPressed:
+                        subscriptions!.planId.contains(plans.id) &&
+                            subscriptions != null
+                        ? null
+                        : onPay,
+                    child: Text(
+                      subscriptions!.planId.contains(plans.id) &&
+                              subscriptions != null
+                          ? ('Ваш текущий тариф')
+                          : ('Подписаться за ${plans.price}\$'),
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  onPressed: onPay,
-                  child: Text(
-                    ('Подписаться за ${plans.price}\$'),
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w600,
+                ),
+              if (subscriptions == null)
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFF59E0B), // gold
+                        Color(0xFFFFC107), // lighter gold tone
+                      ],
                     ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppColors.darkShadow,
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent, // прозрачный фон
+                      shadowColor:
+                          Colors.transparent, // убираем стандартную тень
+                      minimumSize: Size(size.width, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed:
+                        (subscriptions?.planId.contains(plans.id) == true ||
+                            isLoading)
+                        ? null
+                        : onPay,
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: PlatformProgressIndicator(),
+                          )
+                        : Text(
+                            ('Подписаться за ${plans.price}\$'),
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
-              ),
+
               const SizedBox(height: 10),
             ],
           ),

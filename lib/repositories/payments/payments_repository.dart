@@ -22,13 +22,12 @@ class PaymentsRepository extends BaseRepository implements PaymentsRepositoryI {
   });
 
   @override
-  Future<void> getCurrentSubscription() => safeApiCall(() async {
-    await api.getCurrentSubscription();
-  });
+  Future<List<SubscriptionsDto>> getCurrentSubscription() => safeApiCall(()=> api.getCurrentSubscription());
 
   @override
-  Future<PaymentReceiptDto> applePayments(AppleReceipts receipts) =>
+  Future<void> applePayments(AppleReceipts receipts) =>
       safeApiCall(() async {
+        talker.debug('pay');
         return await api.applePayments(receipts);
       });
 

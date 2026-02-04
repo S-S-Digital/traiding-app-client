@@ -4,7 +4,7 @@ import 'package:aspiro_trade/repositories/payments/models/models.dart';
 
 abstract interface class PaymentsRepositoryI{
   Future<List<SubscriptionPlans>> fetchAllPlans();
-  Future<void> getCurrentSubscription();
-  Future<PaymentReceiptDto> applePayments(AppleReceipts receipts);
+  Future<List<SubscriptionsDto>> getCurrentSubscription();
+  Future<void> applePayments(AppleReceipts receipts);
   Future<PaymentReceiptDto> googlePayments(GoogleReceipts receipts);
 }

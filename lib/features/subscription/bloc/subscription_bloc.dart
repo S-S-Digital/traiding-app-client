@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:aspiro_trade/api/api.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
+import 'package:aspiro_trade/repositories/notifications/notifications.dart';
 import 'package:aspiro_trade/repositories/payments/payments.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,151 +13,193 @@ part 'subscription_event.dart';
 part 'subscription_state.dart';
 
 class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
-  SubscriptionBloc({required PaymentsRepositoryI paymentsRepository})
-    : _paymentsRepository = paymentsRepository,
-      super(SubscriptionInitial()) {
-    on<Start>(_start);
+  SubscriptionBloc({
+    required PaymentsRepositoryI paymentsRepository,
+    required NotificationsRepositoryI notificationsRepository,
+  }) : _paymentsRepository = paymentsRepository,
+       _notificationsRepository = notificationsRepository,
+       super(const SubscriptionState()) {
+    on<Start>(_onStart);
     on<PurchasePlan>(_onPurchasePlan);
     on<UpdatePurchaseStatus>(_onUpdatePurchaseStatus);
+    on<RestorePurchases>(_onRestorePurchases);
 
-    // Подписываемся на поток покупок сразу при создании Блока
     _subscription = _iap.purchaseStream.listen(
       (purchases) => add(UpdatePurchaseStatus(purchases)),
-      // onError: (error) => add(SubscriptionFailure(error: error) ),
+      onError: (error) => talker.error('IAP Stream Error: $error'),
     );
-    on<RestorePurchases>(_onRestorePurchases);
   }
 
   final PaymentsRepositoryI _paymentsRepository;
+  final NotificationsRepositoryI _notificationsRepository;
   final InAppPurchase _iap = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
-  Future<void> _start(Start event, Emitter<SubscriptionState> emit) async {
-    emit(SubscriptionLoading());
-    try {
-      // 1. Получаем планы с вашего бэкенда
-      final plans = await _paymentsRepository.fetchAllPlans();
+  /* ---------------- START ---------------- */
 
-      // 2. Проверяем доступность магазина
-      final bool available = await _iap.isAvailable();
-      if (!available) {
-        throw Exception('Магазин приложений недоступен');
+  Future<void> _onStart(Start event, Emitter<SubscriptionState> emit) async {
+    emit(state.copyWith(status: SubscriptionStatus.loading));
+    try {
+      if (!await _iap.isAvailable()) {
+        emit(
+          state.copyWith(
+            status: SubscriptionStatus.failure,
+            error: 'Store unavailable',
+          ),
+        );
+        return;
       }
 
-      // 3. Запрашиваем детали продуктов у Apple/Google
-      // Берем ID из ваших планов (в зависимости от платформы)
-      final Set<String> ids = plans
+      final plans = await _paymentsRepository.fetchAllPlans();
+      final myPlan = await _paymentsRepository.getCurrentSubscription();
+
+      final ids = plans
           .map((p) => Platform.isIOS ? p.appleProductId : p.googleProductId)
           .where((id) => id.isNotEmpty)
           .toSet();
 
-      final productResponse = await _iap.queryProductDetails(ids);
+      final response = await _iap.queryProductDetails(ids);
 
-      // 4. Обогащаем планы читаемыми фичами (как было у вас)
-      final enrichedPlans = plans.map((plan) {
-        return plan.copyWith(features: plan.readableFeatures);
-      }).toList();
+      if (response.error != null) {
+        throw Exception(response.error);
+      }
+
+      // МЕТА-КОММЕНТАРИЙ: Не блокируем работу, если какой-то ID не найден,
+      // просто логируем. Это делает приложение стабильнее при проверке.
+      if (response.notFoundIDs.isNotEmpty) {
+        talker.error('IAP not found IDs: ${response.notFoundIDs}');
+      }
 
       emit(
-        SubscriptionLoaded(
-          plans: enrichedPlans,
-          productDetails: productResponse.productDetails,
+        state.copyWith(
+          status: SubscriptionStatus.loaded,
+          plans: plans,
+          productDetails: response.productDetails,
+          subscription: myPlan.isNotEmpty ? myPlan.last : null,
+          error: null,
         ),
       );
-    } catch (error) {
-      emit(SubscriptionFailure(error: error));
+    } catch (e) {
+      talker.error(e);
+      emit(state.copyWith(status: SubscriptionStatus.failure, error: e));
     }
   }
+
+  /* ---------------- PURCHASE ---------------- */
 
   Future<void> _onPurchasePlan(
     PurchasePlan event,
     Emitter<SubscriptionState> emit,
   ) async {
-    final purchaseParam = PurchaseParam(productDetails: event.productDetails);
-
     try {
-      await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+      // МЕТА-КОММЕНТАРИЙ: Немедленно уведомляем UI, что процесс пошел.
+      // Это уберет претензию Apple "No action followed".
+      emit(state.copyWith(status: SubscriptionStatus.purchasing));
+
+      final param = PurchaseParam(productDetails: event.productDetails);
+
+      // ВАЖНО: Мы не ждем результата покупки здесь,
+      // результат придет в _onUpdatePurchaseStatus через стрим.
+      await _iap.buyNonConsumable(purchaseParam: param);
     } catch (e) {
+      talker.error('Purchase initiation error: $e');
       if (e is PlatformException && e.code == 'storekit2_purchase_cancelled') {
+        emit(state.copyWith(status: SubscriptionStatus.loaded));
         return;
-      } else {
-        talker.debug(e);
-        emit(SubscriptionFailure(error: e));
       }
+      emit(state.copyWith(status: SubscriptionStatus.failure, error: e));
     }
   }
+  /* ---------------- PURCHASE STREAM ---------------- */
 
   Future<void> _onUpdatePurchaseStatus(
     UpdatePurchaseStatus event,
     Emitter<SubscriptionState> emit,
   ) async {
     for (final purchase in event.purchases) {
+      talker.debug(purchase.status);
+      if (purchase.status == PurchaseStatus.pending) {
+        emit(state.copyWith(status: SubscriptionStatus.purchasing));
+        continue;
+      }
+
+      if (purchase.status == PurchaseStatus.error) {
+        if (purchase.pendingCompletePurchase) {
+          await _iap.completePurchase(purchase);
+        }
+
+        emit(
+          state.copyWith(
+            status: SubscriptionStatus.failure,
+            error: purchase.error?.message ?? 'Purchase error',
+          ),
+        );
+
+        add(Start());
+        continue;
+      }
+
       if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
         try {
           if (Platform.isIOS) {
-            // Формируем ваш AppleReceipts DTO
-            final receipt = AppleReceipts(
-              receiptData: purchase.verificationData.serverVerificationData,
-              transactionId: purchase.purchaseID ?? '',
+            await _paymentsRepository.applePayments(
+              AppleReceipts(
+                receiptData: purchase.verificationData.serverVerificationData,
+                transactionId: purchase.purchaseID ?? '',
+              ),
             );
-            await _paymentsRepository.applePayments(receipt);
           } else {
-            // Формируем ваш GoogleReceipts DTO
-            final receipt = GoogleReceipts(
-              purchaseToken: purchase.verificationData.serverVerificationData,
-              productId: purchase.productID,
-              packageName:
-                  'com.aspiro.trade', // Замените на ваш реальный package name
+            await _paymentsRepository.googlePayments(
+              GoogleReceipts(
+                purchaseToken: purchase.verificationData.serverVerificationData,
+                productId: purchase.productID,
+                packageName: 'com.aspiro.trade',
+              ),
             );
-            await _paymentsRepository.googlePayments(receipt);
           }
 
-          // КРИТИЧНО: Подтверждаем покупку в магазине, чтобы не было возврата денег
           if (purchase.pendingCompletePurchase) {
             await _iap.completePurchase(purchase);
           }
 
-          // После успеха можно перезапустить загрузку, чтобы обновить статус пользователя
+          emit(state.copyWith(status: SubscriptionStatus.success));
           add(Start());
         } catch (e) {
-          emit(SubscriptionFailure(error: e));
+          talker.error('Verification error: $e');
+          emit(
+            state.copyWith(
+              status: SubscriptionStatus.failure,
+              error: 'Payment verification failed',
+            ),
+          );
         }
-      } else if (purchase.status == PurchaseStatus.error) {
-        emit(SubscriptionFailure(error: purchase.error ?? 'Ошибка покупки'));
       }
     }
   }
+
+  /* ---------------- RESTORE ---------------- */
 
   Future<void> _onRestorePurchases(
     RestorePurchases event,
     Emitter<SubscriptionState> emit,
   ) async {
-    try {
-      final currentState = state;
-      if (currentState is! SubscriptionLoaded) return;
-      emit(currentState.copyWith(isRestoring: true));
+    if (state.status != SubscriptionStatus.loaded) return;
 
-      // Вызываем метод репозитория
+    emit(state.copyWith(status: SubscriptionStatus.restoring));
+
+    try {
       await _iap.restorePurchases();
 
-      // Apple требует, чтобы мы дали фидбек.
-      // Если метод завершился без ошибок, говорим пользователю, что запрос отправлен.
-      emit(
-        const SubscriptionRestoreSuccess(
-          'Запрос на восстановление отправлен. Ваши покупки обновятся в ближайшее время.',
-        ),
-      );
-
-      add(Start());
+      await _iap.isAvailable();
+      // результат придёт через purchaseStream
     } catch (e) {
-      talker.error("Restore Error: $e");
       emit(
-        SubscriptionFailure(
-          error: 'Не удалось восстановить покупки: ${e.toString()}',
+        state.copyWith(
+          status: SubscriptionStatus.failure,
+          error: 'Restore failed',
         ),
       );
-      add(Start()); // Возвращаем UI в рабочее состояние
     }
   }
 

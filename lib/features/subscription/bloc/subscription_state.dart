@@ -1,66 +1,64 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 part of 'subscription_bloc.dart';
 
-sealed class SubscriptionState extends Equatable {
-  const SubscriptionState();
-  bool get isBuildable => true;
-  @override
-  List<Object?> get props => [];
+enum SubscriptionStatus {
+  initial,
+  loading,
+  loaded,
+  purchasing,
+  restoring,
+  success,
+  failure,
 }
 
-final class SubscriptionInitial extends SubscriptionState {}
-final class SubscriptionLoading extends SubscriptionState {}
 
-class SubscriptionLoaded extends SubscriptionState {
-  final List<SubscriptionPlans> plans;
-  // Данные напрямую из AppStore/GooglePlay (цены, валюта)
-  final List<ProductDetails> productDetails;
-  final bool isRestoring;
 
-  const SubscriptionLoaded({
-    required this.plans, 
-    required this.productDetails,
-    this.isRestoring = false
+class SubscriptionState extends Equatable {
+  const SubscriptionState({
+    this.status = SubscriptionStatus.initial,
+    this.plans = const [],
+    this.productDetails = const [],
+    this.subscription,
+    this.error,
   });
 
-  @override
-  List<Object?> get props => [plans, productDetails, isRestoring];
+  final SubscriptionStatus status;
+  final List<SubscriptionPlans> plans;
+  final List<ProductDetails> productDetails;
+  final SubscriptionsDto? subscription;
+  final Object? error;
 
-  SubscriptionLoaded copyWith({
+  bool get isLoading => status == SubscriptionStatus.loading;
+  bool get isPurchasing => status == SubscriptionStatus.purchasing;
+  bool get isRestoring => status == SubscriptionStatus.restoring;
+  bool get isLoaded => status == SubscriptionStatus.loaded;
+
+  /// UI можно не перестраивать на success / failure
+  bool get isBuildable =>
+      status != SubscriptionStatus.failure &&
+      status != SubscriptionStatus.success;
+
+  SubscriptionState copyWith({
+    SubscriptionStatus? status,
     List<SubscriptionPlans>? plans,
     List<ProductDetails>? productDetails,
-    bool? isRestoring,
+    SubscriptionsDto? subscription,
+    Object? error,
   }) {
-    return SubscriptionLoaded(
+    return SubscriptionState(
+      status: status ?? this.status,
       plans: plans ?? this.plans,
       productDetails: productDetails ?? this.productDetails,
-      isRestoring: isRestoring ?? this.isRestoring,
+      subscription: subscription ?? this.subscription,
+      error: error,
     );
   }
-}
-
-class SubscriptionFailure extends SubscriptionState {
-  SubscriptionFailure({required this.error}) : timestamp = DateTime.now();
-  final Object error;
-  final DateTime timestamp;
 
   @override
-  bool get isBuildable => false;
-  @override
-  List<Object?> get props => [error, timestamp];
-}
-
-class SubscriptionPurchasing extends SubscriptionState {
-  @override
-  bool get isBuildable => true;
-}
-
-final class SubscriptionRestoreSuccess extends SubscriptionState {
-  final String message;
-  const SubscriptionRestoreSuccess(this.message);
-  
-  @override
-  bool get isBuildable => false; // Нам не нужно перерисовывать экран, только показать уведомление
-  @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [
+        status,
+        plans,
+        productDetails,
+        subscription,
+        error,
+      ];
 }

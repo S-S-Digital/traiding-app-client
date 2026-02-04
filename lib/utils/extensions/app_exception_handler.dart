@@ -171,6 +171,70 @@ extension AppExceptionHandler on BuildContext {
     }
   }
 
+
+  Future<void> showSuccesDialog({
+    required String title,
+    required String message,
+    required VoidCallback onPressed,
+  }) {
+    if (Platform.isIOS) {
+      return showCupertinoDialog(
+        context: this,
+        barrierDismissible: false,
+        builder: (context) => CupertinoAlertDialog(
+          title: Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          content: Text(
+            message,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: onPressed,
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Android стиль с твоей кастомной анимацией
+      return showGeneralDialog(
+        context: this,
+        barrierLabel: "success",
+        barrierDismissible: false,
+        barrierColor: Colors.black54,
+        transitionDuration: const Duration(
+          milliseconds: 600,
+        ), // Оптимально для EaseOutBack
+        pageBuilder: (context, animation, secondaryAnimation) {
+          // Здесь вызывается твой кастомный виджет ErrorDialog
+          return ErrorDialog(
+            message: message,
+            title: title,
+            onPressed: onPressed,
+          );
+        },
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          final offsetAnimation =
+              Tween<Offset>(
+                begin: const Offset(0, 1), // Снизу вверх
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+              );
+
+          return SlideTransition(position: offsetAnimation, child: child);
+        },
+      );
+    }
+  }
+
   /// Главная функция вызова, разделяющая логику на две платформы
   Future<bool?> showDeleteAccountDialog(BuildContext context) async {
     if (Platform.isIOS) {

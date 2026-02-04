@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:aspiro_trade/features/privacy_policy/view/privacy_policy_screen.dart';
 import 'package:aspiro_trade/features/settings/bloc/settings_bloc.dart';
 import 'package:aspiro_trade/features/settings/models/models.dart';
@@ -9,6 +11,7 @@ import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage()
 class SettingsScreen extends StatefulWidget {
@@ -23,6 +26,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     context.read<SettingsBloc>().add(Start());
     super.initState();
+  }
+
+  Future<void> _launchURL(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   final items = [
@@ -110,7 +120,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         AutoRouter.of(context).push(const ProfileRoute());
                         break;
                       case 1:
-                        AutoRouter.of(context).push(const TermsOfUseRoute());
+                        // AutoRouter.of(context).push(const TermsOfUseRoute());
+                        if (Platform.isIOS) {
+                          // Для Apple — только внешняя ссылка на их стандартный EULA
+                          _launchURL(
+                            'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+                          );
+                        } else {
+                          // Для Android — ваш красивый локальный WebView
+                          context.router.push(const TermsOfUseRoute());
+                        }
                         break;
                       case 2:
                         AutoRouter.of(context).push(const PrivacyPolicyRoute());

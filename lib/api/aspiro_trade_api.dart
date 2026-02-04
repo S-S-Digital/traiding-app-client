@@ -10,6 +10,8 @@ import 'package:talker_dio_logger/talker_dio_logger.dart';
 
 part 'aspiro_trade_api.g.dart';
 
+
+
 @RestApi(baseUrl: '')
 abstract class AspiroTradeApi {
   factory AspiroTradeApi(Dio dio, {String baseUrl}) = _AspiroTradeApi;
@@ -100,11 +102,11 @@ abstract class AspiroTradeApi {
   Future<List<SubscriptionPlansDto>> fetchAllPlans();
 
   @GET('/payments/subscriptions')
-  Future<void> getCurrentSubscription();
+  Future<List<SubscriptionsDto>> getCurrentSubscription();
 
 
   @POST('/payments/verify/apple')
-  Future<PaymentReceiptDto> applePayments(@Body() AppleReceipts receipts);
+  Future<void> applePayments(@Body() AppleReceipts receipts);
 
 
   @POST('/payments/verify/google')

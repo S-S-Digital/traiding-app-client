@@ -54,5 +54,6 @@ Future<void> main() async {
     firebaseAuth: firebaseAuth
   );
 
+
   runApp(AspiroTradeApp(config: config));
 }

@@ -1,12 +1,22 @@
-
+import 'package:aspiro_trade/api/api.dart';
+import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/repositories/payments/payments.dart';
+import 'package:aspiro_trade/ui/ui.dart';
 import 'package:flutter/material.dart';
 
 class SubscriptionItem extends StatelessWidget {
-  const SubscriptionItem({super.key, required this.plans, required this.onPay});
+  const SubscriptionItem({
+    super.key,
+    required this.plans,
+    required this.onPay,
+    this.subscriptions,
+    this.isLoading = false,
+  });
 
   final SubscriptionPlans plans;
+  final SubscriptionsDto? subscriptions;
   final VoidCallback onPay;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +24,7 @@ class SubscriptionItem extends StatelessWidget {
     final size = MediaQuery.of(context).size;
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: double.infinity ,
+        maxHeight: double.infinity,
         maxWidth: size.width,
       ),
       child: Container(
@@ -36,14 +46,14 @@ class SubscriptionItem extends StatelessWidget {
                 color: theme.colorScheme.onPrimary,
               ),
             ),
-    
+
             Text(
               plans.description,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
               ),
             ),
-    
+
             Container(
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.all(10),
@@ -89,7 +99,7 @@ class SubscriptionItem extends StatelessWidget {
             Wrap(
               spacing: 8, // горизонтальный отступ между элементами
               runSpacing: 8, // вертикальный отступ между строками
-              children: plans.features.map((feature) {
+              children: plans.readableFeatures.map((feature) {
                 return Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -111,9 +121,9 @@ class SubscriptionItem extends StatelessWidget {
                 );
               }).toList(),
             ),
-    
+
             const SizedBox(height: 20),
-    
+
             Container(
               width: double.infinity,
               height: 50,
@@ -156,21 +166,69 @@ class SubscriptionItem extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-    
-            if(plans.price != 0)
-    
+            if (subscriptions != null && plans.price != "0")
               ElevatedButton(
-                onPressed: () {},
+                onPressed:
+                    subscriptions != null &&
+                            subscriptions!.planId.contains(plans.id) ||
+                        isLoading
+                    ? null
+                    : onPay,
                 style: ButtonStyle(
                   minimumSize: WidgetStatePropertyAll(Size(size.width, 50)),
                 ),
-                child: Text(
-                  'Подписаться за ${plans.price} \$',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: PlatformProgressIndicator()
+                      )
+                    : () {
+                        final bool hasActiveSub = subscriptions != null;
+                        final bool isThisPlanActive =
+                            hasActiveSub && subscriptions!.planId == plans.id;
+                        final bool isFreePlan =
+                            (plans.price == "0" || plans.price == "0.0");
+                        talker.debug(isFreePlan);
+
+                        if (isThisPlanActive) {
+                          return const Text('Ваш текущий тариф');
+                        }
+
+                        if (isFreePlan) {
+                          // Если у пользователя есть ЛЮБАЯ активная подписка (например PRO),
+                          // а мы смотрим на карточку FREE
+                          return const Text('');
+                        }
+
+                        return Text('Подписаться за ${plans.price} \$');
+                      }(),
+              ),
+            if (subscriptions == null)
+              ElevatedButton(
+                onPressed: plans.price.contains('0') ? null : onPay,
+                style: ButtonStyle(
+                  minimumSize: WidgetStatePropertyAll(Size(size.width, 50)),
                 ),
+                child: () {
+                  final bool hasActiveSub = subscriptions != null;
+                  final bool isThisPlanActive =
+                      hasActiveSub && subscriptions!.planId == plans.id;
+                  final bool isFreePlan =
+                      plans.price == "0" || plans.price == "0.0";
+
+                  if (isThisPlanActive) {
+                    return const Text('Ваш текущий тариф');
+                  }
+
+                  if (isFreePlan) {
+                    // Если у пользователя есть ЛЮБАЯ активная подписка (например PRO),
+                    // а мы смотрим на карточку FREE
+                    return const Text('У вас обычный тариф');
+                  }
+
+                  return Text('Подписаться за ${plans.price} \$');
+                }(),
               ),
           ],
         ),
