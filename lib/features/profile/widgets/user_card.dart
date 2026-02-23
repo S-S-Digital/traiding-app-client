@@ -10,8 +10,8 @@ class UserCard extends StatelessWidget {
     final size = MediaQuery.of(context).size;
     final theme = Theme.of(context);
     return Container(
-      margin: const EdgeInsetsGeometry.all(15),
-      padding: const EdgeInsetsGeometry.symmetric(vertical: 20, horizontal: 15),
+      margin: const EdgeInsets.all(15),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),

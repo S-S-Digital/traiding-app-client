@@ -1,4 +1,5 @@
 import 'package:aspiro_trade/features/history/models/models.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class HistoryItem extends StatelessWidget {
@@ -8,249 +9,78 @@ class HistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
+    final isWin = history.history.status.toLowerCase().contains('won') ||
+        history.history.status.toLowerCase().contains('tp') ||
+        history.history.resultPct > 0;
+    final isBuy = history.history.direction.toLowerCase() == 'buy';
+    final resultPct = history.history.resultPct;
 
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minHeight: size.height * 0.2,
-          maxHeight: size.height * 0.7,
-        ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      child: Row(
+        children: [
+          // Status icon
+          Container(
+            width: 32, height: 32,
+            decoration: BoxDecoration(
+              color: isWin ? AppColors.up.withValues(alpha: 0.12) : AppColors.down.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              isWin ? Icons.check : Icons.close,
+              size: 16,
+              color: isWin ? AppColors.up : AppColors.down,
+            ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.secondary.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(5),
+          const SizedBox(width: 10),
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      history.history.symbol,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.check,
-                          color: theme.colorScheme.secondary,
-                          size: size.height * 0.02,
-                        ),
-                        const SizedBox(width: 3),
-                        Text(
-                          history.history.formatStatus(history.history.status),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.secondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isBuy ? AppColors.up.withValues(alpha: 0.12) : AppColors.down.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Text(
+                        isBuy ? 'LONG' : 'SHORT',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isBuy ? AppColors.up : AppColors.down),
+                      ),
                     ),
-                  ),
-
-                  Text(
-                    DateFormatter.format(history.history.closedAt),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Image.network(
-                  history.assets.logoUrl,
-
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.image_not_supported_outlined,
-                      size: 40,
-                    );
-                  },
+                    const SizedBox(width: 6),
+                    Text(
+                      history.history.timeframe.toUpperCase(),
+                      style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+                    ),
+                  ],
                 ),
-                title: Text(
-                  history.history.symbol,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                const SizedBox(height: 2),
+                Text(
+                  '${isWin ? 'Take Profit' : 'Stop Loss'} • ${history.history.duration}',
+                  style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
                 ),
-                subtitle: Text(
-                  history.history.formatDirection(history.history.direction),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.secondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: size.height * 0.1,
-                  maxHeight: size.height * 0.4,
-                ),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: theme.scaffoldBackgroundColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Вход:',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                          Text(
-                            '${history.history.entry}\$',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Тейк-профит:',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                          Text(
-                            '${history.history.takeProfit}\$',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.secondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Стоп-лосс:',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                          Text(
-                            '${history.history.stopLoss}\$',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.error,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Выход:',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                          Text(
-                            '${history.history.exit}\$',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Результат:',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                          Text(
-                            '${history.history.resultPct}% (${history.history.resultUsd}\$)',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.secondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Таймфрейм:',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                          Text(
-                            history.history.formatTimeframe(
-                              history.history.timeframe,
-                            ),
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Stop Loss
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Длительность:',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                          Text(
-                            history.history.duration,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          // P&L %
+          Text(
+            '${resultPct > 0 ? '+' : ''}${resultPct}%',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: resultPct >= 0 ? AppColors.up : AppColors.down,
+            ),
+          ),
+        ],
       ),
     );
   }

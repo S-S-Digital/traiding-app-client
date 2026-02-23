@@ -1,6 +1,5 @@
-
 import 'package:aspiro_trade/features/signals/models/models.dart';
-import 'package:aspiro_trade/ui/ui.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class SignalsItem extends StatelessWidget {
@@ -10,214 +9,195 @@ class SignalsItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final theme = Theme.of(context);
     final isBuy = signal.signal.direction.toLowerCase() == 'buy';
-    final priceChange = signal.signal.currentPrice - signal.signal.price;
-    final priceChangePct = (priceChange / signal.signal.price) * 100;
+    final profitPct = signal.signal.profitPct.toDouble();
+    final isProfit = profitPct >= 0;
 
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minHeight: size.height * 0.2,
-          maxHeight: size.height * 0.6,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isBuy
-                          ? theme.colorScheme.secondary.withValues(alpha: 0.25)
-                          : theme.colorScheme.error.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Text(
-                      signal.signal.getDirection(signal.signal.direction),
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: isBuy
-                            ? theme.colorScheme.secondary
-                            : theme.colorScheme.error,
-                        fontWeight: FontWeight.bold,
+    final sl = signal.signal.stopLoss.toDouble();
+    final tp = signal.signal.takeProfit.toDouble();
+    final current = signal.signal.currentPrice.toDouble();
+    final entry = signal.signal.price.toDouble();
+    final range = (tp - sl).abs();
+    final progress = range > 0 ? ((current - sl).abs() / range).clamp(0.0, 1.0) : 0.5;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border, width: 0.5),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── Header ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+            child: Row(
+              children: [
+                // Icon
+                Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.elevated,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.network(
+                      signal.assets.logoUrl,
+                      width: 36, height: 36, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Center(
+                        child: Text(
+                          signal.signal.symbol.isNotEmpty ? signal.signal.symbol[0] : '?',
+                          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 14),
+                        ),
                       ),
                     ),
                   ),
-                  Text(
-                    // Можно форматировать дату entryBarTime
-                    TimeOfDay.fromDateTime(
-                      signal.signal.entryBarTime,
-                    ).format(context),
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-
-              // Crypto info
-              CryptoListTile(
-                imagePath: signal.assets.logoUrl,
-                title: signal.assets.symbol,
-                subtitle: '',
-                size: CryptoListTileSize.medium,
-              ),
-
-              // Prices info
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: size.height * 0.05,
-                  maxHeight: size.height * 0.3,
                 ),
-                child: Container(
-                  width: size.width,
+                const SizedBox(width: 10),
+                // Pair + pills
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        signal.signal.symbol,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          _DirectionPill(isBuy: isBuy),
+                          const SizedBox(width: 6),
+                          _TimeframePill(timeframe: signal.signal.timeframe),
+                          const SizedBox(width: 6),
+                          Text(
+                            TimeOfDay.fromDateTime(signal.signal.entryBarTime).format(context),
+                            style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // P&L badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: theme.scaffoldBackgroundColor.withValues(alpha:  0.8),
-                    borderRadius: BorderRadius.circular(10),
+                    color: isProfit ? AppColors.up.withValues(alpha: 0.12) : AppColors.down.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10.0,
-                      vertical: 5,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Текущая цена:',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              '${signal.signal.currentPrice.toStringAsFixed(2)}\$',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Цена входа:',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              '${signal.signal.price.toStringAsFixed(2)}\$',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Тейк-профит',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              '${signal.signal.takeProfit.toStringAsFixed(2)}\$',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.secondary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Стоп-лосс',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              '${signal.signal.stopLoss.toStringAsFixed(2)}\$',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.error,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Изменение:',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              '${priceChangePct >= 0 ? '+' : ''}${priceChangePct.toStringAsFixed(2)}% (${priceChange.toStringAsFixed(2)}\$)',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: priceChange >= 0
-                                    ? theme.colorScheme.secondary
-                                    : theme.colorScheme.error,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Таймфрейм:',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              signal.signal.formatTimeframe(signal.signal.timeframe),
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                      ],
-                    ),
+                  child: Text(
+                    '${isProfit ? '+' : ''}${profitPct.toStringAsFixed(2)}%',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: isProfit ? AppColors.up : AppColors.down),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+
+          // ── Progress Bar (SL → TP) ──
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('SL ${sl.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, color: AppColors.down, fontWeight: FontWeight.w500)),
+                    Text('TP ${tp.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, color: AppColors.up, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: AppColors.elevated,
+                    valueColor: AlwaysStoppedAnimation<Color>(isProfit ? AppColors.up : AppColors.down),
+                    minHeight: 4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // ── Grid: Entry / Current / P&L ──
+          Container(
+            margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            decoration: BoxDecoration(color: AppColors.elevated, borderRadius: BorderRadius.circular(8)),
+            child: Row(
+              children: [
+                _GridCell(label: 'Entry', value: '\$${entry.toStringAsFixed(2)}', valueColor: AppColors.textPrimary),
+                Container(width: 1, height: 32, color: AppColors.border),
+                _GridCell(label: 'Current', value: '\$${current.toStringAsFixed(2)}', valueColor: AppColors.textPrimary),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DirectionPill extends StatelessWidget {
+  const _DirectionPill({required this.isBuy});
+  final bool isBuy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isBuy ? AppColors.up.withValues(alpha: 0.15) : AppColors.down.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        isBuy ? 'LONG' : 'SHORT',
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: isBuy ? AppColors.up : AppColors.down),
+      ),
+    );
+  }
+}
+
+class _TimeframePill extends StatelessWidget {
+  const _TimeframePill({required this.timeframe});
+  final String timeframe;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: AppColors.elevated, borderRadius: BorderRadius.circular(4)),
+      child: Text(
+        timeframe.toUpperCase(),
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+      ),
+    );
+  }
+}
+
+class _GridCell extends StatelessWidget {
+  const _GridCell({required this.label, required this.value, required this.valueColor});
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 4),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor)),
+        ],
       ),
     );
   }

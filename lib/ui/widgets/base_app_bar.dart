@@ -1,6 +1,4 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter/cupertino.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class BaseAppBar extends StatelessWidget {
@@ -11,29 +9,48 @@ class BaseAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return SliverAppBar(
       title: Text(
         text,
-        style: theme.textTheme.headlineMedium?.copyWith(
+        style: const TextStyle(
+          fontSize: 28,
           fontWeight: FontWeight.w700,
+          letterSpacing: -0.4,
+          color: AppColors.textPrimary,
         ),
       ),
       centerTitle: false,
+      pinned: true,
       actions: [
-        onPressed != null
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStatePropertyAll(theme.primaryColor),
-                    minimumSize: const WidgetStatePropertyAll(Size(50, 50)),
-                  ),
-                  onPressed: onPressed,
-                  child: Icon(Platform.isIOS ? CupertinoIcons.add : Icons.add),
+        if (onPressed != null)
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: GestureDetector(
+              onTap: onPressed,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.brand,
+                  borderRadius: BorderRadius.circular(6),
                 ),
-              )
-            : const SizedBox(),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, size: 14, color: AppColors.background),
+                    SizedBox(width: 4),
+                    Text(
+                      'Add',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.background,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

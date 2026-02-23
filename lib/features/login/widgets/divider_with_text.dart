@@ -1,19 +1,27 @@
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class DividerWithText extends StatelessWidget {
-  const DividerWithText({super.key});
+  const DividerWithText({super.key, this.text = 'or'});
+
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Row(
       children: [
-        Expanded(child: Container(height: 1, color: theme.dividerColor)),
+        Expanded(child: Container(height: 1, color: AppColors.border)),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Text('или', style: theme.textTheme.bodyMedium),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textQuaternary,
+            ),
+          ),
         ),
-        Expanded(child: Container(height: 1, color: theme.dividerColor)),
+        Expanded(child: Container(height: 1, color: AppColors.border)),
       ],
     );
   }

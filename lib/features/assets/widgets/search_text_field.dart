@@ -1,4 +1,4 @@
-
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class SearchTextField extends StatefulWidget {
@@ -34,41 +34,65 @@ class _SearchTextFieldState extends State<SearchTextField> {
 
   void _onTextChanged() {
     final hasText = widget.controller.text.isNotEmpty;
-    if (hasText != _showSuffix) {
-      setState(() => _showSuffix = hasText);
-    }
+    if (hasText != _showSuffix) setState(() => _showSuffix = hasText);
   }
 
-  void _clearText(bool value) {
+  void _clearText() {
     widget.controller.clear();
     widget.onClearTap?.call();
-    setState(() => _showSuffix = !value);
+    setState(() => _showSuffix = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return TextField(
-      controller: widget.controller,
-      textInputAction: TextInputAction.search,
-      onSubmitted: widget.onSubmitted,
-
-      decoration: InputDecoration(
-        enabledBorder: const OutlineInputBorder(
-          borderSide: BorderSide.none,
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-        ),
-        hintText: 'Поиск монет...',
-        fillColor: theme.cardColor,
-
-        border: const OutlineInputBorder(borderSide: BorderSide.none),
-
-        suffixIcon: _showSuffix
-            ? IconButton(
-                onPressed: () => _clearText(_showSuffix),
-                icon: const Icon(Icons.close, size: 22),
-              )
-            : null,
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(left: 12),
+            child: Icon(Icons.search, size: 18, color: AppColors.textTertiary),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: widget.controller,
+              textInputAction: TextInputAction.search,
+              onSubmitted: widget.onSubmitted,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
+              decoration: const InputDecoration(
+                hintText: 'Поиск монет...',
+                hintStyle: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textTertiary,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+          if (_showSuffix)
+            GestureDetector(
+              onTap: _clearText,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Icon(
+                  Icons.close,
+                  size: 18,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

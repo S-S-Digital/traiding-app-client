@@ -4,12 +4,11 @@ import 'package:aspiro_trade/features/assets/widgets/widgets.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/router/app_router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:io' show Platform;
 
 @RoutePage()
 class AssetsScreen extends StatefulWidget {
@@ -21,6 +20,7 @@ class AssetsScreen extends StatefulWidget {
 
 class _AssetsScreenState extends State<AssetsScreen> {
   final _searchController = TextEditingController();
+
   @override
   void initState() {
     context.read<AssetsBloc>().add(Start());
@@ -30,40 +30,30 @@ class _AssetsScreenState extends State<AssetsScreen> {
   @override
   void dispose() {
     _searchController.dispose();
-
-    if (context.mounted) {}
     super.dispose();
-  }
-
-  void _onTapSearch(BuildContext context) {
-    final query = _searchController.text;
-    if (query.isNotEmpty) {
-      context.read<AssetsBloc>().add(SearchAsset(symbol: query));
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            title: Text(
-              'Регистрация тикеров',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
+            title: const Text(
+              'Market',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
             ),
-            backgroundColor: theme.scaffoldBackgroundColor.withValues(
-              alpha: 1.25,
-            ),
-            toolbarHeight: 40,
-            centerTitle: true,
+            centerTitle: false,
             pinned: true,
-            snap: true,
             floating: true,
+            snap: true,
+            backgroundColor: AppColors.background,
+            surfaceTintColor: Colors.transparent,
             automaticallyImplyLeading: false,
             leading: IconButton(
               onPressed: () {
@@ -73,50 +63,40 @@ class _AssetsScreenState extends State<AssetsScreen> {
                   predicate: (value) => false,
                 );
               },
-              icon: Icon(
-                Platform.isIOS ? Icons.arrow_back_ios : Icons.arrow_back,
+              icon: const Icon(
+                Icons.arrow_back_ios,
+                color: AppColors.textSecondary,
+                size: 20,
               ),
             ),
-            surfaceTintColor: Colors.transparent,
             bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(95),
+              preferredSize: const Size.fromHeight(56),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 15,
-                  vertical: 10,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: SearchTextField(
                         controller: _searchController,
-                        onClearTap: () {
-                          context.read<AssetsBloc>().add(Start());
-                        },
-                        onSubmitted: (value) => _onTapSearch(context),
+                        onClearTap: () =>
+                            context.read<AssetsBloc>().add(Start()),
+                        onSubmitted: (_) => _doSearch(),
                       ),
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(
-                      onTap: () {
-                        context.read<AssetsBloc>().add(
-                          SearchAsset(symbol: _searchController.text.trim()),
-                        );
-                      },
+                      onTap: _doSearch,
                       child: Container(
-                        height: 48,
-                        width: 48,
+                        height: 40,
+                        width: 40,
                         decoration: BoxDecoration(
-                          color: theme.primaryColor,
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppColors.brand,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(
-                          Platform.isIOS
-                              ? CupertinoIcons.search
-                              : Icons.search_outlined,
-
-                          size: 24,
+                        child: const Icon(
+                          Icons.search,
+                          size: 20,
+                          color: AppColors.background,
                         ),
                       ),
                     ),
@@ -126,18 +106,37 @@ class _AssetsScreenState extends State<AssetsScreen> {
             ),
           ),
 
+          // ── Column headers ──
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'Популярные монеты',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text(
+                    'NAME',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textQuaternary,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  Text(
+                    'PRICE / 24H',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textQuaternary,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
 
+          // ── Asset list ──
           BlocConsumer<AssetsBloc, AssetsState>(
             listener: (context, state) {
               if (state.status == Status.failure) {
@@ -154,37 +153,105 @@ class _AssetsScreenState extends State<AssetsScreen> {
                   child: Center(child: PlatformProgressIndicator()),
                 );
               }
-              if (state.status != Status.initial) {
-                
-                return SliverList.builder(
-                  itemCount: state.assets.length,
-                  itemBuilder: (context, index) {
-                    final asset = state.assets[index];
-                    return AssetsItem(
-                      asset: asset,
-                      onTap: () {
-                        context.read<AssetsBloc>().add(StopTimer());
-                        AutoRouter.of(
-                          context,
-                        ).push(AssetDetailsRoute(assets: asset));
-                      },
-                      openDrawer: () {
-                        context.read<AssetsBloc>().add(StopTimer());
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (context) => AddTickersScreen(assets: asset),
+              if (state.status != Status.initial && state.assets.isNotEmpty) {
+                return SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.card,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      children: List.generate(state.assets.length, (i) {
+                        final asset = state.assets[i];
+                        return Column(
+                          children: [
+                            if (i > 0)
+                              Container(
+                                height: 1,
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 14),
+                                color: AppColors.border,
+                              ),
+                            AssetsItem(
+                              asset: asset,
+                              onTap: () {
+                                context.read<AssetsBloc>().add(StopTimer());
+                                AutoRouter.of(context)
+                                    .push(AssetDetailsRoute(assets: asset));
+                              },
+                              openDrawer: () {
+                                context.read<AssetsBloc>().add(StopTimer());
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: AppColors.card,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(16),
+                                    ),
+                                  ),
+                                  builder: (_) =>
+                                      AddTickersScreen(assets: asset),
+                                );
+                              },
+                            ),
+                          ],
                         );
-                      },
-                    );
-                  },
+                      }),
+                    ),
+                  ),
+                );
+              }
+              if (state.status != Status.initial && state.assets.isEmpty) {
+                return SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.card,
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Icon(
+                            Icons.search_off,
+                            size: 28,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Ничего не найдено',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               }
               return const SliverToBoxAdapter();
             },
           ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
     );
+  }
+
+  void _doSearch() {
+    final query = _searchController.text.trim();
+    if (query.isNotEmpty) {
+      context.read<AssetsBloc>().add(SearchAsset(symbol: query));
+    }
   }
 }

@@ -1,8 +1,8 @@
-import 'package:aspiro_trade/features/tickers/bloc/bloc.dart';
+import 'package:aspiro_trade/features/tickers/bloc/tickers_bloc.dart';
 import 'package:aspiro_trade/features/tickers/widgets/widgets.dart';
-import 'package:aspiro_trade/features/update_tickers/view/update_tickers_screen.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/router/app_router.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
@@ -25,85 +25,185 @@ class _TickersScreenState extends State<TickersScreen> {
   }
 
   @override
-  void dispose() {
-    talker.debug('dispose tickers');
-    context.read<TickersBloc>().add(StopTimer());
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async {
-          context.read<TickersBloc>().add(Refresh());
-          await Future.delayed(const Duration(milliseconds: 300));
-        },
-
-        child: CustomScrollView(
-          slivers: [
-            BaseAppBar(
-              text: 'Активы',
-              onPressed: () => AutoRouter.of(context).push(const AssetsRoute()),
-            ),
-
-            BlocConsumer<TickersBloc, TickersState>(
-              listener: (context, state) {
-                if (state.status == Status.failure) {
-                  if (state.error is AppException) {
-                    final error = state.error as AppException;
-                    context.handleException(error, context);
-                  }
-                }
-              },
-              buildWhen: (previous, current) => current.status.isBuildable,
-              builder: (context, state) {
-                if (state.status == Status.loading) {
-                  return const SliverFillRemaining(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          PlatformProgressIndicator(),
-                          Text('Загрузка...'),
-                        ],
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: AppColors.brand,
+          backgroundColor: AppColors.card,
+          onRefresh: () async {
+            context.read<TickersBloc>().add(Refresh());
+          },
+          child: CustomScrollView(
+            slivers: [
+              // ── Header ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Row(
+                    children: [
+                      const Text(
+                        'Market',
+                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                       ),
-                    ),
-                  );
-                } else if (state.status == Status.loaded) {
-                  if (state.tickers.isEmpty) {
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => context.router.push(const AssetsRoute()),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.brand,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add, size: 18, color: AppColors.background),
+                              SizedBox(width: 4),
+                              Text('Add', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.background)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+              // ── Column headers ──
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      SizedBox(width: 52),
+                      Expanded(
+                        child: Text('Name', style: TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w500)),
+                      ),
+                      Text('Price', style: TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w500)),
+                      SizedBox(width: 8),
+                      SizedBox(
+                        width: 72,
+                        child: Text('24h', style: TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w500), textAlign: TextAlign.right),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 8)),
+
+              // ── Ticker List ──
+              BlocConsumer<TickersBloc, TickersState>(
+                listener: (context, state) {
+                  if (state.status == Status.failure) {
+                    if (state.error is AppException) {
+                      final error = state.error as AppException;
+                      context.handleException(error, context);
+                    }
+                  }
+                },
+                buildWhen: (previous, current) => current.status.isBuildable,
+                builder: (context, state) {
+                  if (state.status == Status.loading) {
+                    return const SliverFillRemaining(
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand),
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (state.status != Status.initial && state.tickers.isNotEmpty) {
+                    return SliverToBoxAdapter(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.card,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ...state.tickers.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final ticker = entry.value;
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TickersItem(
+                                    tickers: ticker,
+                                    onSwipe: () async {
+                                      final result = await showDialog<bool>(
+                                        context: context,
+                                        builder: (_) => const DeleteTickerDialog(),
+                                      );
+                                      if (result == true && context.mounted) {
+                                        context.read<TickersBloc>().add(DeleteTicker(id: ticker.tickers.id));
+                                      }
+                                    },
+                                    onEdit: () {
+                                      context.router.push(AssetDetailsRoute(assets: ticker.assets));
+                                    },
+                                  ),
+                                  if (index < state.tickers.length - 1)
+                                    const Divider(height: 1, color: AppColors.border, indent: 68, endIndent: 16),
+                                ],
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (state.tickers.isEmpty && state.status != Status.loading) {
                     return SliverFillRemaining(
+                      hasScrollBody: false,
                       child: Center(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 40),
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.info_outline,
-                                size: 60,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primary.withValues(alpha: 0.6),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Список тикеров пуст',
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  color: theme.colorScheme.onPrimary,
-                                  fontWeight: FontWeight.w700,
+                              Container(
+                                width: 72, height: 72,
+                                decoration: BoxDecoration(
+                                  color: AppColors.brand.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(36),
                                 ),
+                                child: const Icon(Icons.show_chart_rounded, size: 36, color: AppColors.brand),
+                              ),
+                              const SizedBox(height: 20),
+                              const Text(
+                                'No tickers yet',
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                'Вы можете добавить тикеры, нажав на кнопку "+" в верхнем правом углу.',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface.withValues(
-                                    alpha: 0.7,
+                              const Text(
+                                'Add your first ticker to start\ntracking the market',
+                                style: TextStyle(fontSize: 14, color: AppColors.textTertiary),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 24),
+                              GestureDetector(
+                                onTap: () => context.router.push(const AssetsRoute()),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.brand,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    'Add Tickers',
+                                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.background),
                                   ),
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),
@@ -112,41 +212,13 @@ class _TickersScreenState extends State<TickersScreen> {
                     );
                   }
 
-                  return SliverList.builder(
-                    itemCount: state.tickers.length,
-                    itemBuilder: (context, index) {
-                      return TickersItem(
-                        tickers: state.tickers[index],
-                        onSwipe: () async {
-                          final confirmed = await showDeleteTickerDialog(
-                            context,
-                          );
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                },
+              ),
 
-                          if (confirmed == true && context.mounted) {
-                            context.read<TickersBloc>().add(
-                              DeleteTicker(id: state.tickers[index].tickers.id),
-                            );
-                          }
-                        },
-                        onEdit: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            builder: (context) => UpdateTickersScreen(
-                              tickers: state.tickers[index],
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                }
-                return const SliverToBoxAdapter(
-                  child: Center(child: Text('data')),
-                );
-              },
-            ),
-          ],
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ],
+          ),
         ),
       ),
     );

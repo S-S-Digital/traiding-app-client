@@ -1,4 +1,4 @@
-
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
 
@@ -7,7 +7,7 @@ class PhoneTextField extends StatelessWidget {
     super.key,
     required this.phoneController,
     required this.phoneFocus,
-    required this.onChanged
+    required this.onChanged,
   });
 
   final MaskedTextController phoneController;
@@ -16,14 +16,29 @@ class PhoneTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: phoneController,
-      focusNode: phoneFocus,
-      textInputAction: TextInputAction.done,
-      keyboardType: TextInputType.phone,
-      onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
-      decoration: const InputDecoration(hintText: 'Введите номер телефона'),
-      onChanged: (value) => onChanged(value),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Phone',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 5),
+        TextFormField(
+          controller: phoneController,
+          focusNode: phoneFocus,
+          keyboardType: TextInputType.phone,
+          textInputAction: TextInputAction.done,
+          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
+          onChanged: onChanged,
+          onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
+          decoration: const InputDecoration(hintText: '+7(___)-___-__-__'),
+        ),
+      ],
     );
   }
 }

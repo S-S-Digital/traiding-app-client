@@ -1,14 +1,13 @@
 import 'package:aspiro_trade/features/add_tickers/bloc/add_tickers_bloc.dart';
 import 'package:aspiro_trade/features/add_tickers/models/models.dart';
 import 'package:aspiro_trade/features/tickers/bloc/bloc.dart' as tickers_bloc;
-
 import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/router/router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -22,32 +21,12 @@ class AddTickersScreen extends StatefulWidget {
 }
 
 class _AddTickersScreenState extends State<AddTickersScreen> {
-  final List<Options> options = [
-    Options(
-      title: 'Покупка и продажа',
-      subtitle: 'уведомления о всех типах сигналов',
-      notifyBuy: true,
-      notifySell: true,
-    ),
-    Options(
-      title: 'Только покупка',
-      subtitle: 'Уведомления только о сигналах покупки',
-      notifyBuy: true,
-      notifySell: false,
-    ),
-    Options(
-      title: 'Только продажа',
-      subtitle: 'Уведомления только о сигналах продажи',
-      notifyBuy: false,
-      notifySell: true,
-    ),
-  ];
   final List<Timeframes> timeframeOptions = [
-    Timeframes(title: '15 минут', value: '15m'),
-    Timeframes(title: '1 час', value: '1h'),
-    Timeframes(title: '1 день', value: '1d'),
-    Timeframes(title: '1 неделя', value: '1w'),
-    Timeframes(title: '1 месяц', value: '1M'),
+    Timeframes(title: '15m', value: '15m'),
+    Timeframes(title: '1H', value: '1h'),
+    Timeframes(title: '1D', value: '1d'),
+    Timeframes(title: '1W', value: '1w'),
+    Timeframes(title: '1M', value: '1M'),
   ];
 
   @override
@@ -58,16 +37,12 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
-
     return Container(
-      padding: const EdgeInsets.all(10),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: BorderRadius.circular(25),
+      decoration: const BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 34),
       child: BlocConsumer<AddTickersBloc, AddTickersState>(
         listener: (context, state) {
           if (state.status == Status.failure) {
@@ -76,8 +51,8 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
               if (error is ConflictException) {
                 showErrorDialog(
                   context,
-                  'Видимо вы уже добавили этот тикер с таким таймфреймом',
-                  'ok',
+                  'Этот тикер с таким таймфреймом уже добавлен',
+                  'OK',
                   () {
                     if (context.mounted) {
                       Navigator.of(context).pop();
@@ -90,11 +65,10 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
               } else if (error is FordibenException) {
                 showErrorDialog(
                   context,
-                  'Чтобы добавить новый тикер, вам необходимо оформить подписку или расширить лимиты текущего тарифного плана.',
-                  'ok',
+                  'Необходимо оформить подписку для добавления тикеров',
+                  'OK',
                   () {
                     if (context.mounted) {
-                      // Navigator.of(context).pop();
                       AutoRouter.of(context).pushAndPopUntil(
                         const HomeRoute(),
                         predicate: (value) => false,
@@ -103,7 +77,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                   },
                 );
               } else {
-                showErrorDialog(context, error.message, 'ok', () {
+                showErrorDialog(context, error.message, 'OK', () {
                   if (error is UnauthorizedException) {
                     if (context.mounted) {
                       AutoRouter.of(context).pushAndPopUntil(
@@ -112,19 +86,14 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                       );
                     }
                   } else {
-                    if (context.mounted) {
-                      Navigator.of(context).pop();
-                    }
+                    if (context.mounted) Navigator.of(context).pop();
                   }
                 });
               }
             }
           } else if (state.status == Status.success) {
             if (context.mounted) {
-              context.read<tickers_bloc.TickersBloc>().add(
-                tickers_bloc.Start(),
-              );
-
+              context.read<tickers_bloc.TickersBloc>().add(tickers_bloc.Start());
               AutoRouter.of(context).pop(const HomeRoute());
             }
           }
@@ -132,350 +101,420 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
         buildWhen: (previous, current) => current.status.isBuildable,
         builder: (context, state) {
           if (state.status == Status.loading) {
-            return Column(
+            return const Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const PlatformProgressIndicator(),
-                const SizedBox(height: 16),
+                SizedBox(height: 40),
+                PlatformProgressIndicator(),
+                SizedBox(height: 12),
                 Text(
                   'Загрузка...',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 40),
               ],
             );
           }
-          if (state.status != Status.initial) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CryptoListTile(
-                  imagePath: widget.assets.logoUrl,
-                  title: widget.assets.baseAsset,
-                  subtitle: widget.assets.name.toUpperCase(),
-                  size: CryptoListTileSize.large,
-                ),
-
-                const SizedBox(height: 10),
-
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: state.status == Status.submit
-                        ? theme.colorScheme.secondary.withValues(alpha: 0.3)
-                        : theme.colorScheme.error.withValues(alpha: 0.3),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16)),
-                    border: Border.all(
-                      color: state.status == Status.submit
-                          ? theme.colorScheme.secondary
-                          : theme.colorScheme.error,
-                      width: 2,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      state.status == Status.submit
-                          ? 'Тикер найден на бирже'
-                          : 'Тикер не найден на бирже',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: state.status == Status.submit
-                            ? theme.colorScheme.secondary
-                            : theme.colorScheme.error,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                // TickerStatus(isValid: state.isValid),
-                const SizedBox(height: 10),
-
-                const Divider(),
-                const SizedBox(height: 10),
-
-                Text(
-                  'Выберите таймфрейм'.toUpperCase(),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onPrimary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                SizedBox(
-                  height: 40,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: timeframeOptions.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 10),
-                    itemBuilder: (context, index) {
-                      final tf = timeframeOptions[index];
-                      final isSelected = state.selectedTimeframe == tf;
-                      return ChoiceChip(
-                        label: Text(tf.title),
-                        selected: isSelected,
-                        onSelected: (_) {
-                          context.read<AddTickersBloc>().add(
-                            SelectTimeframe(timeframe: tf),
-                          );
-                        },
-                        showCheckmark: false,
-                        selectedColor: theme.colorScheme.primary,
-                        backgroundColor: theme.cardColor,
-                        labelStyle: theme.textTheme.bodyMedium?.copyWith(
-                          color: isSelected
-                              ? theme.colorScheme.onPrimary
-                              : theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Text(
-                  'Уведомления о сигналах'.toUpperCase(),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onPrimary,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: options.length,
-                  itemBuilder: (context, index) {
-                    final option = options[index];
-                    final isSelected = state.selectedOption == option;
-                    return GestureDetector(
-                      onTap: () => context.read<AddTickersBloc>().add(
-                        SelectOption(option: option),
-                      ),
-                      child: Card(
-                        color: theme.cardColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadiusGeometry.circular(16),
-                          side: BorderSide(
-                            color: isSelected
-                                ? theme.colorScheme.primary
-                                : theme.canvasColor,
-                            width: 2,
-                          ),
-                        ),
-
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Radio<String>(
-                                value: option.title,
-                                groupValue: state.selectedOption?.title,
-                                onChanged: (value) => context
-                                    .read<AddTickersBloc>()
-                                    .add(SelectOption(option: option)),
-                              ),
-
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    option.title,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.w500,
-                                      color: theme.colorScheme.onPrimary,
-                                    ),
-                                  ),
-
-                                  Text(
-                                    option.subtitle,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.w700,
-                                      color: theme.colorScheme.onPrimary,
-                                    ),
-                                    softWrap: true,
-                                    maxLines: null,
-                                    overflow: TextOverflow.visible,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                ElevatedButton(
-                  style: ButtonStyle(
-                    minimumSize: WidgetStatePropertyAll(
-                      Size(size.width, size.height * 0.07),
-                    ),
-                    backgroundColor: WidgetStatePropertyAll(
-                      state.status == Status.submit &&
-                              state.selectedOption != null &&
-                              state.selectedTimeframe != null
-                          ? theme.colorScheme.primary
-                          : theme.cardColor,
-                    ),
-                    shape: WidgetStatePropertyAll(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadiusGeometry.circular(20),
-                      ),
-                    ),
-                  ),
-                  onPressed: () {
-                    state.status == Status.submit &&
-                            state.selectedOption != null &&
-                            state.selectedTimeframe != null
-                        ? context.read<AddTickersBloc>().add(
-                            AddNewTicker(
-                              symbol: widget.assets.symbol,
-                              timeframe: state.selectedTimeframe!.value,
-                              notifyBuy: state.selectedOption!.notifyBuy,
-                              notifySell: state.selectedOption!.notifySell,
-                            ),
-                          )
-                        : null;
-                  },
-                  child: const Text('Добавить тикер'),
-                ),
-                const SizedBox(height: 20),
-              ],
-            );
+          if (state.status == Status.submit || state.status == Status.loaded) {
+            return _buildContent(context, state);
           }
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 48,
-                color: theme.colorScheme.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Не удалось загрузить данные',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Попробуйте еще раз!',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                style: ButtonStyle(
-                  minimumSize: WidgetStatePropertyAll(
-                    Size(size.width, size.height * 0.06),
-                  ),
-                  backgroundColor: WidgetStatePropertyAll(
-                    theme.colorScheme.primary,
-                  ),
-                  shape: WidgetStatePropertyAll(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadiusGeometry.circular(20),
-                    ),
-                  ),
-                ),
-                onPressed: () => context.read<AddTickersBloc>().add(
-                  Start(symbol: widget.assets.symbol),
-                ),
-                child: const Text('Попробовать еще раз'),
-              ),
-
-              const SizedBox(height: 16),
-            ],
-          );
+          return _buildError(context);
         },
       ),
     );
   }
-}
 
+  Widget _buildContent(BuildContext context, AddTickersState state) {
+    final isValid = state.status == Status.submit;
+    final canSubmit = isValid &&
+        state.selectedOption != null &&
+        state.selectedTimeframe != null;
 
-
-class TickerStatus extends StatefulWidget {
-  final bool isValid;
-  const TickerStatus({super.key, required this.isValid});
-
-  @override
-  State<TickerStatus> createState() => _TickerStatusState();
-}
-
-class _TickerStatusState extends State<TickerStatus>
-    with SingleTickerProviderStateMixin {
-
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-      lowerBound: 0.4,
-      upperBound: 1.0,
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return FadeTransition(
-      opacity: _controller,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: widget.isValid
-              ? theme.colorScheme.secondary.withValues(alpha: 0.3)
-              : theme.colorScheme.error.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: widget.isValid
-                ? theme.colorScheme.secondary
-                : theme.colorScheme.error,
-            width: 2,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            widget.isValid
-                ? 'Тикер найден на бирже'
-                : 'Тикер не найден на бирже',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: widget.isValid
-                  ? theme.colorScheme.secondary
-                  : theme.colorScheme.error,
-              fontWeight: FontWeight.bold,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Handle ──
+        Center(
+          child: Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.elevated,
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
         ),
-      ),
+        const SizedBox(height: 14),
+
+        // ── Title ──
+        const Text(
+          'Добавить тикер',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // ── Selected asset ──
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isValid
+                ? AppColors.brand.withValues(alpha: 0.06)
+                : AppColors.elevated,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isValid
+                  ? AppColors.brand.withValues(alpha: 0.15)
+                  : Colors.transparent,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.elevated,
+                ),
+                child: ClipOval(
+                  child: Image.network(
+                    widget.assets.logoUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Center(
+                      child: Text(
+                        widget.assets.baseAsset.isNotEmpty
+                            ? widget.assets.baseAsset[0]
+                            : '?',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.assets.symbol,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      widget.assets.name,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isValid)
+                const Text(
+                  'Найден',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.brand,
+                  ),
+                )
+              else
+                const Text(
+                  'Не найден',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.down,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+
+        // ── Timeframe ──
+        const Text(
+          'ТАЙМФРЕЙМ',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textTertiary,
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          children: timeframeOptions.map((tf) {
+            final isSelected = state.selectedTimeframe == tf;
+            return GestureDetector(
+              onTap: () => context
+                  .read<AddTickersBloc>()
+                  .add(SelectTimeframe(timeframe: tf)),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.brand.withValues(alpha: 0.1)
+                      : AppColors.elevated,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.brand.withValues(alpha: 0.3)
+                        : AppColors.border,
+                  ),
+                ),
+                child: Text(
+                  tf.title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.brand
+                        : AppColors.textTertiary,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 18),
+
+        // ── Notifications ──
+        const Text(
+          'УВЕДОМЛЕНИЯ',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textTertiary,
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  final opt = Options(
+                    title: 'Покупка и продажа',
+                    subtitle: '',
+                    notifyBuy: !(state.selectedOption?.notifyBuy ?? false),
+                    notifySell: state.selectedOption?.notifySell ?? true,
+                  );
+                  context.read<AddTickersBloc>().add(SelectOption(option: opt));
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: (state.selectedOption?.notifyBuy ?? false)
+                        ? AppColors.up.withValues(alpha: 0.06)
+                        : AppColors.elevated,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: (state.selectedOption?.notifyBuy ?? false)
+                          ? AppColors.up.withValues(alpha: 0.12)
+                          : AppColors.border,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Buy Signals',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: (state.selectedOption?.notifyBuy ?? false)
+                              ? AppColors.up
+                              : AppColors.textTertiary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        (state.selectedOption?.notifyBuy ?? false)
+                            ? 'Enabled'
+                            : 'Disabled',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: (state.selectedOption?.notifyBuy ?? false)
+                              ? AppColors.up
+                              : AppColors.textQuaternary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  final opt = Options(
+                    title: 'Покупка и продажа',
+                    subtitle: '',
+                    notifyBuy: state.selectedOption?.notifyBuy ?? true,
+                    notifySell: !(state.selectedOption?.notifySell ?? false),
+                  );
+                  context.read<AddTickersBloc>().add(SelectOption(option: opt));
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: (state.selectedOption?.notifySell ?? false)
+                        ? AppColors.down.withValues(alpha: 0.06)
+                        : AppColors.elevated,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: (state.selectedOption?.notifySell ?? false)
+                          ? AppColors.down.withValues(alpha: 0.12)
+                          : AppColors.border,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Sell Signals',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: (state.selectedOption?.notifySell ?? false)
+                              ? AppColors.down
+                              : AppColors.textTertiary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        (state.selectedOption?.notifySell ?? false)
+                            ? 'Enabled'
+                            : 'Disabled',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: (state.selectedOption?.notifySell ?? false)
+                              ? AppColors.down
+                              : AppColors.textQuaternary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // ── Submit ──
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton(
+            onPressed: canSubmit
+                ? () => context.read<AddTickersBloc>().add(
+                      AddNewTicker(
+                        symbol: widget.assets.symbol,
+                        timeframe: state.selectedTimeframe!.value,
+                        notifyBuy: state.selectedOption!.notifyBuy,
+                        notifySell: state.selectedOption!.notifySell,
+                      ),
+                    )
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  canSubmit ? AppColors.brand : AppColors.elevated,
+              foregroundColor: AppColors.background,
+              disabledBackgroundColor: AppColors.elevated,
+              disabledForegroundColor: AppColors.textQuaternary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              'Добавить ${widget.assets.symbol}${state.selectedTimeframe != null ? " · ${state.selectedTimeframe!.title}" : ""}',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildError(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Center(
+          child: Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.elevated,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 40),
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.down.withValues(alpha: 0.1),
+          ),
+          child: const Icon(Icons.error_outline, size: 32, color: AppColors.down),
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Не удалось загрузить',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton(
+            onPressed: () => context.read<AddTickersBloc>().add(
+              Start(symbol: widget.assets.symbol),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brand,
+              foregroundColor: AppColors.background,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            child: const Text('Попробовать снова'),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 }

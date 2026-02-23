@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -21,9 +22,7 @@ class _TermsOfUseScreenState extends State<TermsOfUseScreen> {
 
   Future<void> _initController() async {
     _controller = WebViewController()
-      ..setJavaScriptMode(
-        JavaScriptMode.unrestricted,
-      ) // Обязательно для работы скрипта
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (url) {
@@ -31,24 +30,35 @@ class _TermsOfUseScreenState extends State<TermsOfUseScreen> {
           },
         ),
       );
-
     await _controller.loadFlutterAsset('assets/html/terms.html');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Условия использования'),
+        title: const Text(
+          'Terms of Use',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
         centerTitle: true,
-        leading: const AutoLeadingButton(),
+        backgroundColor: AppColors.background,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          onPressed: () => AutoRouter.of(context).back(),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: AppColors.textSecondary,
+            size: 20,
+          ),
+        ),
       ),
-      body: Stack(
-        children: [
-          // Основной контент
-          WebViewWidget(controller: _controller),
-        ],
-      ),
+      body: WebViewWidget(controller: _controller),
     );
   }
 }

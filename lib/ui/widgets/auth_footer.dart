@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class AuthFooter extends StatelessWidget {
@@ -14,28 +15,32 @@ class AuthFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          firstText,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSecondary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        TextButton(
-          onPressed: onPressed,
-          child: Text(
-            secondText,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.bold,
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            firstText,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textTertiary,
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onPressed,
+            child: Text(
+              secondText,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.brand,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

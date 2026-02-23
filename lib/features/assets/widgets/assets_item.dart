@@ -1,7 +1,5 @@
-import 'dart:io';
-
 import 'package:aspiro_trade/repositories/assets/assets.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class AssetsItem extends StatelessWidget {
@@ -18,157 +16,119 @@ class AssetsItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
+    final isUp = asset.change24h.isNotEmpty && !asset.change24h.startsWith('-');
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: size.height * 0.08,
-            maxHeight: size.height * 0.4,
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(8.0),
-            width: double.infinity,
-
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            // ── Icon ──
+            Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.elevated,
+              ),
+              child: ClipOval(
+                child: Image.network(
+                  asset.logoUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Center(
+                    child: Text(
+                      asset.baseAsset.isNotEmpty ? asset.baseAsset[0] : '?',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            const SizedBox(width: 12),
+
+            // ── Name ──
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    asset.name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    asset.baseAsset,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Price + change ──
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Row(
-                  children: [
-                    Image.network(
-                      asset.logoUrl,
-                      height: size.height * 0.06,
-
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) {
-                          // Изображение загрузилось полностью
-                          return child;
-                        }
-
-                        return SizedBox(
-                          height: size.height * 0.06,
-                          child: Center(
-                            child: Platform.isIOS
-                                ? const CupertinoActivityIndicator() // Нативная "ромашка" iOS
-                                : CircularProgressIndicator(
-                                    // Нативное кольцо Android
-                                    value:
-                                        loadingProgress.expectedTotalBytes !=
-                                            null
-                                        ? loadingProgress
-                                                  .cumulativeBytesLoaded /
-                                              loadingProgress
-                                                  .expectedTotalBytes!
-                                        : null,
-                                  ),
-                          ),
-                        );
-                      },
-                      // Если ошибка загрузки
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Platform.isIOS
-                              ? CupertinoIcons.photo
-                              : Icons.broken_image_outlined,
-                          size: 40,
-                          color: Colors.grey.withValues(alpha: 0.5),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(width: 10),
-
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              asset.symbol,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(width: 7),
-                            Text(
-                              asset.baseAsset,
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                        asset.price.isNotEmpty
-                            ? Text(
-                                '\$${asset.formatPriceLogic(asset.price)}',
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: theme.colorScheme.onPrimary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              )
-                            : const Text('Нет данных'),
-                      ],
-                    ),
-                  ],
+                Text(
+                  asset.price.isNotEmpty
+                      ? '\$${asset.formatPriceLogic(asset.price)}'
+                      : '—',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-
-                Row(
-                  children: [
-                    asset.priceChangePercent.isNotEmpty
-                        ? Container(
-                            padding: const EdgeInsets.all(2),
-
-                            decoration: BoxDecoration(
-                              color: asset.priceChangePercent[0] == '-'
-                                  ? theme.colorScheme.error.withValues(
-                                      alpha: 0.18,
-                                    )
-                                  : theme.colorScheme.secondary.withValues(
-                                      alpha: 0.18,
-                                    ),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '${asset.formatPercent}%',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: asset.priceChangePercent[0] == '-'
-                                    ? theme.colorScheme.error.withValues(
-                                        alpha: 0.7,
-                                      )
-                                    : theme.colorScheme.secondary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )
-                        : const SizedBox(),
-                    const SizedBox(width: 10),
-
-                    ElevatedButton(
-                      onPressed: openDrawer,
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStatePropertyAll(
-                          theme.colorScheme.primary,
-                        ),
-                        minimumSize: const WidgetStatePropertyAll(Size(50, 50)),
-                      ),
-
-                      child: Icon(
-                        Platform.isIOS ? CupertinoIcons.add : Icons.add,
+                if (asset.priceChangePercent.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(top: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: isUp
+                          ? AppColors.up.withValues(alpha: 0.12)
+                          : AppColors.down.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${isUp ? '+' : ''}${asset.formatPriceLogic(asset.priceChangePercent)}%',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isUp ? AppColors.up : AppColors.down,
                       ),
                     ),
-                  ],
-                ),
+                  ),
               ],
             ),
-          ),
+            const SizedBox(width: 8),
+
+            // ── Add button ──
+            GestureDetector(
+              onTap: openDrawer,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.brand.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.add, size: 16, color: AppColors.brand),
+              ),
+            ),
+          ],
         ),
       ),
     );

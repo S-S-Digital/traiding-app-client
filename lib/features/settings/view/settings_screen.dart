@@ -1,17 +1,10 @@
-import 'dart:io';
-
-import 'package:aspiro_trade/features/privacy_policy/view/privacy_policy_screen.dart';
 import 'package:aspiro_trade/features/settings/bloc/settings_bloc.dart';
-import 'package:aspiro_trade/features/settings/models/models.dart';
 import 'package:aspiro_trade/features/settings/widgets/widgets.dart';
-import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/router/app_router.dart';
-import 'package:aspiro_trade/ui/widgets/base_app_bar.dart';
-import 'package:aspiro_trade/utils/utils.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage()
 class SettingsScreen extends StatefulWidget {
@@ -28,145 +21,313 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
   }
 
-  Future<void> _launchURL(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  final items = [
-    SettingsItems(
-      title: 'Настройки профиля',
-      subtitle: '',
-      switchValue: false,
-      isSwitch: false,
-    ),
-    SettingsItems(
-      title: 'Условия использования',
-      subtitle: '',
-      switchValue: false,
-      isSwitch: false,
-    ),
-    SettingsItems(
-      title: 'Политика конфиденциальности',
-      subtitle: '',
-      switchValue: false,
-      isSwitch: false,
-    ),
-    SettingsItems(
-      title: 'Подписка',
-      subtitle: '',
-      switchValue: false,
-      isSwitch: false,
-    ),
-    SettingsItems(
-      title: 'Выйти',
-      subtitle: '',
-      switchValue: false,
-      isSwitch: false,
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          const BaseAppBar(text: 'Настройки'),
-          const SliverToBoxAdapter(child: SizedBox(height: 20)),
-
-          BlocConsumer<SettingsBloc, SettingsState>(
-            listener: (context, state) {
-              if (state is SettingsFailure) {
-                if (state.error is AppException) {
-                  final error = state.error as AppException;
-                  context.handleException(error, context);
-                }
-              } else if (state is Close) {
-                AutoRouter.of(context).pushAndPopUntil(
-                  const LoginRoute(),
-                  predicate: (value) => false,
-                );
-              }
-            },
-            buildWhen: (previous, current) => current.isBuildable,
-            builder: (context, state) {
-              if (state is SettingsLoaded) {
-                return SliverToBoxAdapter(child: UserCard(users: state.users));
-              }
-              return const SliverToBoxAdapter();
-            },
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 30)),
-
-          SliverList.separated(
-            separatorBuilder: (context, index) => const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child: Divider(),
-            ),
-
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                child: SettingsItem(
-                  item: item,
-                  onTap: () {
-                    switch (index) {
-                      case 0:
-                        AutoRouter.of(context).push(const ProfileRoute());
-                        break;
-                      case 1:
-                        // AutoRouter.of(context).push(const TermsOfUseRoute());
-                        if (Platform.isIOS) {
-                          // Для Apple — только внешняя ссылка на их стандартный EULA
-                          _launchURL(
-                            'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
-                          );
-                        } else {
-                          // Для Android — ваш красивый локальный WebView
-                          context.router.push(const TermsOfUseRoute());
-                        }
-                        break;
-                      case 2:
-                        AutoRouter.of(context).push(const PrivacyPolicyRoute());
-                        break;
-                      case 3:
-                        AutoRouter.of(context).push(const SubscriptionRoute());
-                        break;
-                      case 4:
-                        showExitDialog(context, () {
-                          context.read<SettingsBloc>().add(Exit());
-                        });
-                    }
-                  },
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: BlocConsumer<SettingsBloc, SettingsState>(
+          listener: (context, state) {
+            if (state is SettingsFailure) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: AppColors.card,
+                  content: Text('Error: ${state.error}', style: const TextStyle(color: AppColors.down)),
                 ),
               );
-            },
-          ),
+            }
+            if (state is Close) {
+              context.router.replaceAll([const LoginRoute()]);
+            }
+          },
+          builder: (context, state) {
+            String email = '';
+            String name = 'User';
+            bool isPremium = false;
+            String premiumUntil = '';
+            String appVersion = '1.0.0';
 
-          const SliverToBoxAdapter(child: SizedBox(height: 70)),
+            if (state is SettingsLoaded) {
+              email = state.users.email;
+              name = state.users.email.split('@').first;
+              isPremium = state.users.isPremium;
+              premiumUntil = state.users.premiumUntilFormatted;
+              appVersion = state.appVersion;
+            }
 
-          BlocBuilder<SettingsBloc, SettingsState>(
-            builder: (context, state) {
-              if (state is SettingsLoaded) {
-                return SliverToBoxAdapter(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+
+                  // ── Profile Header ──
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Column(
+                      children: [
+                        // Avatar
+                        Container(
+                          width: 72, height: 72,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppColors.brand, Color(0xFF0D9B5A)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(36),
+                          ),
+                          child: Center(
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          name,
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          email,
+                          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                        ),
+                        if (isPremium) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.warning.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'PRO',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.warning),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // ── Plan Card ──
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1A2A1F), Color(0xFF162016)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.brand.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              isPremium ? 'Pro Plan' : 'Free Plan',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.brand.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                isPremium ? 'Active' : 'Upgrade',
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.brand),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (premiumUntil.isNotEmpty && premiumUntil != '-') ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Renews $premiumUntil',
+                            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ── Account Section ──
+                  _SettingsGroup(
+                    title: 'Account',
                     children: [
-                      Text('Версия: ${state.appVersion}'),
-                      Text('(сборка: ${state.build})'),
+                      _SettingsRow(
+                        icon: Icons.person_outline, iconColor: AppColors.brand,
+                        title: 'Edit Profile',
+                        onTap: () => context.router.push(const ProfileRoute()),
+                      ),
+                      _SettingsRow(
+                        icon: Icons.workspace_premium_outlined, iconColor: AppColors.warning,
+                        title: 'Subscription',
+                        onTap: () => context.router.push(const SubscriptionRoute()),
+                      ),
                     ],
                   ),
-                );
-              }
-              return const SliverToBoxAdapter();
-            },
+
+                  const SizedBox(height: 16),
+
+                  // ── Support Section ──
+                  _SettingsGroup(
+                    title: 'Support',
+                    children: [
+                      _SettingsRow(
+                        icon: Icons.description_outlined, iconColor: AppColors.info,
+                        title: 'Terms of Use',
+                        onTap: () => context.router.push(const TermsOfUseRoute()),
+                      ),
+                      _SettingsRow(
+                        icon: Icons.shield_outlined, iconColor: AppColors.purple,
+                        title: 'Privacy Policy',
+                        onTap: () => context.router.push(const PrivacyPolicyRoute()),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ── Sign Out ──
+                  _SettingsGroup(
+                    children: [
+                      _SettingsRow(
+                        icon: Icons.logout, iconColor: AppColors.down,
+                        title: 'Sign Out',
+                        titleColor: AppColors.down,
+                        showArrow: false,
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (_) => ExitDialog(
+                              confirm: () {
+                                context.read<SettingsBloc>().add(Exit());
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ── Version ──
+                  Text(
+                    'Aspiro Trade v$appVersion',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textQuaternary),
+                  ),
+                  const SizedBox(height: 100),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsGroup extends StatelessWidget {
+  const _SettingsGroup({this.title, required this.children});
+  final String? title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (title != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            child: Text(
+              title!,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textTertiary),
+            ),
           ),
-        ],
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              ...children.asMap().entries.map((entry) {
+                return Column(
+                  children: [
+                    entry.value,
+                    if (entry.key < children.length - 1)
+                      const Divider(height: 1, color: AppColors.border, indent: 52, endIndent: 16),
+                  ],
+                );
+              }),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  const _SettingsRow({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.onTap,
+    this.titleColor,
+    this.showArrow = true,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final Color? titleColor;
+  final bool showArrow;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 32, height: 32,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 18, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: titleColor ?? AppColors.textPrimary),
+              ),
+            ),
+            if (showArrow)
+              const Icon(Icons.chevron_right, size: 20, color: AppColors.textQuaternary),
+          ],
+        ),
       ),
     );
   }

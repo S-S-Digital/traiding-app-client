@@ -1,18 +1,18 @@
-import 'package:aspiro_trade/ui/ui.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class PlatformProgressIndicator extends StatelessWidget {
-  const PlatformProgressIndicator({
-    super.key,
-  });
+  const PlatformProgressIndicator({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    if (theme.isCupertino) {
-      return const CupertinoActivityIndicator();
-    }
-    return const CircularProgressIndicator();
+    return const SizedBox(
+      width: 32,
+      height: 32,
+      child: CircularProgressIndicator(
+        strokeWidth: 2.5,
+        color: AppColors.brand,
+      ),
+    );
   }
 }

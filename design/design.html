@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aspiro Trade — Complete App Design</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;550;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   ASPIRO TRADE — Bybit-Inspired Dark Theme
+   Brand: #20B26C (Green)
+   ═══════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  background:#0B0E11;color:#EAECEF;
+  -webkit-font-smoothing:antialiased;
+}
+.canvas{display:flex;flex-wrap:wrap;gap:72px;padding:72px;justify-content:center}
+.frame-wrap{display:flex;flex-direction:column;align-items:center;gap:18px}
+.frame-label{font-size:11px;font-weight:600;color:#474D57;text-transform:uppercase;letter-spacing:1.8px}
+
+/* ═══ iPhone 15 Pro Frame ═══ */
+.phone{
+  width:393px;height:852px;background:#0B0E11;
+  border-radius:50px;overflow:hidden;position:relative;
+  border:1px solid rgba(255,255,255,0.06);
+  box-shadow:0 0 0 1px rgba(255,255,255,0.03),0 40px 80px -20px rgba(0,0,0,0.9);
+}
+.phone::before{content:'';position:absolute;top:12px;left:50%;transform:translateX(-50%);width:126px;height:37px;background:#000;border-radius:20px;z-index:200}
+.statusbar{position:absolute;top:0;left:0;right:0;height:54px;z-index:150;display:flex;align-items:flex-end;justify-content:space-between;padding:0 32px 4px}
+.statusbar-time{font-size:15px;font-weight:600;letter-spacing:-0.2px;color:#fff}
+.statusbar-right{display:flex;align-items:center;gap:5px}
+.screen{width:100%;height:100%;overflow-y:auto;overflow-x:hidden;background:#0B0E11;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+.screen-pad{padding-top:59px}
+.home-indicator{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:rgba(255,255,255,0.15);z-index:200}
+
+/* ═══ Status bar icons ═══ */
+.sb-icons{display:flex;align-items:center;gap:5px}
+
+/* ═══ Tab Bar ═══ */
+.tab-bar{
+  position:absolute;bottom:0;left:0;right:0;height:83px;z-index:100;
+  background:rgba(11,14,17,0.92);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-top:1px solid #1E2329;display:flex;align-items:flex-start;justify-content:space-around;padding:8px 4px 0;
+}
+.tab-item{display:flex;flex-direction:column;align-items:center;gap:3px;width:60px;padding-top:2px}
+.tab-item svg{opacity:0.35}
+.tab-item span{font-size:10px;font-weight:500;color:rgba(234,236,239,0.35);letter-spacing:0.1px}
+.tab-item.on svg{opacity:1}
+.tab-item.on span{color:#20B26C;font-weight:600}
+
+/* ═══ DESIGN TOKENS ═══ */
+:root{
+  --bg:#0B0E11;--card:#181A20;--card2:#1E2329;--border:#2B3139;
+  --brand:#20B26C;--brand-dim:rgba(32,178,108,0.12);--brand-light:#2DC77A;
+  --up:#20B26C;--down:#EF454A;--warn:#F0B90B;
+  --t1:#EAECEF;--t2:#848E9C;--t3:#5E6673;--t4:#474D57;
+}
+.c-up{color:var(--up)}.c-down{color:var(--down)}.c-brand{color:var(--brand)}.c-warn{color:var(--warn)}
+
+/* ═══ SHARED COMPONENTS ═══ */
+.lg-title{font-size:28px;font-weight:700;letter-spacing:-0.4px;line-height:34px;color:var(--t1)}
+.md-title{font-size:20px;font-weight:700;letter-spacing:-0.3px;color:var(--t1)}
+
+/* Pill */
+.pill{display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;letter-spacing:0.3px}
+.pill-long{background:rgba(32,178,108,0.12);color:#20B26C}
+.pill-short{background:rgba(239,69,74,0.12);color:#EF454A}
+.pill-brand{background:rgba(32,178,108,0.12);color:#2DC77A}
+.pill-warn{background:rgba(240,185,11,0.12);color:#F0B90B}
+.pill-neutral{background:rgba(132,142,156,0.12);color:#848E9C}
+
+/* Button */
+.btn{
+  height:48px;border-radius:8px;border:none;font-size:16px;font-weight:600;letter-spacing:-0.1px;
+  display:flex;align-items:center;justify-content:center;width:100%;cursor:pointer;color:#0B0E11;background:#20B26C;
+}
+.btn:hover{background:#2DC77A}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--t1)}
+.btn-gold{background:linear-gradient(135deg,#F0B90B,#FCD535);color:#0B0E11}
+.btn-danger{background:transparent;border:1px solid #EF454A;color:#EF454A}
+
+/* Field */
+.field{
+  height:48px;border-radius:8px;background:var(--card);border:1px solid var(--border);
+  padding:0 14px;font-size:15px;color:var(--t1);width:100%;font-family:inherit;outline:none;
+}
+.field:focus{border-color:var(--brand)}
+.field::placeholder{color:var(--t3)}
+
+/* Search */
+.search-bar{
+  height:40px;border-radius:8px;background:var(--card);border:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;padding:0 12px;margin:0 16px;
+}
+.search-bar svg{flex-shrink:0;opacity:0.4}
+.search-bar input{border:none;background:none;outline:none;font-size:14px;color:var(--t1);font-family:inherit;width:100%}
+.search-bar input::placeholder{color:var(--t3)}
+
+/* Segmented */
+.segmented{display:flex;padding:2px;background:var(--card);border-radius:8px;margin:0 16px;border:1px solid var(--border)}
+.seg-item{flex:1;height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;border-radius:6px;color:var(--t3);letter-spacing:-0.05px}
+.seg-item.on{background:var(--card2);color:var(--t1)}
+
+/* Progress */
+.progress{height:4px;border-radius:2px;background:var(--card2);overflow:hidden}
+.progress-fill{height:100%;border-radius:2px}
+.progress-up{background:var(--up)}
+.progress-down{background:var(--down)}
+
+/* Card */
+.card{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden}
+
+svg{display:inline-block;vertical-align:middle}
+
+/* ═══ ASPIRO TRADE LOGO SVG ═══ */
+.logo-icon{display:flex;align-items:center;justify-content:center}
+
+/* ═══════════════════════════════════════════
+   SCREEN STYLES
+   ═══════════════════════════════════════════ */
+
+/* SPLASH */
+.splash{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:var(--bg);position:relative}
+.splash-glow{position:absolute;width:360px;height:360px;background:radial-gradient(circle,rgba(32,178,108,0.10) 0%,rgba(32,178,108,0.04) 40%,transparent 70%);border-radius:50%}
+.splash-logo{z-index:1;margin-bottom:20px;width:100px;height:100px;border-radius:28px;background:rgba(32,178,108,0.06);display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(32,178,108,0.15);box-shadow:0 0 40px rgba(32,178,108,0.15),0 0 80px rgba(32,178,108,0.06),0 8px 32px rgba(0,0,0,0.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.splash-name{font-size:26px;font-weight:800;letter-spacing:-0.6px;z-index:1;color:#EAECEF}
+.splash-name em{font-style:normal;color:#20B26C}
+.splash-sub{font-size:14px;color:var(--t3);margin-top:4px;z-index:1}
+
+/* ONBOARDING */
+.ob{display:flex;flex-direction:column;height:100%;padding-bottom:34px}
+.ob-vis{flex:1;display:flex;align-items:center;justify-content:center}
+.ob-hex{width:180px;height:180px;border-radius:50%;background:rgba(32,178,108,0.04);border:1px solid rgba(32,178,108,0.08);display:flex;align-items:center;justify-content:center}
+.ob-hex-inner{width:110px;height:110px;border-radius:50%;background:rgba(32,178,108,0.06);border:1px solid rgba(32,178,108,0.1);display:flex;align-items:center;justify-content:center}
+.ob-bottom{padding:0 24px}
+.ob-dots{display:flex;gap:8px;justify-content:center;margin-bottom:24px}
+.ob-dot{width:6px;height:6px;border-radius:3px;background:var(--card2)}
+.ob-dot.on{width:24px;background:var(--brand)}
+.ob-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;line-height:32px;text-align:center;margin-bottom:8px;color:var(--t1)}
+.ob-desc{font-size:15px;color:var(--t2);text-align:center;line-height:22px;margin-bottom:28px}
+
+/* AUTH */
+.auth{display:flex;flex-direction:column;height:100%;padding:20px 24px 34px}
+.auth-top{text-align:center;margin-bottom:36px;padding-top:8px}
+.auth-logo{width:64px;height:64px;border-radius:18px;background:rgba(32,178,108,0.06);border:1.5px solid rgba(32,178,108,0.12);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(32,178,108,0.1),0 4px 20px rgba(0,0,0,0.3)}
+.auth-title{font-size:22px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px;color:var(--t1)}
+.auth-sub{font-size:14px;color:var(--t3)}
+.auth-form{display:flex;flex-direction:column;gap:12px;flex:1}
+.field-label{font-size:13px;font-weight:500;color:var(--t2);margin-bottom:5px}
+.field-group{display:flex;flex-direction:column}
+.field-link{font-size:13px;color:var(--brand);text-align:right;margin-top:6px;font-weight:500}
+.or-divider{display:flex;align-items:center;gap:16px;margin:8px 0}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.or-divider span{font-size:13px;color:var(--t3);font-weight:500}
+.social-row{display:flex;gap:10px}
+.social-btn{flex:1;height:48px;border-radius:8px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:500;color:var(--t1)}
+.auth-bottom{text-align:center;padding-top:16px;margin-top:auto}
+.auth-bottom span{font-size:14px;color:var(--t3)}
+.auth-bottom a{color:var(--brand);text-decoration:none;font-weight:600}
+
+/* DASHBOARD */
+.dash-head{padding:6px 16px 0;display:flex;justify-content:space-between;align-items:center}
+.dash-head-left{display:flex;align-items:center;gap:10px}
+.dash-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#20B26C,#2DC77A);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0B0E11}
+.dash-greeting{font-size:12px;color:var(--t3)}
+.dash-name{font-size:16px;font-weight:600;color:var(--t1);margin-top:1px}
+.dash-actions{display:flex;gap:8px}
+.dash-icon-btn{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative}
+.dash-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#EF454A;border:2px solid var(--bg)}
+
+/* Perf Card */
+.perf-card{margin:16px 16px 0;background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border)}
+.perf-label{font-size:12px;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+.perf-row{display:flex;align-items:baseline;gap:10px;margin-top:4px}
+.perf-value{font-size:36px;font-weight:800;letter-spacing:-1.5px;line-height:1;color:var(--t1)}
+.perf-stats{display:flex;gap:0;margin-top:16px}
+.perf-stat{flex:1;text-align:center;position:relative}
+.perf-stat+.perf-stat::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:1px;background:var(--border)}
+.perf-stat-val{font-size:20px;font-weight:700;letter-spacing:-0.4px}
+.perf-stat-lbl{font-size:10px;color:var(--t3);margin-top:2px;font-weight:600;letter-spacing:0.4px;text-transform:uppercase}
+
+/* Section */
+.sec-head{display:flex;justify-content:space-between;align-items:center;padding:20px 16px 10px}
+.sec-title{font-size:18px;font-weight:600;color:var(--t1)}
+.sec-link{font-size:13px;color:var(--brand);font-weight:500}
+
+/* Sig Row */
+.sig-row{display:flex;align-items:center;gap:12px;padding:10px 16px}
+.sig-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.sig-icon-btc{background:rgba(247,147,26,0.1);color:#F7931A}
+.sig-icon-eth{background:rgba(98,126,234,0.1);color:#627EEA}
+.sig-icon-sol{background:rgba(153,69,255,0.1);color:#9945FF}
+.sig-icon-bnb{background:rgba(243,186,47,0.1);color:#F3BA2F}
+.sig-icon-xrp{background:rgba(255,255,255,0.06);color:#fff}
+.sig-icon-ada{background:rgba(51,117,233,0.1);color:#3375E9}
+.sig-icon-doge{background:rgba(196,164,57,0.1);color:#C2A633}
+.sig-icon-avax{background:rgba(232,65,66,0.1);color:#E84142}
+.sig-icon-dot{background:rgba(230,0,122,0.1);color:#E6007A}
+.sig-icon-matic{background:rgba(130,71,229,0.1);color:#8247E5}
+.sig-icon-link{background:rgba(43,87,213,0.1);color:#2B57D5}
+.sig-icon-atom{background:rgba(108,108,180,0.1);color:#6C6CB4}
+
+.sig-body{flex:1;min-width:0}
+.sig-top{display:flex;align-items:center;gap:6px}
+.sig-sym{font-size:14px;font-weight:600;color:var(--t1)}
+.sig-tf{font-size:11px;font-weight:500;color:var(--t3);background:var(--card2);padding:1px 5px;border-radius:3px}
+.sig-meta{font-size:12px;color:var(--t3);margin-top:2px}
+.sig-right{text-align:right;flex-shrink:0}
+.sig-price{font-size:14px;font-weight:600;font-feature-settings:'tnum' 1}
+.sig-chg{font-size:12px;font-weight:500;margin-top:1px;font-feature-settings:'tnum' 1}
+
+/* Market */
+.mkt-row{display:flex;align-items:center;gap:12px;padding:12px 16px}
+.mkt-row+.mkt-row{border-top:1px solid var(--border)}
+.mkt-body{flex:1;min-width:0}
+.mkt-name{font-size:14px;font-weight:600;color:var(--t1)}
+.mkt-pair{font-size:12px;color:var(--t3)}
+.mkt-right{text-align:right;flex-shrink:0}
+.mkt-price{font-size:14px;font-weight:600;color:var(--t1);font-feature-settings:'tnum' 1}
+.mkt-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;margin-top:3px;font-feature-settings:'tnum' 1}
+.mkt-badge-up{background:rgba(32,178,108,0.12);color:#20B26C}
+.mkt-badge-down{background:rgba(239,69,74,0.12);color:#EF454A}
+
+/* Signal Card */
+.sig-card{margin:0 16px 10px;background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)}
+.sig-card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sig-card-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+.sig-card-body{flex:1}
+.sig-card-sym{font-size:16px;font-weight:600;color:var(--t1)}
+.sig-card-meta{display:flex;align-items:center;gap:6px;margin-top:2px}
+.sig-card-right{text-align:right}
+.sig-card-pnl{font-size:18px;font-weight:700;letter-spacing:-0.3px}
+.sig-card-pnl-sub{font-size:11px;color:var(--t3);margin-top:1px}
+.sig-card-progress{margin-bottom:12px}
+.sig-card-progress-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500;font-feature-settings:'tnum' 1}
+.sig-card-grid{display:flex;gap:0}
+.sig-card-stat{flex:1;text-align:center;padding:8px 0;background:var(--card2);position:relative}
+.sig-card-stat:first-child{border-radius:6px 0 0 6px}
+.sig-card-stat:last-child{border-radius:0 6px 6px 0}
+.sig-card-stat+.sig-card-stat{border-left:1px solid var(--border)}
+.sig-card-stat-lbl{font-size:10px;font-weight:600;color:var(--t3);letter-spacing:0.3px;text-transform:uppercase;margin-bottom:2px}
+.sig-card-stat-val{font-size:14px;font-weight:600;font-feature-settings:'tnum' 1;color:var(--t1)}
+
+/* Levels */
+.levels{margin:0 16px 12px;background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.level-row{display:flex;align-items:center;padding:12px 14px}
+.level-row+.level-row{border-top:1px solid var(--border)}
+.level-dot{width:8px;height:8px;border-radius:50%;margin-right:10px;flex-shrink:0}
+.level-label{flex:1;font-size:14px;color:var(--t2)}
+.level-val{font-size:14px;font-weight:600;font-feature-settings:'tnum' 1;color:var(--t1)}
+
+/* Indicator Grid */
+.ind-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px}
+.ind-card{background:var(--card);border-radius:10px;padding:12px 14px;border:1px solid var(--border)}
+.ind-name{font-size:10px;font-weight:600;color:var(--t3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px}
+.ind-val{font-size:18px;font-weight:700;letter-spacing:-0.3px;color:var(--t1)}
+.ind-sub{font-size:11px;color:var(--t2);margin-top:2px}
+
+/* Watchlist */
+.wl-item{display:flex;align-items:center;gap:12px;padding:12px 16px}
+.wl-item+.wl-item{border-top:1px solid var(--border)}
+.wl-body{flex:1;min-width:0}
+.wl-sym{font-size:14px;font-weight:600;color:var(--t1)}
+.wl-sub{font-size:12px;color:var(--t3);margin-top:1px}
+.wl-toggles{display:flex;gap:6px;flex-shrink:0}
+.wl-pill{padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:0.2px}
+.wl-pill-buy{background:rgba(32,178,108,0.12);color:#20B26C}
+.wl-pill-sell{background:rgba(239,69,74,0.12);color:#EF454A}
+.wl-pill-off{background:var(--card2);color:var(--t4)}
+
+/* Profile */
+.prof-head{display:flex;flex-direction:column;align-items:center;padding:12px 20px 20px}
+.prof-av{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#20B26C,#2DC77A);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#0B0E11;margin-bottom:10px}
+.prof-name{font-size:20px;font-weight:700;color:var(--t1);margin-bottom:2px}
+.prof-email{font-size:13px;color:var(--t3)}
+.prof-badge{margin-top:8px;display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(32,178,108,0.1);color:#20B26C;border:1px solid rgba(32,178,108,0.2);text-transform:uppercase;letter-spacing:0.5px}
+
+/* Plan Card */
+.plan-card{margin:0 16px 16px;background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)}
+.plan-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.plan-title{font-size:15px;font-weight:600;color:var(--t1)}
+.plan-status{font-size:12px;font-weight:600;color:#20B26C}
+.plan-sub{font-size:12px;color:var(--t3);margin-bottom:10px}
+.plan-stats{display:flex}
+.plan-stat{flex:1;text-align:center;padding:10px 0;position:relative}
+.plan-stat+.plan-stat::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:1px;background:var(--border)}
+.plan-stat-val{font-size:14px;font-weight:700;color:var(--t1)}
+.plan-stat-lbl{font-size:10px;color:var(--t3);margin-top:1px;font-weight:500}
+
+/* Settings */
+.set-group{margin:0 16px 12px;background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.set-group-label{padding:0 16px;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.5px}
+.set-row{display:flex;align-items:center;gap:12px;padding:12px 14px;min-height:44px}
+.set-row+.set-row{border-top:1px solid var(--border)}
+.set-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.set-text{flex:1;font-size:15px;color:var(--t1)}
+.set-val{font-size:14px;color:var(--t3)}
+.set-chevron{opacity:0.3}
+.set-toggle{width:48px;height:28px;border-radius:14px;position:relative;flex-shrink:0}
+.set-toggle-off{background:var(--card2);border:1px solid var(--border)}
+.set-toggle-on{background:var(--brand)}
+.set-toggle::after{content:'';position:absolute;top:2px;width:24px;height:24px;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.set-toggle-off::after{left:2px}
+.set-toggle-on::after{right:2px}
+
+/* Paywall */
+.pw{padding:0 20px}
+.pw-hero{text-align:center;padding:12px 0 20px}
+.pw-crown{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#20B26C,#2DC77A);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 8px 24px rgba(32,178,108,0.2)}
+.pw-title{font-size:24px;font-weight:700;letter-spacing:-0.4px;margin-bottom:4px;color:var(--t1)}
+.pw-title em{font-style:normal;color:#20B26C}
+.pw-sub{font-size:14px;color:var(--t2);line-height:20px}
+.pw-plans{display:flex;gap:8px;margin-bottom:16px}
+.pw-plan{flex:1;padding:14px 10px;background:var(--card);border-radius:10px;text-align:center;border:2px solid transparent;position:relative}
+.pw-plan.on{border-color:var(--brand);background:rgba(32,178,108,0.04)}
+.pw-plan-pop{position:absolute;top:-10px;left:50%;transform:translateX(-50%);padding:2px 10px;border-radius:20px;background:var(--brand);color:#0B0E11;font-size:9px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;white-space:nowrap}
+.pw-plan-dur{font-size:12px;color:var(--t2);margin-bottom:2px}
+.pw-plan-price{font-size:20px;font-weight:700;color:var(--t1)}
+.pw-plan-period{font-size:11px;color:var(--t3)}
+.pw-plan-save{font-size:10px;color:var(--brand);font-weight:600;margin-top:3px}
+.pw-feature{display:flex;align-items:center;gap:10px;padding:7px 0}
+.pw-check{width:20px;height:20px;border-radius:50%;background:rgba(32,178,108,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pw-feature-text{font-size:14px;color:var(--t2);line-height:18px}
+.pw-feature-text strong{color:var(--t1);font-weight:600}
+
+/* Notifications */
+.notif{display:flex;gap:12px;padding:12px 16px}
+.notif+.notif{border-top:1px solid var(--border)}
+.notif-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.notif-body{flex:1;min-width:0}
+.notif-title{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:1px}
+.notif-text{font-size:12px;color:var(--t2);line-height:16px}
+.notif-time{font-size:11px;color:var(--t4);margin-top:2px}
+.notif-unread{width:8px;height:8px;border-radius:50%;background:var(--brand);flex-shrink:0;margin-top:4px}
+
+/* Sheet */
+.sheet{background:var(--card);border-radius:16px 16px 0 0;padding:10px 20px 34px;min-height:580px}
+.sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--card2);margin:0 auto 14px}
+.sheet-title{font-size:18px;font-weight:700;margin-bottom:14px;color:var(--t1)}
+.sheet-result{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;margin-bottom:6px}
+.sheet-result.on{background:rgba(32,178,108,0.06);border:1px solid rgba(32,178,108,0.15)}
+.sheet-result:not(.on){background:var(--card2);border:1px solid transparent}
+.sheet-result-body{flex:1}
+.sheet-result-sym{font-size:14px;font-weight:600;color:var(--t1)}
+.sheet-result-pair{font-size:12px;color:var(--t3)}
+.sheet-result-check{font-size:12px;color:var(--brand);font-weight:600}
+.sheet-section{font-size:12px;font-weight:600;color:var(--t3);margin:14px 0 8px;text-transform:uppercase;letter-spacing:0.3px}
+.sheet-chips{display:flex;gap:6px;flex-wrap:wrap}
+.sheet-chip{padding:7px 14px;border-radius:6px;font-size:13px;font-weight:500;background:var(--card2);color:var(--t3);border:1px solid var(--border)}
+.sheet-chip.on{background:rgba(32,178,108,0.1);color:var(--brand);border-color:rgba(32,178,108,0.3)}
+.sheet-notify-row{display:flex;gap:8px;margin-top:4px}
+.sheet-notify{flex:1;padding:12px;border-radius:10px;text-align:center}
+
+/* Det */
+.det-nav{display:flex;align-items:center;gap:10px;padding:6px 16px 10px}
+.det-back{width:32px;height:32px;border-radius:8px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.det-nav-title{font-size:16px;font-weight:600;flex:1;color:var(--t1)}
+
+/* OTP */
+.otp-row{display:flex;gap:10px;justify-content:center;margin:20px 0}
+.otp-box{width:48px;height:56px;border-radius:8px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--t1)}
+.otp-box.filled{border-color:var(--brand)}
+
+/* Empty State */
+.empty-state{display:flex;flex-direction:column;align-items:center;padding:60px 40px;text-align:center}
+.empty-icon{width:80px;height:80px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.empty-title{font-size:18px;font-weight:600;color:var(--t1);margin-bottom:6px}
+.empty-desc{font-size:14px;color:var(--t3);line-height:20px;margin-bottom:20px}
+
+/* Referral */
+.ref-card{margin:0 16px;background:linear-gradient(135deg,rgba(32,178,108,0.08),rgba(32,178,108,0.02));border:1px solid rgba(32,178,108,0.15);border-radius:12px;padding:20px;text-align:center}
+.ref-code{margin:12px 0;padding:12px;background:var(--card);border:1px dashed var(--border);border-radius:8px;font-size:22px;font-weight:800;letter-spacing:4px;color:var(--brand)}
+
+.footer-note{text-align:center;padding:14px;font-size:11px;color:var(--t4)}
+
+/* Filter Chips */
+.filter-row{display:flex;gap:8px;padding:0 16px;overflow-x:auto;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-chip{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;white-space:nowrap;background:var(--card);border:1px solid var(--border);color:var(--t3)}
+.filter-chip.on{background:rgba(32,178,108,0.1);color:var(--brand);border-color:rgba(32,178,108,0.3)}
+
+/* Stats Bar */
+.stats-bar{display:flex;gap:8px;padding:0 16px;margin-bottom:16px}
+.stat-box{flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.stat-box-val{font-size:20px;font-weight:700;letter-spacing:-0.4px}
+.stat-box-lbl{font-size:10px;color:var(--t3);font-weight:600;letter-spacing:0.3px;text-transform:uppercase;margin-top:2px}
+
+/* Loading Skeleton */
+.skeleton{background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);background-size:200% 100%;border-radius:6px;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+</style>
+</head>
+<body>
+
+<div class="canvas">
+
+<!-- ════════════════════════════════════════
+     01 — SPLASH
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">01 · Splash</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen">
+      <div class="splash">
+        <div class="splash-glow"></div>
+        <div class="splash-logo">
+          <img src="logo.png" style="width:68px;height:68px;object-fit:contain;border-radius:6px">
+        </div>
+        <div class="splash-name">Aspiro <em>Trade</em></div>
+        <div class="splash-sub">Smart Trading Signals</div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     02 — ONBOARDING 1
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">02 · Onboarding 1</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="ob">
+        <div class="ob-vis">
+          <div class="ob-hex"><div class="ob-hex-inner">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M6 36L18 18L28 28L42 12" stroke="#20B26C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 12H42V22" stroke="#20B26C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div></div>
+        </div>
+        <div class="ob-bottom">
+          <div class="ob-dots"><div class="ob-dot on"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
+          <h2 class="ob-title">Algorithmic<br>Trading Signals</h2>
+          <p class="ob-desc">Professional BUY & SELL signals powered by quantitative analysis, delivered in real time.</p>
+          <button class="btn">Continue</button>
+          <div style="text-align:center;padding-top:14px"><span style="font-size:14px;color:var(--t3)">Skip</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     03 — ONBOARDING 2
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">03 · Onboarding 2</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="ob">
+        <div class="ob-vis">
+          <div class="ob-hex"><div class="ob-hex-inner">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M24 6V42" stroke="#20B26C" stroke-width="3" stroke-linecap="round"/><path d="M24 6L30 14H18L24 6Z" fill="#20B26C"/><path d="M10 24H38" stroke="#20B26C" stroke-width="3" stroke-linecap="round" opacity=".3"/><path d="M10 32H38" stroke="#20B26C" stroke-width="3" stroke-linecap="round" opacity=".15"/></svg>
+          </div></div>
+        </div>
+        <div class="ob-bottom">
+          <div class="ob-dots"><div class="ob-dot"></div><div class="ob-dot on"></div><div class="ob-dot"></div></div>
+          <h2 class="ob-title">Instant<br>Push Alerts</h2>
+          <p class="ob-desc">Build your watchlist and get notified the moment a new trading opportunity appears.</p>
+          <button class="btn">Continue</button>
+          <div style="text-align:center;padding-top:14px"><span style="font-size:14px;color:var(--t3)">Skip</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     04 — ONBOARDING 3
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">04 · Onboarding 3</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="ob">
+        <div class="ob-vis">
+          <div class="ob-hex"><div class="ob-hex-inner">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="14" stroke="#20B26C" stroke-width="3"/><path d="M24 16V24L30 28" stroke="#20B26C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div></div>
+        </div>
+        <div class="ob-bottom">
+          <div class="ob-dots"><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot on"></div></div>
+          <h2 class="ob-title">Track & Analyze<br>Performance</h2>
+          <p class="ob-desc">Monitor win rates, profit/loss metrics, and signal history to sharpen your edge.</p>
+          <button class="btn">Get Started</button>
+        </div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     05 — SIGN IN
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">05 · Sign In</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="auth">
+        <div class="auth-top">
+          <div class="auth-logo"><img src="logo.png" style="width:44px;height:44px;object-fit:contain;border-radius:4px"></div>
+          <h1 class="auth-title">Welcome back</h1>
+          <p class="auth-sub">Sign in to Aspiro Trade</p>
+        </div>
+        <div class="auth-form">
+          <div class="field-group"><label class="field-label">Email</label><input type="email" class="field" placeholder="you@email.com"></div>
+          <div class="field-group"><label class="field-label">Password</label><input type="password" class="field" placeholder="Enter password" value="••••••••"></div>
+          <div class="field-link">Forgot password?</div>
+          <button class="btn" style="margin-top:8px">Sign In</button>
+          <div class="or-divider"><span>or</span></div>
+          <div class="social-row">
+            <div class="social-btn"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M15.24 9.14c0-.46-.04-.9-.12-1.33H9v2.62h3.5c-.16.82-.62 1.5-1.3 1.96v1.6h2.1c1.23-1.13 1.94-2.8 1.94-4.85z" fill="#4285F4"/><path d="M9 16c1.76 0 3.23-.58 4.3-1.58l-2.1-1.6c-.58.39-1.33.62-2.2.62-1.7 0-3.13-1.14-3.64-2.68H3.18v1.66A6.49 6.49 0 009 16z" fill="#34A853"/><path d="M5.36 10.76c-.14-.39-.2-.82-.2-1.26s.07-.87.2-1.26V6.58H3.18A6.49 6.49 0 002.5 9.5c0 1.05.25 2.05.68 2.92l2.18-1.66z" fill="#FBBC05"/><path d="M9 5.32c.96 0 1.81.33 2.49.97l1.86-1.86C12.22 3.36 10.76 2.5 9 2.5A6.49 6.49 0 003.18 6.58l2.18 1.66C5.87 6.46 7.3 5.32 9 5.32z" fill="#EA4335"/></svg>Google</div>
+            <div class="social-btn"><svg width="16" height="18" viewBox="0 0 16 18" fill="#fff"><path d="M13.32 9.5c-.02-2.04 1.66-3.02 1.74-3.07-1.02-1.5-2.6-1.7-3.14-1.72-1.31-.14-2.6.78-3.27.78-.68 0-1.72-.77-2.84-.75a4.17 4.17 0 00-3.52 2.15C.7 9.73 1.72 13.5 3.27 15.6c.76 1.03 1.65 2.17 2.81 2.13 1.14-.05 1.57-.73 2.94-.73 1.36 0 1.75.73 2.94.7 1.22-.02 1.98-1.03 2.72-2.07.88-1.25 1.23-2.48 1.24-2.55-.03-.01-2.38-.92-2.4-3.58zm-2.25-6.58c.6-.77 1.02-1.8.9-2.86-.87.04-1.97.62-2.6 1.37-.55.65-1.06 1.74-.93 2.75.98.08 1.99-.5 2.63-1.26z"/></svg>Apple</div>
+          </div>
+          <div class="auth-bottom"><span>No account? </span><a href="#">Create one</a></div>
+        </div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     06 — SIGN UP
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">06 · Sign Up</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="auth">
+        <div class="auth-top">
+          <div class="auth-logo"><img src="logo.png" style="width:44px;height:44px;object-fit:contain;border-radius:4px"></div>
+          <h1 class="auth-title">Create account</h1>
+          <p class="auth-sub">Join Aspiro Trade today</p>
+        </div>
+        <div class="auth-form">
+          <div class="field-group"><label class="field-label">Full Name</label><input type="text" class="field" placeholder="Your name"></div>
+          <div class="field-group"><label class="field-label">Email</label><input type="email" class="field" placeholder="you@email.com"></div>
+          <div class="field-group"><label class="field-label">Password</label><input type="password" class="field" placeholder="Minimum 8 characters"></div>
+          <div style="display:flex;gap:8px;align-items:flex-start;margin-top:4px">
+            <div style="width:18px;height:18px;border-radius:4px;background:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px"><svg width="10" height="7" viewBox="0 0 10 7" fill="none"><path d="M1 3L3.5 5.5L9 1" stroke="#0B0E11" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span style="font-size:12px;color:var(--t2);line-height:1.4">I agree to the <span style="color:var(--brand);font-weight:500">Terms of Service</span> and <span style="color:var(--brand);font-weight:500">Privacy Policy</span></span>
+          </div>
+          <button class="btn" style="margin-top:12px">Create Account</button>
+          <div class="or-divider"><span>or</span></div>
+          <div class="social-row">
+            <div class="social-btn"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M15.24 9.14c0-.46-.04-.9-.12-1.33H9v2.62h3.5c-.16.82-.62 1.5-1.3 1.96v1.6h2.1c1.23-1.13 1.94-2.8 1.94-4.85z" fill="#4285F4"/><path d="M9 16c1.76 0 3.23-.58 4.3-1.58l-2.1-1.6c-.58.39-1.33.62-2.2.62-1.7 0-3.13-1.14-3.64-2.68H3.18v1.66A6.49 6.49 0 009 16z" fill="#34A853"/><path d="M5.36 10.76c-.14-.39-.2-.82-.2-1.26s.07-.87.2-1.26V6.58H3.18A6.49 6.49 0 002.5 9.5c0 1.05.25 2.05.68 2.92l2.18-1.66z" fill="#FBBC05"/><path d="M9 5.32c.96 0 1.81.33 2.49.97l1.86-1.86C12.22 3.36 10.76 2.5 9 2.5A6.49 6.49 0 003.18 6.58l2.18 1.66C5.87 6.46 7.3 5.32 9 5.32z" fill="#EA4335"/></svg>Google</div>
+            <div class="social-btn"><svg width="16" height="18" viewBox="0 0 16 18" fill="#fff"><path d="M13.32 9.5c-.02-2.04 1.66-3.02 1.74-3.07-1.02-1.5-2.6-1.7-3.14-1.72-1.31-.14-2.6.78-3.27.78-.68 0-1.72-.77-2.84-.75a4.17 4.17 0 00-3.52 2.15C.7 9.73 1.72 13.5 3.27 15.6c.76 1.03 1.65 2.17 2.81 2.13 1.14-.05 1.57-.73 2.94-.73 1.36 0 1.75.73 2.94.7 1.22-.02 1.98-1.03 2.72-2.07.88-1.25 1.23-2.48 1.24-2.55-.03-.01-2.38-.92-2.4-3.58zm-2.25-6.58c.6-.77 1.02-1.8.9-2.86-.87.04-1.97.62-2.6 1.37-.55.65-1.06 1.74-.93 2.75.98.08 1.99-.5 2.63-1.26z"/></svg>Apple</div>
+          </div>
+          <div class="auth-bottom"><span>Have an account? </span><a href="#">Sign in</a></div>
+        </div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     07 — FORGOT PASSWORD
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">07 · Forgot Password</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="auth">
+        <div class="det-nav" style="padding:0 0 16px"><div class="det-back"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7L7 13" stroke="var(--t2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="det-nav-title">Back</span></div>
+        <div style="margin-bottom:32px">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(32,178,108,0.1);display:flex;align-items:center;justify-content:center;margin-bottom:16px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="10" rx="2" stroke="#20B26C" stroke-width="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="#20B26C" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <h1 class="auth-title" style="text-align:left">Reset password</h1>
+          <p class="auth-sub" style="text-align:left">Enter your email and we'll send you a reset link</p>
+        </div>
+        <div class="auth-form">
+          <div class="field-group"><label class="field-label">Email address</label><input type="email" class="field" placeholder="you@email.com"></div>
+          <button class="btn" style="margin-top:12px">Send Reset Link</button>
+          <div class="auth-bottom"><span>Remember your password? </span><a href="#">Sign in</a></div>
+        </div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     08 — OTP VERIFICATION
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">08 · OTP Verification</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="auth">
+        <div class="det-nav" style="padding:0 0 16px"><div class="det-back"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7L7 13" stroke="var(--t2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="det-nav-title">Verify Email</span></div>
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(32,178,108,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M22 6L12 13L2 6" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="4" width="20" height="16" rx="2" stroke="#20B26C" stroke-width="2"/></svg></div>
+          <h1 class="auth-title">Enter code</h1>
+          <p class="auth-sub">We sent a 6-digit code to<br><span style="color:var(--t1);font-weight:500">savelii@email.com</span></p>
+        </div>
+        <div class="otp-row">
+          <div class="otp-box filled">4</div>
+          <div class="otp-box filled">2</div>
+          <div class="otp-box filled">8</div>
+          <div class="otp-box">_</div>
+          <div class="otp-box"></div>
+          <div class="otp-box"></div>
+        </div>
+        <button class="btn" style="margin-top:16px">Verify</button>
+        <div style="text-align:center;margin-top:20px"><span style="font-size:14px;color:var(--t3)">Didn't receive it? </span><span style="font-size:14px;color:var(--brand);font-weight:600">Resend in 0:42</span></div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     09 — HOME / DASHBOARD
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">09 · Home</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="dash-head">
+        <div class="dash-head-left">
+          <div class="dash-av">S</div>
+          <div><div class="dash-greeting">Good morning</div><div class="dash-name">Savelii</div></div>
+        </div>
+        <div class="dash-actions">
+          <div class="dash-icon-btn"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="var(--t2)" stroke-width="1.5"/><path d="M10 6V10L13 12" stroke="var(--t2)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+          <div class="dash-icon-btn"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 18c.83 0 1.5-.67 1.5-1.5h-3c0 .83.67 1.5 1.5 1.5zm5.5-4.5V9c0-2.76-1.92-5.08-4.5-5.67V2.5a1 1 0 10-2 0v.83C6.42 3.92 4.5 6.24 4.5 9v4.5L3 15v.5h14V15l-1.5-1.5z" fill="var(--t2)"/></svg><div class="dash-dot"></div></div>
+        </div>
+      </div>
+
+      <div class="perf-card">
+        <div class="perf-label">Win Rate</div>
+        <div class="perf-row">
+          <span class="perf-value">73.8<span style="font-size:22px;color:var(--t3)">%</span></span>
+          <span class="pill pill-long" style="font-size:12px">+4.2%</span>
+        </div>
+        <div style="font-size:12px;color:var(--t3);margin-top:4px">Last 30 days performance</div>
+        <div class="perf-stats">
+          <div class="perf-stat"><div class="perf-stat-val" style="color:var(--t1)">284</div><div class="perf-stat-lbl">Signals</div></div>
+          <div class="perf-stat"><div class="perf-stat-val c-up">209</div><div class="perf-stat-lbl">Won</div></div>
+          <div class="perf-stat"><div class="perf-stat-val c-down">75</div><div class="perf-stat-lbl">Lost</div></div>
+        </div>
+      </div>
+
+      <div class="sec-head"><span class="sec-title">Active Signals</span><span class="sec-link">See All</span></div>
+      <div class="sig-row"><div class="sig-icon sig-icon-btc">B</div><div class="sig-body"><div class="sig-top"><span class="sig-sym">BTC/USDT</span><span class="pill pill-long">LONG</span><span class="sig-tf">1H</span></div><div class="sig-meta">Entry $97,420 · 2h ago</div></div><div class="sig-right"><div class="sig-price c-up">+$1,280</div><div class="sig-chg c-up">+1.31%</div></div></div>
+      <div class="sig-row"><div class="sig-icon sig-icon-eth">E</div><div class="sig-body"><div class="sig-top"><span class="sig-sym">ETH/USDT</span><span class="pill pill-short">SHORT</span><span class="sig-tf">4H</span></div><div class="sig-meta">Entry $2,680 · 5h ago</div></div><div class="sig-right"><div class="sig-price c-up">+$84.30</div><div class="sig-chg c-up">+3.14%</div></div></div>
+      <div class="sig-row"><div class="sig-icon sig-icon-sol">S</div><div class="sig-body"><div class="sig-top"><span class="sig-sym">SOL/USDT</span><span class="pill pill-long">LONG</span><span class="sig-tf">1H</span></div><div class="sig-meta">Entry $198.40 · 1h ago</div></div><div class="sig-right"><div class="sig-price c-down">−$4.20</div><div class="sig-chg c-down">−2.12%</div></div></div>
+
+      <div class="sec-head"><span class="sec-title">Top Movers</span><span class="sec-link">Market</span></div>
+      <div style="margin:0 16px" class="card">
+        <div class="mkt-row"><div class="sig-icon sig-icon-btc" style="width:32px;height:32px;font-size:11px">B</div><div class="mkt-body"><div class="mkt-name">Bitcoin</div><div class="mkt-pair">BTC</div></div><div class="mkt-right"><div class="mkt-price">$98,700</div><div class="mkt-badge mkt-badge-up">+2.84%</div></div></div>
+        <div class="mkt-row"><div class="sig-icon sig-icon-eth" style="width:32px;height:32px;font-size:11px">E</div><div class="mkt-body"><div class="mkt-name">Ethereum</div><div class="mkt-pair">ETH</div></div><div class="mkt-right"><div class="mkt-price">$2,596</div><div class="mkt-badge mkt-badge-up">+1.52%</div></div></div>
+        <div class="mkt-row"><div class="sig-icon sig-icon-sol" style="width:32px;height:32px;font-size:11px">S</div><div class="mkt-body"><div class="mkt-name">Solana</div><div class="mkt-pair">SOL</div></div><div class="mkt-right"><div class="mkt-price">$194.20</div><div class="mkt-badge mkt-badge-down">−0.87%</div></div></div>
+      </div>
+      <div style="height:96px"></div>
+    </div>
+    <!-- Tab Bar: Home active -->
+    <div class="tab-bar">
+      <div class="tab-item on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 4L21 12V20a1 1 0 01-1 1H4a1 1 0 01-1-1V12Z" stroke="#20B26C" stroke-width="2"/><path d="M9 21V13h6v8" stroke="#20B26C" stroke-width="2"/></svg><span>Home</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22 12H18L15 21L9 3L6 12H2" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Signals</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Market</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2Z" stroke="#fff" stroke-width="2"/></svg><span>Watchlist</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#fff" stroke-width="2"/><path d="M20 21c0-4.42-3.58-8-8-8s-8 3.58-8 8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Profile</span></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     10 — SIGNALS LIST
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">10 · Signals</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div style="padding:6px 16px 12px"><h1 class="lg-title">Signals</h1></div>
+      <div class="segmented" style="margin-bottom:14px"><div class="seg-item on">Active · 12</div><div class="seg-item">Closed</div><div class="seg-item">All</div></div>
+      <div class="sig-card">
+        <div class="sig-card-head"><div class="sig-card-icon sig-icon-btc">B</div><div class="sig-card-body"><div class="sig-card-sym">BTC/USDT</div><div class="sig-card-meta"><span class="pill pill-long">LONG</span><span style="font-size:11px;color:var(--t3)">1H · 2h ago</span></div></div><div class="sig-card-right"><div class="sig-card-pnl c-up">+1.31%</div><div class="sig-card-pnl-sub">Unrealized</div></div></div>
+        <div class="sig-card-progress"><div class="sig-card-progress-labels"><span>SL $96,200</span><span>TP $100,800</span></div><div class="progress"><div class="progress-fill progress-up" style="width:52%"></div></div></div>
+        <div class="sig-card-grid"><div class="sig-card-stat"><div class="sig-card-stat-lbl">Entry</div><div class="sig-card-stat-val">$97,420</div></div><div class="sig-card-stat"><div class="sig-card-stat-lbl">Current</div><div class="sig-card-stat-val" style="color:var(--up)">$98,700</div></div><div class="sig-card-stat"><div class="sig-card-stat-lbl">P&L</div><div class="sig-card-stat-val" style="color:var(--up)">+$1,280</div></div></div>
+      </div>
+      <div class="sig-card">
+        <div class="sig-card-head"><div class="sig-card-icon sig-icon-eth">E</div><div class="sig-card-body"><div class="sig-card-sym">ETH/USDT</div><div class="sig-card-meta"><span class="pill pill-short">SHORT</span><span style="font-size:11px;color:var(--t3)">4H · 5h ago</span></div></div><div class="sig-card-right"><div class="sig-card-pnl c-up">+3.14%</div><div class="sig-card-pnl-sub">Unrealized</div></div></div>
+        <div class="sig-card-progress"><div class="sig-card-progress-labels"><span>TP $2,580</span><span>SL $2,750</span></div><div class="progress"><div class="progress-fill progress-up" style="width:72%"></div></div></div>
+        <div class="sig-card-grid"><div class="sig-card-stat"><div class="sig-card-stat-lbl">Entry</div><div class="sig-card-stat-val">$2,680</div></div><div class="sig-card-stat"><div class="sig-card-stat-lbl">Current</div><div class="sig-card-stat-val" style="color:var(--up)">$2,596</div></div><div class="sig-card-stat"><div class="sig-card-stat-lbl">P&L</div><div class="sig-card-stat-val" style="color:var(--up)">+$84.30</div></div></div>
+      </div>
+      <div class="sig-card">
+        <div class="sig-card-head"><div class="sig-card-icon sig-icon-sol">S</div><div class="sig-card-body"><div class="sig-card-sym">SOL/USDT</div><div class="sig-card-meta"><span class="pill pill-long">LONG</span><span style="font-size:11px;color:var(--t3)">1H · 1h ago</span></div></div><div class="sig-card-right"><div class="sig-card-pnl c-down">−2.12%</div><div class="sig-card-pnl-sub">Unrealized</div></div></div>
+        <div class="sig-card-progress"><div class="sig-card-progress-labels"><span>SL $190</span><span>TP $210</span></div><div class="progress"><div class="progress-fill progress-down" style="width:25%"></div></div></div>
+        <div class="sig-card-grid"><div class="sig-card-stat"><div class="sig-card-stat-lbl">Entry</div><div class="sig-card-stat-val">$198.40</div></div><div class="sig-card-stat"><div class="sig-card-stat-lbl">Current</div><div class="sig-card-stat-val" style="color:var(--down)">$194.20</div></div><div class="sig-card-stat"><div class="sig-card-stat-lbl">P&L</div><div class="sig-card-stat-val" style="color:var(--down)">−$4.20</div></div></div>
+      </div>
+      <div style="height:96px"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 4L21 12V20a1 1 0 01-1 1H4a1 1 0 01-1-1V12Z" stroke="#fff" stroke-width="2"/><path d="M9 21V13h6v8" stroke="#fff" stroke-width="2"/></svg><span>Home</span></div>
+      <div class="tab-item on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22 12H18L15 21L9 3L6 12H2" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Signals</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Market</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2Z" stroke="#fff" stroke-width="2"/></svg><span>Watchlist</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#fff" stroke-width="2"/><path d="M20 21c0-4.42-3.58-8-8-8s-8 3.58-8 8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Profile</span></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     11 — SIGNAL DETAIL
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">11 · Signal Detail</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="det-nav"><div class="det-back"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7L7 13" stroke="var(--t2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="det-nav-title">Signal Detail</span><span class="pill pill-brand">Active</span></div>
+      <div style="margin:0 16px 12px;background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div class="sig-icon sig-icon-btc" style="width:34px;height:34px;font-size:12px">B</div><div><div style="font-size:20px;font-weight:700;color:var(--t1)">BTC/USDT</div><div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span class="pill pill-long" style="font-size:10px">LONG</span><span style="font-size:12px;color:var(--t3)">1H · 2h ago</span></div></div></div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px"><span style="font-size:30px;font-weight:800;letter-spacing:-1px;color:var(--t1)">$98,700</span><span style="font-size:14px;font-weight:600;color:var(--up)">+1.31%</span></div>
+        <div style="font-size:12px;color:var(--t3)">Current Price · P&L +$1,280.00</div>
+      </div>
+      <div style="margin:0 16px 12px;background:var(--card);border-radius:10px;padding:14px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;font-weight:600;color:var(--t3)">Progress to Target</span><span style="font-size:12px;font-weight:700;color:var(--up)">52%</span></div>
+        <div class="progress" style="height:6px;border-radius:3px"><div class="progress-fill progress-up" style="width:52%;border-radius:3px"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--t4);font-feature-settings:'tnum' 1"><span>SL $96,200</span><span>TP $100,800</span></div>
+      </div>
+      <div style="padding:0 16px 6px"><span style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.3px">Price Levels</span></div>
+      <div class="levels">
+        <div class="level-row"><div class="level-dot" style="background:var(--brand)"></div><span class="level-label">Entry Price</span><span class="level-val">$97,420.00</span></div>
+        <div class="level-row"><div class="level-dot" style="background:var(--warn)"></div><span class="level-label">Current Price</span><span class="level-val" style="color:var(--up)">$98,700.00</span></div>
+        <div class="level-row"><div class="level-dot" style="background:var(--up)"></div><span class="level-label">Take Profit</span><span class="level-val" style="color:var(--up)">$100,800.00</span></div>
+        <div class="level-row"><div class="level-dot" style="background:var(--down)"></div><span class="level-label">Stop Loss</span><span class="level-val" style="color:var(--down)">$96,200.00</span></div>
+      </div>
+      <div style="padding:12px 16px 6px"><span style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.3px">Technical Indicators</span></div>
+      <div class="ind-grid">
+        <div class="ind-card"><div class="ind-name">Stoch K</div><div class="ind-val">72.4</div><div class="ind-sub c-warn">Overbought</div></div>
+        <div class="ind-card"><div class="ind-name">Stoch D</div><div class="ind-val">68.1</div><div class="ind-sub c-up">Bullish</div></div>
+        <div class="ind-card"><div class="ind-name">MACD</div><div class="ind-val" style="color:var(--up)">+124.5</div><div class="ind-sub">Signal: 89.2</div></div>
+        <div class="ind-card"><div class="ind-name">EMA 50</div><div class="ind-val">$96,840</div><div class="ind-sub c-up">Above</div></div>
+        <div class="ind-card"><div class="ind-name">EMA 200</div><div class="ind-val">$94,210</div><div class="ind-sub c-up">Bullish</div></div>
+        <div class="ind-card"><div class="ind-name">ATR</div><div class="ind-val">1,842</div><div class="ind-sub">High vol</div></div>
+      </div>
+      <div style="height:32px"></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     12 — HISTORY
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">12 · History</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div style="padding:6px 16px 12px"><h1 class="lg-title">History</h1></div>
+      <div class="stats-bar">
+        <div class="stat-box"><div class="stat-box-val c-up">209</div><div class="stat-box-lbl">Won</div></div>
+        <div class="stat-box"><div class="stat-box-val c-down">75</div><div class="stat-box-lbl">Lost</div></div>
+        <div class="stat-box"><div class="stat-box-val c-brand">73.8%</div><div class="stat-box-lbl">Win Rate</div></div>
+      </div>
+      <div style="padding:0 16px;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.3px">Today</div>
+      <div style="margin:0 16px 14px" class="card">
+        <div class="sig-row"><div style="width:28px;height:28px;border-radius:50%;background:rgba(32,178,108,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4.5L4.5 8L11 1" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sig-body"><div class="sig-top"><span class="sig-sym">BTC/USDT</span><span class="pill pill-long" style="font-size:10px">LONG</span><span class="sig-tf">1H</span></div><div class="sig-meta">TP hit · 2h 14m</div></div><div class="sig-right"><div class="sig-price c-up">+3.47%</div><div class="sig-chg c-up">+$3,380</div></div></div>
+        <div class="sig-row" style="border-top:1px solid var(--border)"><div style="width:28px;height:28px;border-radius:50%;background:rgba(239,69,74,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1l-8 8" stroke="#EF454A" stroke-width="2" stroke-linecap="round"/></svg></div><div class="sig-body"><div class="sig-top"><span class="sig-sym">SOL/USDT</span><span class="pill pill-short" style="font-size:10px">SHORT</span><span class="sig-tf">4H</span></div><div class="sig-meta">SL hit · 6h 32m</div></div><div class="sig-right"><div class="sig-price c-down">−1.82%</div><div class="sig-chg c-down">−$3.61</div></div></div>
+        <div class="sig-row" style="border-top:1px solid var(--border)"><div style="width:28px;height:28px;border-radius:50%;background:rgba(32,178,108,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4.5L4.5 8L11 1" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sig-body"><div class="sig-top"><span class="sig-sym">ETH/USDT</span><span class="pill pill-long" style="font-size:10px">LONG</span><span class="sig-tf">1H</span></div><div class="sig-meta">TP hit · 4h 08m</div></div><div class="sig-right"><div class="sig-price c-up">+2.65%</div><div class="sig-chg c-up">+$71.02</div></div></div>
+      </div>
+      <div style="padding:0 16px;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.3px">Yesterday</div>
+      <div style="margin:0 16px" class="card">
+        <div class="sig-row"><div style="width:28px;height:28px;border-radius:50%;background:rgba(32,178,108,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4.5L4.5 8L11 1" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sig-body"><div class="sig-top"><span class="sig-sym">BNB/USDT</span><span class="pill pill-long" style="font-size:10px">LONG</span><span class="sig-tf">4H</span></div><div class="sig-meta">TP hit · 8h 45m</div></div><div class="sig-right"><div class="sig-price c-up">+4.12%</div><div class="sig-chg c-up">+$25.21</div></div></div>
+        <div class="sig-row" style="border-top:1px solid var(--border)"><div style="width:28px;height:28px;border-radius:50%;background:rgba(32,178,108,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4.5L4.5 8L11 1" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sig-body"><div class="sig-top"><span class="sig-sym">XRP/USDT</span><span class="pill pill-short" style="font-size:10px">SHORT</span><span class="sig-tf">1H</span></div><div class="sig-meta">TP hit · 1h 22m</div></div><div class="sig-right"><div class="sig-price c-up">+1.94%</div><div class="sig-chg c-up">+$0.048</div></div></div>
+      </div>
+      <div style="height:96px"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 4L21 12V20a1 1 0 01-1 1H4a1 1 0 01-1-1V12Z" stroke="#fff" stroke-width="2"/><path d="M9 21V13h6v8" stroke="#fff" stroke-width="2"/></svg><span>Home</span></div>
+      <div class="tab-item on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22 12H18L15 21L9 3L6 12H2" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Signals</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Market</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2Z" stroke="#fff" stroke-width="2"/></svg><span>Watchlist</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#fff" stroke-width="2"/><path d="M20 21c0-4.42-3.58-8-8-8s-8 3.58-8 8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Profile</span></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     13 — MARKET
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">13 · Market</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div style="padding:6px 16px 10px"><h1 class="lg-title">Market</h1></div>
+      <div class="search-bar" style="margin-bottom:12px"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="var(--t2)" stroke-width="2"/><path d="M14 14l4 4" stroke="var(--t2)" stroke-width="2" stroke-linecap="round"/></svg><input type="text" placeholder="Search coins..."></div>
+      <div class="filter-row" style="margin-bottom:12px">
+        <span class="filter-chip on">All</span>
+        <span class="filter-chip">Crypto</span>
+        <span class="filter-chip">Stocks</span>
+        <span class="filter-chip">Forex</span>
+        <span class="filter-chip">ETF</span>
+        <span class="filter-chip">Commodities</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 16px 8px;font-size:11px;font-weight:600;color:var(--t4);text-transform:uppercase;letter-spacing:0.3px"><span>Name</span><span>Price / 24h</span></div>
+      <div style="margin:0 16px" class="card">
+        <div class="mkt-row"><div class="sig-icon sig-icon-btc" style="width:32px;height:32px;font-size:11px">B</div><div class="mkt-body"><div class="mkt-name">Bitcoin</div><div class="mkt-pair">BTC/USDT</div></div><div class="mkt-right"><div class="mkt-price">$98,700</div><div class="mkt-badge mkt-badge-up">+2.84%</div></div></div>
+        <div class="mkt-row"><div class="sig-icon sig-icon-eth" style="width:32px;height:32px;font-size:11px">E</div><div class="mkt-body"><div class="mkt-name">Ethereum</div><div class="mkt-pair">ETH/USDT</div></div><div class="mkt-right"><div class="mkt-price">$2,596</div><div class="mkt-badge mkt-badge-up">+1.52%</div></div></div>
+        <div class="mkt-row"><div class="sig-icon sig-icon-sol" style="width:32px;height:32px;font-size:11px">S</div><div class="mkt-body"><div class="mkt-name">Solana</div><div class="mkt-pair">SOL/USDT</div></div><div class="mkt-right"><div class="mkt-price">$194.20</div><div class="mkt-badge mkt-badge-down">−0.87%</div></div></div>
+        <div class="mkt-row"><div class="sig-icon sig-icon-bnb" style="width:32px;height:32px;font-size:11px">B</div><div class="mkt-body"><div class="mkt-name">BNB</div><div class="mkt-pair">BNB/USDT</div></div><div class="mkt-right"><div class="mkt-price">$612.80</div><div class="mkt-badge mkt-badge-up">+3.21%</div></div></div>
+        <div class="mkt-row"><div class="sig-icon sig-icon-xrp" style="width:32px;height:32px;font-size:11px">X</div><div class="mkt-body"><div class="mkt-name">XRP</div><div class="mkt-pair">XRP/USDT</div></div><div class="mkt-right"><div class="mkt-price">$2.48</div><div class="mkt-badge mkt-badge-up">+5.62%</div></div></div>
+        <div class="mkt-row"><div class="sig-icon sig-icon-ada" style="width:32px;height:32px;font-size:11px">A</div><div class="mkt-body"><div class="mkt-name">Cardano</div><div class="mkt-pair">ADA/USDT</div></div><div class="mkt-right"><div class="mkt-price">$0.742</div><div class="mkt-badge mkt-badge-down">−2.14%</div></div></div>
+        <div class="mkt-row"><div class="sig-icon sig-icon-doge" style="width:32px;height:32px;font-size:11px">D</div><div class="mkt-body"><div class="mkt-name">Dogecoin</div><div class="mkt-pair">DOGE/USDT</div></div><div class="mkt-right"><div class="mkt-price">$0.284</div><div class="mkt-badge mkt-badge-up">+8.31%</div></div></div>
+        <div class="mkt-row"><div class="sig-icon sig-icon-avax" style="width:32px;height:32px;font-size:11px">A</div><div class="mkt-body"><div class="mkt-name">Avalanche</div><div class="mkt-pair">AVAX/USDT</div></div><div class="mkt-right"><div class="mkt-price">$34.82</div><div class="mkt-badge mkt-badge-up">+4.56%</div></div></div>
+        <div class="mkt-row"><div class="sig-icon sig-icon-dot" style="width:32px;height:32px;font-size:11px">P</div><div class="mkt-body"><div class="mkt-name">Polkadot</div><div class="mkt-pair">DOT/USDT</div></div><div class="mkt-right"><div class="mkt-price">$7.14</div><div class="mkt-badge mkt-badge-down">−1.23%</div></div></div>
+      </div>
+      <div style="height:96px"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 4L21 12V20a1 1 0 01-1 1H4a1 1 0 01-1-1V12Z" stroke="#fff" stroke-width="2"/><path d="M9 21V13h6v8" stroke="#fff" stroke-width="2"/></svg><span>Home</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22 12H18L15 21L9 3L6 12H2" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Signals</span></div>
+      <div class="tab-item on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#20B26C" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="#20B26C" stroke-width="2" stroke-linecap="round"/></svg><span>Market</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2Z" stroke="#fff" stroke-width="2"/></svg><span>Watchlist</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#fff" stroke-width="2"/><path d="M20 21c0-4.42-3.58-8-8-8s-8 3.58-8 8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Profile</span></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     14 — ASSET DETAIL
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">14 · Asset Detail</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="det-nav"><div class="det-back"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7L7 13" stroke="var(--t2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="det-nav-title">BTC/USDT</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2Z" fill="#20B26C"/></svg></div>
+      <div style="padding:0 16px 16px;text-align:center">
+        <div style="font-size:36px;font-weight:800;letter-spacing:-1.5px;color:var(--t1)">$98,700.00</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px"><span style="font-size:14px;color:var(--up);font-weight:600">+$2,724.00</span><span class="pill pill-long">+2.84%</span></div>
+      </div>
+      <!-- Mini chart placeholder -->
+      <div style="margin:0 16px 16px;height:140px;background:var(--card);border-radius:10px;border:1px solid var(--border);display:flex;align-items:flex-end;padding:16px;overflow:hidden">
+        <svg width="100%" height="100" viewBox="0 0 340 100" fill="none" preserveAspectRatio="none"><path d="M0 80 C30 70 60 90 90 60 C120 30 150 45 180 35 C210 25 240 50 270 20 C300 10 320 15 340 5" stroke="#20B26C" stroke-width="2" fill="none"/><path d="M0 80 C30 70 60 90 90 60 C120 30 150 45 180 35 C210 25 240 50 270 20 C300 10 320 15 340 5 V100 H0Z" fill="url(#grad)"/><defs><linearGradient id="grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#20B26C" stop-opacity="0.15"/><stop offset="100%" stop-color="#20B26C" stop-opacity="0"/></linearGradient></defs></svg>
+      </div>
+      <div class="filter-row" style="margin-bottom:14px;justify-content:center"><span class="filter-chip">1H</span><span class="filter-chip on">24H</span><span class="filter-chip">7D</span><span class="filter-chip">1M</span><span class="filter-chip">1Y</span><span class="filter-chip">All</span></div>
+      <div style="padding:0 16px 8px"><span style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.3px">Market Stats</span></div>
+      <div style="margin:0 16px 12px" class="card">
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--t2)">Market Cap</span><span style="font-size:13px;font-weight:600;color:var(--t1)">$1.94T</span></div>
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--t2)">Volume 24h</span><span style="font-size:13px;font-weight:600;color:var(--t1)">$42.8B</span></div>
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--t2)">24h High</span><span style="font-size:13px;font-weight:600;color:var(--up)">$99,120</span></div>
+        <div style="display:flex;justify-content:space-between;padding:10px 14px"><span style="font-size:13px;color:var(--t2)">24h Low</span><span style="font-size:13px;font-weight:600;color:var(--down)">$95,800</span></div>
+      </div>
+      <div style="padding:12px 16px"><button class="btn">Add to Watchlist</button></div>
+      <div style="height:20px"></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     15 — WATCHLIST
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">15 · Watchlist</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 6px"><h1 class="lg-title">Watchlist</h1><div style="padding:6px 12px;border-radius:6px;background:var(--brand);font-size:13px;font-weight:600;color:#0B0E11;display:flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#0B0E11" stroke-width="2" stroke-linecap="round"/></svg>Add</div></div>
+      <div style="padding:4px 16px 12px"><div style="background:rgba(32,178,108,0.05);border:1px solid rgba(32,178,108,0.1);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="var(--brand)" stroke-width="1.5"/><path d="M7 4.5v3" stroke="var(--brand)" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="10" r="0.5" fill="var(--brand)"/></svg><span style="font-size:12px;color:var(--t2)">Tracking <span style="color:var(--t1);font-weight:600">8 of 20</span> tickers</span></div></div>
+      <div style="margin:0 16px" class="card">
+        <div class="wl-item"><div class="sig-icon sig-icon-btc" style="width:32px;height:32px;font-size:11px">B</div><div class="wl-body"><div class="wl-sym">BTC/USDT</div><div class="wl-sub">1H · 2 active signals</div></div><div class="wl-toggles"><span class="wl-pill wl-pill-buy">BUY</span><span class="wl-pill wl-pill-sell">SELL</span></div></div>
+        <div class="wl-item"><div class="sig-icon sig-icon-eth" style="width:32px;height:32px;font-size:11px">E</div><div class="wl-body"><div class="wl-sym">ETH/USDT</div><div class="wl-sub">4H · 1 active signal</div></div><div class="wl-toggles"><span class="wl-pill wl-pill-buy">BUY</span><span class="wl-pill wl-pill-sell">SELL</span></div></div>
+        <div class="wl-item"><div class="sig-icon sig-icon-sol" style="width:32px;height:32px;font-size:11px">S</div><div class="wl-body"><div class="wl-sym">SOL/USDT</div><div class="wl-sub">1H · 1 active signal</div></div><div class="wl-toggles"><span class="wl-pill wl-pill-buy">BUY</span><span class="wl-pill wl-pill-off">SELL</span></div></div>
+        <div class="wl-item"><div class="sig-icon sig-icon-bnb" style="width:32px;height:32px;font-size:11px">B</div><div class="wl-body"><div class="wl-sym">BNB/USDT</div><div class="wl-sub">4H · No signals</div></div><div class="wl-toggles"><span class="wl-pill wl-pill-buy">BUY</span><span class="wl-pill wl-pill-sell">SELL</span></div></div>
+        <div class="wl-item"><div class="sig-icon sig-icon-xrp" style="width:32px;height:32px;font-size:11px">X</div><div class="wl-body"><div class="wl-sym">XRP/USDT</div><div class="wl-sub">1H · No signals</div></div><div class="wl-toggles"><span class="wl-pill wl-pill-off">BUY</span><span class="wl-pill wl-pill-sell">SELL</span></div></div>
+        <div class="wl-item"><div class="sig-icon sig-icon-avax" style="width:32px;height:32px;font-size:11px">A</div><div class="wl-body"><div class="wl-sym">AVAX/USDT</div><div class="wl-sub">1D · No signals</div></div><div class="wl-toggles"><span class="wl-pill wl-pill-buy">BUY</span><span class="wl-pill wl-pill-sell">SELL</span></div></div>
+        <div class="wl-item"><div class="sig-icon sig-icon-link" style="width:32px;height:32px;font-size:11px">L</div><div class="wl-body"><div class="wl-sym">LINK/USDT</div><div class="wl-sub">1H · No signals</div></div><div class="wl-toggles"><span class="wl-pill wl-pill-buy">BUY</span><span class="wl-pill wl-pill-sell">SELL</span></div></div>
+        <div class="wl-item"><div class="sig-icon sig-icon-atom" style="width:32px;height:32px;font-size:11px">C</div><div class="wl-body"><div class="wl-sym">ATOM/USDT</div><div class="wl-sub">4H · No signals</div></div><div class="wl-toggles"><span class="wl-pill wl-pill-buy">BUY</span><span class="wl-pill wl-pill-off">SELL</span></div></div>
+      </div>
+      <div style="height:96px"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 4L21 12V20a1 1 0 01-1 1H4a1 1 0 01-1-1V12Z" stroke="#fff" stroke-width="2"/><path d="M9 21V13h6v8" stroke="#fff" stroke-width="2"/></svg><span>Home</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22 12H18L15 21L9 3L6 12H2" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Signals</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Market</span></div>
+      <div class="tab-item on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2Z" stroke="#20B26C" stroke-width="2"/></svg><span>Watchlist</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#fff" stroke-width="2"/><path d="M20 21c0-4.42-3.58-8-8-8s-8 3.58-8 8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Profile</span></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     16 — PROFILE
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">16 · Profile</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="prof-head">
+        <div class="prof-av">S</div>
+        <div class="prof-name">Savelii</div>
+        <div class="prof-email">savelii@email.com</div>
+        <div class="prof-badge"><svg width="10" height="10" viewBox="0 0 14 14" fill="none"><path d="M7 1l2 4 4.5.7L10.2 9l.8 4.5L7 11.3 3 13.5l.8-4.5L.5 5.7 5 5l2-4Z" fill="#20B26C"/></svg>PRO</div>
+      </div>
+      <div class="plan-card">
+        <div class="plan-row"><span class="plan-title">Pro Plan</span><span class="plan-status">Active</span></div>
+        <div class="plan-sub">Renews March 15, 2026</div>
+        <div class="plan-stats"><div class="plan-stat"><div class="plan-stat-val">8/20</div><div class="plan-stat-lbl">Tickers</div></div><div class="plan-stat"><div class="plan-stat-val">28d</div><div class="plan-stat-lbl">Remaining</div></div><div class="plan-stat"><div class="plan-stat-val">$49.99</div><div class="plan-stat-lbl">Monthly</div></div></div>
+      </div>
+      <div class="set-group-label">Account</div>
+      <div class="set-group">
+        <div class="set-row"><div class="set-icon" style="background:#20B26C"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="#0B0E11" stroke-width="1.5"/><path d="M13 14c0-2.76-2.24-5-5-5S3 11.24 3 14" stroke="#0B0E11" stroke-width="1.5" stroke-linecap="round"/></svg></div><span class="set-text">Edit Profile</span><svg class="set-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="var(--t4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="set-row"><div class="set-icon" style="background:#3375E9"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 14c.55 0 1-.45 1-1H7c0 .55.45 1 1 1zm4-3.5V7c0-2.07-1.1-3.8-3-4.26V2.25a1 1 0 10-2 0v.49C5.1 3.2 4 4.93 4 7v3.5L3 12v.5h10V12l-1-1.5z" fill="#fff"/></svg></div><span class="set-text">Notifications</span><div class="set-toggle set-toggle-on"></div></div>
+        <div class="set-row"><div class="set-icon" style="background:#F0B90B"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="9" rx="2" stroke="#0B0E11" stroke-width="1.5"/><path d="M2 7h12" stroke="#0B0E11" stroke-width="1.5"/></svg></div><span class="set-text">Subscription</span><svg class="set-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="var(--t4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="set-row"><div class="set-icon" style="background:#9945FF"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M5 5l3-3 3 3M5 11l3 3 3-3" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="set-text">Invite Friends</span><svg class="set-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="var(--t4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+      <div class="set-group-label">Preferences</div>
+      <div class="set-group">
+        <div class="set-row"><span class="set-text">Appearance</span><span class="set-val">Dark</span><svg class="set-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="var(--t4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="set-row"><span class="set-text">Currency</span><span class="set-val">USD</span><svg class="set-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="var(--t4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="set-row"><span class="set-text">Language</span><span class="set-val">English</span><svg class="set-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="var(--t4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+      <div class="set-group-label">Support</div>
+      <div class="set-group">
+        <div class="set-row"><span class="set-text">Help & FAQ</span><svg class="set-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="var(--t4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="set-row"><span class="set-text">Contact Us</span><svg class="set-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="var(--t4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="set-row"><span class="set-text">Rate the App</span><svg class="set-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="var(--t4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+      <div class="set-group" style="margin-top:12px"><div class="set-row"><span class="set-text" style="color:#EF454A">Sign Out</span></div></div>
+      <div class="footer-note">Aspiro Trade v1.0.0 (42)</div>
+      <div style="height:96px"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 4L21 12V20a1 1 0 01-1 1H4a1 1 0 01-1-1V12Z" stroke="#fff" stroke-width="2"/><path d="M9 21V13h6v8" stroke="#fff" stroke-width="2"/></svg><span>Home</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22 12H18L15 21L9 3L6 12H2" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Signals</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Market</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2Z" stroke="#fff" stroke-width="2"/></svg><span>Watchlist</span></div>
+      <div class="tab-item on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#20B26C" stroke-width="2"/><path d="M20 21c0-4.42-3.58-8-8-8s-8 3.58-8 8" stroke="#20B26C" stroke-width="2" stroke-linecap="round"/></svg><span>Profile</span></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     17 — EDIT PROFILE
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">17 · Edit Profile</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="det-nav"><div class="det-back"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7L7 13" stroke="var(--t2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="det-nav-title">Edit Profile</span><span style="font-size:14px;font-weight:600;color:var(--brand)">Save</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;padding:20px 0 24px">
+        <div style="position:relative">
+          <div class="prof-av" style="margin-bottom:0">S</div>
+          <div style="position:absolute;bottom:-2px;right:-2px;width:24px;height:24px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M1 8.5V11h2.5L10 4.5 7.5 2 1 8.5Z" fill="#0B0E11"/></svg></div>
+        </div>
+        <div style="margin-top:10px;font-size:13px;color:var(--brand);font-weight:500">Change Photo</div>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:14px">
+        <div class="field-group"><label class="field-label">First Name</label><input type="text" class="field" value="Savelii"></div>
+        <div class="field-group"><label class="field-label">Last Name</label><input type="text" class="field" placeholder="Enter last name"></div>
+        <div class="field-group"><label class="field-label">Email</label><input type="email" class="field" value="savelii@email.com"></div>
+        <div class="field-group"><label class="field-label">Phone</label><input type="tel" class="field" placeholder="+1 (000) 000-0000"></div>
+        <div style="padding-top:8px"><button class="btn-outline btn" style="color:var(--down);border-color:rgba(239,69,74,0.3)">Delete Account</button></div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     18 — PAYWALL / UPGRADE
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">18 · Upgrade</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div style="text-align:right;padding:4px 16px 0"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--card)"/><path d="M8 8l8 8M16 8l-8 8" stroke="var(--t2)" stroke-width="2" stroke-linecap="round"/></svg></div>
+      <div class="pw">
+        <div class="pw-hero">
+          <div class="pw-crown"><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M3 20l3-12 7 6 7-6 3 12H3Z" fill="#0B0E11" opacity=".5"/><path d="M3 20l3-12 7 6 7-6 3 12H3Z" stroke="#0B0E11" stroke-width="2" stroke-linejoin="round"/></svg></div>
+          <h1 class="pw-title">Upgrade to <em>Pro</em></h1>
+          <p class="pw-sub">Unlimited signals, real-time alerts,<br>and advanced analytics.</p>
+        </div>
+        <div class="pw-plans">
+          <div class="pw-plan"><div class="pw-plan-dur">Weekly</div><div class="pw-plan-price">$14.99</div><div class="pw-plan-period">/week</div></div>
+          <div class="pw-plan on"><div class="pw-plan-pop">Best Value</div><div class="pw-plan-dur">Monthly</div><div class="pw-plan-price">$49.99</div><div class="pw-plan-period">/month</div><div class="pw-plan-save">Save 17%</div></div>
+          <div class="pw-plan"><div class="pw-plan-dur">Yearly</div><div class="pw-plan-price">$399</div><div class="pw-plan-period">/year</div><div class="pw-plan-save">Save 33%</div></div>
+        </div>
+        <div style="margin-bottom:20px">
+          <div class="pw-feature"><div class="pw-check"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="pw-feature-text"><strong>Unlimited tickers</strong> — track all assets</span></div>
+          <div class="pw-feature"><div class="pw-check"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="pw-feature-text"><strong>Real-time signals</strong> — instant delivery</span></div>
+          <div class="pw-feature"><div class="pw-check"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="pw-feature-text"><strong>Push notifications</strong> — never miss</span></div>
+          <div class="pw-feature"><div class="pw-check"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="pw-feature-text"><strong>Full signal history</strong> — deep analytics</span></div>
+          <div class="pw-feature"><div class="pw-check"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="pw-feature-text"><strong>Priority support</strong> — 24/7 help</span></div>
+        </div>
+        <button class="btn" style="height:50px;font-size:16px;font-weight:700">Subscribe — $49.99/month</button>
+        <div style="text-align:center;padding:12px 0 2px;font-size:11px;color:var(--t4)">Cancel anytime · Restore purchase</div>
+        <div style="text-align:center;padding:2px 0;font-size:10px;color:var(--t4)">Terms of Service · Privacy Policy</div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     19 — NOTIFICATIONS
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">19 · Notifications</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 12px"><h1 class="lg-title">Notifications</h1><span style="font-size:13px;color:var(--brand);font-weight:500">Mark all read</span></div>
+      <div style="padding:0 16px;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.3px">New</div>
+      <div style="margin:0 16px 12px" class="card">
+        <div class="notif"><div class="notif-icon" style="background:rgba(32,178,108,0.08)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 10V4M4 7l3-3 3 3" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="notif-body"><div class="notif-title">New BUY Signal — BTC/USDT</div><div class="notif-text">Entry $97,420 · TP $100,800 · SL $96,200</div><div class="notif-time">2 min ago</div></div><div class="notif-unread"></div></div>
+        <div class="notif"><div class="notif-icon" style="background:rgba(32,178,108,0.08)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-8" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="notif-body"><div class="notif-title">Signal Closed — ETH/USDT</div><div class="notif-text">TP hit · P&L +3.14% (+$84.30)</div><div class="notif-time">18 min ago</div></div><div class="notif-unread"></div></div>
+        <div class="notif"><div class="notif-icon" style="background:rgba(32,178,108,0.08)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 10V4M4 7l3-3 3 3" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="notif-body"><div class="notif-title">New BUY Signal — SOL/USDT</div><div class="notif-text">Entry $198.40 · TP $210 · SL $190</div><div class="notif-time">1h ago</div></div><div class="notif-unread"></div></div>
+      </div>
+      <div style="padding:0 16px;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.3px">Earlier</div>
+      <div style="margin:0 16px" class="card">
+        <div class="notif"><div class="notif-icon" style="background:rgba(239,69,74,0.08)"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="#EF454A" stroke-width="2" stroke-linecap="round"/></svg></div><div class="notif-body"><div class="notif-title">Signal Closed — SOL/USDT</div><div class="notif-text">SL hit · P&L −1.82% (−$3.61)</div><div class="notif-time">8h ago</div></div></div>
+        <div class="notif"><div class="notif-icon" style="background:rgba(51,117,233,0.08)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="#3375E9" stroke-width="1.5"/><path d="M7 4v4" stroke="#3375E9" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="10" r="0.5" fill="#3375E9"/></svg></div><div class="notif-body"><div class="notif-title">Subscription Renewed</div><div class="notif-text">Pro plan renewed for another month</div><div class="notif-time">2 days ago</div></div></div>
+        <div class="notif"><div class="notif-icon" style="background:rgba(32,178,108,0.08)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 4.5L7 2l4 2.5V8c0 3-2.5 4.5-4 5-1.5-.5-4-2-4-5V4.5Z" stroke="#20B26C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="notif-body"><div class="notif-title">Welcome to Aspiro Trade</div><div class="notif-text">Your account is ready. Add tickers to start.</div><div class="notif-time">5 days ago</div></div></div>
+      </div>
+      <div style="height:32px"></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     20 — ADD TICKER (Bottom Sheet)
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">20 · Add Ticker</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad"><div style="height:210px;background:rgba(0,0,0,0.6)"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Add Ticker</div>
+        <div class="search-bar" style="margin:0 0 12px;background:var(--card2)"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="var(--t2)" stroke-width="2"/><path d="M14 14l4 4" stroke="var(--t2)" stroke-width="2" stroke-linecap="round"/></svg><input type="text" placeholder="Search symbol..." value="BTC"></div>
+        <div class="sheet-result on"><div class="sig-icon sig-icon-btc" style="width:30px;height:30px;font-size:10px">B</div><div class="sheet-result-body"><div class="sheet-result-sym">BTC/USDT</div><div class="sheet-result-pair">Bitcoin / Tether</div></div><span class="sheet-result-check">Selected</span></div>
+        <div class="sheet-result"><div class="sig-icon sig-icon-btc" style="width:30px;height:30px;font-size:10px;opacity:0.4">B</div><div class="sheet-result-body"><div class="sheet-result-sym" style="color:var(--t2)">BTC/BUSD</div><div class="sheet-result-pair">Bitcoin / BUSD</div></div></div>
+        <div class="sheet-section">Timeframe</div>
+        <div class="sheet-chips"><span class="sheet-chip">15m</span><span class="sheet-chip on">1H</span><span class="sheet-chip">4H</span><span class="sheet-chip">1D</span><span class="sheet-chip">1W</span></div>
+        <div class="sheet-section">Notifications</div>
+        <div class="sheet-notify-row"><div class="sheet-notify" style="background:rgba(32,178,108,0.06);border:1px solid rgba(32,178,108,0.12)"><div style="font-size:13px;font-weight:600;color:var(--up)">Buy Signals</div><div style="font-size:11px;color:var(--up)">Enabled</div></div><div class="sheet-notify" style="background:rgba(239,69,74,0.06);border:1px solid rgba(239,69,74,0.12)"><div style="font-size:13px;font-weight:600;color:var(--down)">Sell Signals</div><div style="font-size:11px;color:var(--down)">Enabled</div></div></div>
+        <button class="btn" style="margin-top:16px">Add BTC/USDT · 1H</button>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     21 — REFERRAL
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">21 · Referral</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="det-nav"><div class="det-back"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7L7 13" stroke="var(--t2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="det-nav-title">Invite Friends</span></div>
+      <div style="text-align:center;padding:24px 24px 20px">
+        <div style="width:72px;height:72px;border-radius:50%;background:rgba(32,178,108,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="12" cy="10" r="5" stroke="#20B26C" stroke-width="2"/><path d="M20 28c0-4.42-3.58-8-8-8s-8 3.58-8 8" stroke="#20B26C" stroke-width="2" stroke-linecap="round"/><path d="M24 12v8M20 16h8" stroke="#20B26C" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h2 style="font-size:22px;font-weight:700;color:var(--t1);margin-bottom:6px">Earn Free Pro</h2>
+        <p style="font-size:14px;color:var(--t2);line-height:20px">Invite 3 friends and get 1 month<br>of Pro subscription for free!</p>
+      </div>
+      <div class="ref-card">
+        <div style="font-size:13px;color:var(--t2);margin-bottom:4px">Your referral code</div>
+        <div class="ref-code">ASPIRO-SV42</div>
+        <button class="btn" style="margin-top:4px">Copy & Share</button>
+      </div>
+      <div style="padding:20px 16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;font-weight:600;color:var(--t2)">Progress</span><span style="font-size:13px;font-weight:700;color:var(--brand)">2 / 3 friends</span></div>
+        <div class="progress" style="height:8px;border-radius:4px"><div class="progress-fill progress-up" style="width:66%;border-radius:4px"></div></div>
+      </div>
+      <div style="padding:0 16px 6px;font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.3px">Invited Friends</div>
+      <div style="margin:0 16px" class="card">
+        <div class="sig-row"><div style="width:32px;height:32px;border-radius:50%;background:rgba(32,178,108,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--brand)">A</div><div class="sig-body"><div class="sig-sym">Alex K.</div><div class="sig-meta">Joined 3 days ago</div></div><span class="pill pill-long">Active</span></div>
+        <div class="sig-row" style="border-top:1px solid var(--border)"><div style="width:32px;height:32px;border-radius:50%;background:rgba(240,185,11,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--warn)">M</div><div class="sig-body"><div class="sig-sym">Maria S.</div><div class="sig-meta">Joined 1 week ago</div></div><span class="pill pill-long">Active</span></div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     22 — EMPTY STATE (No Signals)
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">22 · Empty State</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div style="padding:6px 16px 12px"><h1 class="lg-title">Signals</h1></div>
+      <div class="segmented" style="margin-bottom:14px"><div class="seg-item on">Active · 0</div><div class="seg-item">Closed</div><div class="seg-item">All</div></div>
+      <div class="empty-state">
+        <div class="empty-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M28 16H24l-3 9L13 7l-3 9H4" stroke="var(--t3)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="empty-title">No active signals</div>
+        <div class="empty-desc">Add tickers to your watchlist to receive trading signals when opportunities appear.</div>
+        <button class="btn" style="width:auto;padding:0 28px">Add Tickers</button>
+      </div>
+      <div style="height:96px"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 4L21 12V20a1 1 0 01-1 1H4a1 1 0 01-1-1V12Z" stroke="#fff" stroke-width="2"/><path d="M9 21V13h6v8" stroke="#fff" stroke-width="2"/></svg><span>Home</span></div>
+      <div class="tab-item on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22 12H18L15 21L9 3L6 12H2" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Signals</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Market</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2Z" stroke="#fff" stroke-width="2"/></svg><span>Watchlist</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#fff" stroke-width="2"/><path d="M20 21c0-4.42-3.58-8-8-8s-8 3.58-8 8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Profile</span></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     23 — LOADING STATE
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">23 · Loading</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div style="padding:6px 16px 12px"><h1 class="lg-title">Signals</h1></div>
+      <div class="segmented" style="margin-bottom:14px"><div class="seg-item on">Active</div><div class="seg-item">Closed</div><div class="seg-item">All</div></div>
+      <!-- Skeleton cards -->
+      <div style="margin:0 16px 10px;background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div class="skeleton" style="width:36px;height:36px;border-radius:50%"></div><div style="flex:1"><div class="skeleton" style="width:120px;height:14px;margin-bottom:6px"></div><div class="skeleton" style="width:80px;height:10px"></div></div><div><div class="skeleton" style="width:60px;height:16px;margin-bottom:4px;margin-left:auto"></div><div class="skeleton" style="width:40px;height:10px;margin-left:auto"></div></div></div>
+        <div class="skeleton" style="height:4px;margin-bottom:14px"></div>
+        <div style="display:flex;gap:1px"><div class="skeleton" style="flex:1;height:44px;border-radius:6px 0 0 6px"></div><div class="skeleton" style="flex:1;height:44px;border-radius:0"></div><div class="skeleton" style="flex:1;height:44px;border-radius:0 6px 6px 0"></div></div>
+      </div>
+      <div style="margin:0 16px 10px;background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div class="skeleton" style="width:36px;height:36px;border-radius:50%"></div><div style="flex:1"><div class="skeleton" style="width:100px;height:14px;margin-bottom:6px"></div><div class="skeleton" style="width:70px;height:10px"></div></div><div><div class="skeleton" style="width:50px;height:16px;margin-bottom:4px;margin-left:auto"></div><div class="skeleton" style="width:35px;height:10px;margin-left:auto"></div></div></div>
+        <div class="skeleton" style="height:4px;margin-bottom:14px"></div>
+        <div style="display:flex;gap:1px"><div class="skeleton" style="flex:1;height:44px;border-radius:6px 0 0 6px"></div><div class="skeleton" style="flex:1;height:44px;border-radius:0"></div><div class="skeleton" style="flex:1;height:44px;border-radius:0 6px 6px 0"></div></div>
+      </div>
+      <div style="margin:0 16px 10px;background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div class="skeleton" style="width:36px;height:36px;border-radius:50%"></div><div style="flex:1"><div class="skeleton" style="width:110px;height:14px;margin-bottom:6px"></div><div class="skeleton" style="width:90px;height:10px"></div></div></div>
+        <div class="skeleton" style="height:4px;margin-bottom:14px"></div>
+        <div style="display:flex;gap:1px"><div class="skeleton" style="flex:1;height:44px;border-radius:6px 0 0 6px"></div><div class="skeleton" style="flex:1;height:44px;border-radius:0"></div><div class="skeleton" style="flex:1;height:44px;border-radius:0 6px 6px 0"></div></div>
+      </div>
+      <div style="height:96px"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 4L21 12V20a1 1 0 01-1 1H4a1 1 0 01-1-1V12Z" stroke="#fff" stroke-width="2"/><path d="M9 21V13h6v8" stroke="#fff" stroke-width="2"/></svg><span>Home</span></div>
+      <div class="tab-item on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22 12H18L15 21L9 3L6 12H2" stroke="#20B26C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Signals</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Market</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2Z" stroke="#fff" stroke-width="2"/></svg><span>Watchlist</span></div>
+      <div class="tab-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#fff" stroke-width="2"/><path d="M20 21c0-4.42-3.58-8-8-8s-8 3.58-8 8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><span>Profile</span></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     24 — SUCCESS STATE
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">24 · Success</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:0 40px">
+        <div style="width:88px;height:88px;border-radius:50%;background:rgba(32,178,108,0.1);border:2px solid rgba(32,178,108,0.2);display:flex;align-items:center;justify-content:center;margin-bottom:24px">
+          <svg width="40" height="32" viewBox="0 0 40 32" fill="none"><path d="M4 16L15 27L36 5" stroke="#20B26C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 style="font-size:24px;font-weight:700;color:var(--t1);margin-bottom:6px">You're all set!</h2>
+        <p style="font-size:15px;color:var(--t2);line-height:22px;margin-bottom:32px">Your account has been created.<br>Start adding tickers to receive signals.</p>
+        <button class="btn" style="width:auto;padding:0 40px">Go to Dashboard</button>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     25 — CHANGE PASSWORD
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">25 · Change Password</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="det-nav" style="padding:6px 16px 16px"><div class="det-back"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7L7 13" stroke="var(--t2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="det-nav-title">Change Password</span></div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:14px">
+        <div class="field-group"><label class="field-label">Current Password</label><input type="password" class="field" placeholder="Enter current password"></div>
+        <div class="field-group"><label class="field-label">New Password</label><input type="password" class="field" placeholder="Minimum 8 characters"></div>
+        <div class="field-group"><label class="field-label">Confirm New Password</label><input type="password" class="field" placeholder="Re-enter new password"></div>
+        <div style="margin-top:8px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:10px">
+          <div style="font-size:12px;font-weight:600;color:var(--t3);margin-bottom:8px">PASSWORD REQUIREMENTS</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="var(--brand)" stroke-width="1.5"/><path d="M4 6l1.5 1.5L8 5" stroke="var(--brand)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-size:12px;color:var(--t2)">At least 8 characters</span></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="var(--brand)" stroke-width="1.5"/><path d="M4 6l1.5 1.5L8 5" stroke="var(--brand)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-size:12px;color:var(--t2)">One uppercase letter</span></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="var(--t3)" stroke-width="1.5"/></svg><span style="font-size:12px;color:var(--t3)">One number</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="var(--t3)" stroke-width="1.5"/></svg><span style="font-size:12px;color:var(--t3)">One special character</span></div>
+        </div>
+        <button class="btn" style="margin-top:8px">Update Password</button>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     26 — NOTIFICATION SETTINGS
+     ════════════════════════════════════════ -->
+<div class="frame-wrap">
+  <span class="frame-label">26 · Notification Settings</span>
+  <div class="phone">
+    <div class="statusbar"><span class="statusbar-time">9:41</span><span class="statusbar-right"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x=".5" y="3" width="3" height="9" rx="1" fill="#fff" opacity=".3"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#fff" opacity=".5"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#fff" opacity=".7"/><rect x="14" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="#fff" stroke-opacity=".3"/><rect x="2" y="2" width="15" height="7" rx="1.5" fill="#fff"/></svg></span></div>
+    <div class="screen screen-pad">
+      <div class="det-nav" style="padding:6px 16px 12px"><div class="det-back"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7L7 13" stroke="var(--t2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="det-nav-title">Notification Settings</span></div>
+      <div class="set-group-label">Signal Alerts</div>
+      <div class="set-group">
+        <div class="set-row"><span class="set-text">New BUY Signals</span><div class="set-toggle set-toggle-on"></div></div>
+        <div class="set-row"><span class="set-text">New SELL Signals</span><div class="set-toggle set-toggle-on"></div></div>
+        <div class="set-row"><span class="set-text">Signal Closed (TP)</span><div class="set-toggle set-toggle-on"></div></div>
+        <div class="set-row"><span class="set-text">Signal Closed (SL)</span><div class="set-toggle set-toggle-on"></div></div>
+      </div>
+      <div class="set-group-label">Price Alerts</div>
+      <div class="set-group">
+        <div class="set-row"><span class="set-text">Price Targets</span><div class="set-toggle set-toggle-on"></div></div>
+        <div class="set-row"><span class="set-text">Market Movers</span><div class="set-toggle set-toggle-off"></div></div>
+      </div>
+      <div class="set-group-label">Account</div>
+      <div class="set-group">
+        <div class="set-row"><span class="set-text">Subscription Updates</span><div class="set-toggle set-toggle-on"></div></div>
+        <div class="set-row"><span class="set-text">Promotional</span><div class="set-toggle set-toggle-off"></div></div>
+        <div class="set-row"><span class="set-text">Security Alerts</span><div class="set-toggle set-toggle-on"></div></div>
+      </div>
+      <div class="set-group-label">Delivery Method</div>
+      <div class="set-group">
+        <div class="set-row"><span class="set-text">Push Notifications</span><div class="set-toggle set-toggle-on"></div></div>
+        <div class="set-row"><span class="set-text">Email</span><div class="set-toggle set-toggle-off"></div></div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+</div><!-- end .canvas -->
+
+<!-- FOOTER -->
+<div style="text-align:center;padding:40px 20px 100px">
+  <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px">
+    <div style="width:44px;height:44px;border-radius:12px;background:rgba(32,178,108,0.06);border:1px solid rgba(32,178,108,0.12);display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(32,178,108,0.1)"><img src="logo.png" style="width:32px;height:32px;object-fit:contain;border-radius:3px"></div>
+    <span style="font-size:24px;font-weight:800;letter-spacing:-0.6px;color:#EAECEF">Aspiro <span style="color:#20B26C">Trade</span></span>
+  </div>
+  <div style="font-size:14px;color:var(--t3);margin-bottom:4px">26 screens · Bybit-inspired dark trading theme</div>
+  <div style="font-size:12px;color:var(--t4)">Import to Figma → html.to.design extension by Builder.io</div>
+</div>
+
+</body>
+</html>

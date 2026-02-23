@@ -3,7 +3,7 @@
 <plist version="1.0">
 	<dict>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
-		<true />
+		<true/>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
@@ -34,16 +34,16 @@
 		<key>CFBundleVersion</key>
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
 		<key>LSRequiresIPhoneOS</key>
-		<true />
+		<true/>
 		<key>NSAppTransportSecurity</key>
 		<dict>
 			<key>NSAllowsArbitraryLoads</key>
-			<true />
+			<true/>
 		</dict>
 		<key>NSFaceIDUsageDescription</key>
 		<string>Authentication using Apple ID</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
-		<true />
+		<true/>
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>fetch</string>
@@ -54,7 +54,7 @@
 		<key>UIMainStoryboardFile</key>
 		<string>Main</string>
 		<key>UIStatusBarHidden</key>
-		<false />
+		<false/>
 		<key>UIStatusBarStyle</key>
 		<string></string>
 		<key>UISupportedInterfaceOrientations</key>
@@ -65,8 +65,6 @@
 		<array>
 			<string>UIInterfaceOrientationLandscapeLeft</string>
 		</array>
-
-
 		<key>LSApplicationQueriesSchemes</key>
 		<array>
 			<string>https</string>

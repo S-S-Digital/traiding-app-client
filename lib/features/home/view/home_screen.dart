@@ -1,78 +1,14 @@
-import 'dart:io' show Platform;
-
-import 'package:aspiro_trade/features/asset_details/bloc/asset_details_bloc.dart'
-    as assets_details_bloc;
-import 'package:aspiro_trade/features/assets/bloc/assets_bloc.dart'
-    as assets_bloc;
-import 'package:aspiro_trade/features/history/bloc/history_bloc.dart'
-    as history_bloc;
-import 'package:aspiro_trade/features/home/cubit/home_cubit.dart';
-import 'package:aspiro_trade/features/signals/bloc/signals_bloc.dart'
-    as signals_bloc;
-import 'package:aspiro_trade/features/tickers/bloc/tickers_bloc.dart';
-
-import 'package:aspiro_trade/router/router.dart';
+import 'package:aspiro_trade/router/app_router.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 @RoutePage()
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  @override
-  void initState() {
-    WidgetsBinding.instance.addObserver(this);
-    context.read<HomeCubit>().init();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    context.read<TickersBloc>().add(StopTimer());
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
-      context.read<TickersBloc>().add(StopTimer());
-      context.read<assets_bloc.AssetsBloc>().add(assets_bloc.StopTimer());
-      context.read<assets_details_bloc.AssetDetailsBloc>().add(
-        assets_details_bloc.StopTimer(),
-      );
-      context.read<signals_bloc.SignalsBloc>().add(signals_bloc.StopTimer());
-      context.read<history_bloc.HistoryBloc>().add(history_bloc.StopTimer());
-    }
-
-    if (state == AppLifecycleState.resumed) {
-      context.read<TickersBloc>().add(StopTimer());
-      context.read<assets_bloc.AssetsBloc>().add(assets_bloc.StopTimer());
-      context.read<assets_details_bloc.AssetDetailsBloc>().add(
-        assets_details_bloc.StopTimer(),
-      );
-      context.read<signals_bloc.SignalsBloc>().add(signals_bloc.StopTimer());
-      context.read<history_bloc.HistoryBloc>().add(history_bloc.StopTimer());
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    IconData getAdaptiveIcon({
-      required IconData mIcon,
-      required IconData cIcon,
-    }) {
-      return Platform.isIOS ? cIcon : mIcon;
-    }
-
     return AutoTabsRouter(
       routes: const [
         TickersRoute(),
@@ -82,54 +18,98 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ],
       builder: (context, child) {
         final tabsRouter = AutoTabsRouter.of(context);
+
         return Scaffold(
+          backgroundColor: AppColors.background,
           body: child,
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: tabsRouter.activeIndex,
-            onTap: tabsRouter.setActiveIndex,
-            type: BottomNavigationBarType.fixed,
-            items: [
-              BottomNavigationBarItem(
-                icon: Icon(
-                  getAdaptiveIcon(
-                    mIcon: Icons.analytics_outlined,
-                    cIcon: CupertinoIcons.chart_bar_fill,
-                  ),
-                ),
-                label: 'Активы',
+          bottomNavigationBar: Container(
+            decoration: const BoxDecoration(
+              color: AppColors.card,
+              border: Border(
+                top: BorderSide(color: AppColors.border, width: 0.5),
               ),
-              BottomNavigationBarItem(
-                icon: Icon(
-                  getAdaptiveIcon(
-                    mIcon: Icons.cell_tower, // Сигналы (базовая станция)
-                    cIcon: CupertinoIcons
-                        .waveform_path_ecg, // Сигналы (пульс/график)
-                  ),
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _NavItem(
+                      icon: Icons.show_chart_rounded,
+                      label: 'Market',
+                      isActive: tabsRouter.activeIndex == 0,
+                      onTap: () => tabsRouter.setActiveIndex(0),
+                    ),
+                    _NavItem(
+                      icon: Icons.cell_tower_rounded,
+                      label: 'Signals',
+                      isActive: tabsRouter.activeIndex == 1,
+                      onTap: () => tabsRouter.setActiveIndex(1),
+                    ),
+                    _NavItem(
+                      icon: Icons.history_rounded,
+                      label: 'History',
+                      isActive: tabsRouter.activeIndex == 2,
+                      onTap: () => tabsRouter.setActiveIndex(2),
+                    ),
+                    _NavItem(
+                      icon: Icons.person_outline_rounded,
+                      label: 'Profile',
+                      isActive: tabsRouter.activeIndex == 3,
+                      onTap: () => tabsRouter.setActiveIndex(3),
+                    ),
+                  ],
                 ),
-                label: 'Сигналы',
               ),
-              BottomNavigationBarItem(
-                icon: Icon(
-                  getAdaptiveIcon(
-                    mIcon: Icons.history,
-                    cIcon: CupertinoIcons.clock_fill,
-                  ),
-                ),
-                label: 'История',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(
-                  getAdaptiveIcon(
-                    mIcon: Icons.settings_outlined,
-                    cIcon: CupertinoIcons.settings,
-                  ),
-                ),
-                label: 'Настройки',
-              ),
-            ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 64,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: isActive ? AppColors.brand : AppColors.textQuaternary,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                color: isActive ? AppColors.brand : AppColors.textQuaternary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,52 +1,36 @@
-
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class ExitDialog extends StatelessWidget {
   const ExitDialog({super.key, required this.confirm});
 
   final VoidCallback confirm;
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-      title: Text(
-        'Выход из аккаунта',
-        style: theme.textTheme.headlineSmall?.copyWith(
-          color: theme.colorScheme.onPrimary,
-          fontWeight: FontWeight.bold,
-        ),
+      backgroundColor: AppColors.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text(
+        'Sign Out',
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
       ),
-      content: Text(
-        'Вы уверены, что хотите выйти?',
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: theme.colorScheme.onPrimary,
-          fontWeight: FontWeight.w600,
-        ),
+      content: const Text(
+        'Are you sure you want to sign out?',
+        style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
       ),
       actions: [
-        FilledButton(
-          onPressed:confirm,
-          style: FilledButton.styleFrom(
-            backgroundColor: theme.colorScheme.error,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: Text(
-            'да'.toUpperCase(),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onPrimary,
-            ),
-          ),
-        ),
-
         TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('Нет'),
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+        ),
+        FilledButton(
+          onPressed: confirm,
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.down,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          child: const Text('Sign Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
         ),
       ],
     );

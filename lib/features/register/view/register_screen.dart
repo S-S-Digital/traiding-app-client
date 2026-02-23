@@ -2,10 +2,9 @@ import 'package:aspiro_trade/features/register/bloc/bloc.dart';
 import 'package:aspiro_trade/features/register/widgets/widgets.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/router/app_router.dart';
-
 import 'package:aspiro_trade/ui/ui.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:aspiro_trade/utils/utils.dart';
-
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -48,145 +47,120 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final bloc = context.read<RegisterBloc>();
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 30,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const WelcomeHeader(
-                        title: 'Создать аккаунт',
-                        subtitle: 'Присоединяйтесь к нам',
-                      ),
-                      const SizedBox(height: 30),
-
-                      BlocConsumer<RegisterBloc, RegisterState>(
-                        listener: (context, state) {
-                          if (state.status == Status.failure) {
-                            if (state.error is AppException) {
-                              context.handleException(
-                                state.error as AppException,
-                                context,
-                              );
-                            } else {
-                              context.showBusinessErrorSnackbar(
-                                state.error.toString(),
-                                () {
-                                  context.read<RegisterBloc>().add(Start());
-                                },
-                              );
-                            }
-                          } else if (state.status == Status.success) {
-                            AutoRouter.of(context).pushAndPopUntil(
-                              const HomeRoute(),
-                              predicate: (value) => false,
-                            );
-                          }
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 40),
+              const WelcomeHeader(
+                title: 'Create Account',
+                subtitle: 'Join Aspiro Trade today',
+              ),
+              const SizedBox(height: 32),
+              BlocConsumer<RegisterBloc, RegisterState>(
+                listener: (context, state) {
+                  if (state.status == Status.failure) {
+                    if (state.error is AppException) {
+                      context.handleException(
+                        state.error as AppException,
+                        context,
+                      );
+                    } else {
+                      context.showBusinessErrorSnackbar(
+                        state.error.toString(),
+                        () {
+                          context.read<RegisterBloc>().add(Start());
                         },
-                        buildWhen: (previous, current) =>
-                            current.status.isBuildable,
-                        builder: (context, state) {
-                          if (state.status == Status.loading) {
-                            return const SizedBox(
-                              height: 300,
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-
-                                  children: [
-                                    PlatformProgressIndicator(),
-                                    SizedBox(height: 10),
-                                    Text('Загрузка'),
-                                  ],
-                                ),
+                      );
+                    }
+                  } else if (state.status == Status.success) {
+                    AutoRouter.of(context).pushAndPopUntil(
+                      const HomeRoute(),
+                      predicate: (value) => false,
+                    );
+                  }
+                },
+                buildWhen: (previous, current) =>
+                    current.status.isBuildable,
+                builder: (context, state) {
+                  if (state.status == Status.loading) {
+                    return const SizedBox(
+                      height: 300,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.brand,
+                          strokeWidth: 2.5,
+                        ),
+                      ),
+                    );
+                  }
+                  if (state.status == Status.initial) {
+                    return const SizedBox(height: 300);
+                  }
+                  return Column(
+                    children: [
+                      EmailTextField(
+                        emailFocus: emailFocus,
+                        emailController: emailController,
+                        passwordFocus: passwordFocus,
+                        onChanged: (String value) {
+                          bloc.add(ChangeEmail(email: value));
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      PasswordTextField(
+                        passwordFocus: passwordFocus,
+                        passwordController: passwordController,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) => FocusScope.of(
+                          context,
+                        ).requestFocus(phoneFocus),
+                        onChanged: (String value) {
+                          bloc.add(ChangePassword(password: value));
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      PhoneTextField(
+                        phoneController: phoneController,
+                        phoneFocus: phoneFocus,
+                        onChanged: (String value) {
+                          bloc.add(ChangePhone(phone: value));
+                        },
+                      ),
+                      const SizedBox(height: 32),
+                      AuthButton(
+                        isValid: state.status == Status.submit,
+                        text: 'Create Account',
+                        onPressed: () {
+                          if (state.status == Status.submit) {
+                            bloc.add(
+                              Auth(
+                                phone: phoneController.text.trim(),
+                                password: passwordController.text.trim(),
+                                email: emailController.text.trim(),
                               ),
                             );
                           }
-                          if (state.status != Status.initial) {
-                            return Column(
-                              children: [
-                                EmailTextField(
-                                  emailFocus: emailFocus,
-                                  emailController: emailController,
-                                  passwordFocus: passwordFocus,
-                                  onChanged: (String value) {
-                                    bloc.add(ChangeEmail(email: value));
-                                  },
-                                ),
-                                const SizedBox(height: 15),
-                                PasswordTextField(
-                                  passwordFocus: passwordFocus,
-                                  passwordController: passwordController,
-                                  textInputAction: TextInputAction.next,
-                                  onFieldSubmitted: (_) => FocusScope.of(
-                                    context,
-                                  ).requestFocus(phoneFocus),
-                                  onChanged: (String value) {
-                                    bloc.add(ChangePassword(password: value));
-                                  },
-                                ),
-                                const SizedBox(height: 15),
-                                PhoneTextField(
-                                  phoneController: phoneController,
-                                  phoneFocus: phoneFocus,
-                                  onChanged: (String value) {
-                                    bloc.add(ChangePhone(phone: value));
-                                  },
-                                ),
-                                const SizedBox(height: 30),
-                                AuthButton(
-                                  isValid: state.status == Status.submit,
-                                  text: 'зарегистрироваться'.toUpperCase(),
-                                  onPressed: () {
-                                    if (state.status == Status.submit) {
-                                      bloc.add(
-                                        Auth(
-                                          phone: phoneController.text.trim(),
-                                          password: passwordController.text
-                                              .trim(),
-                                          email: emailController.text.trim(),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                ),
-                              ],
-                            );
-                          }
-                          return const SizedBox(height: 300);
                         },
                       ),
-
-                      AuthFooter(
-                        onPressed: () => AutoRouter.of(context).back(),
-                        firstText: 'Уже есть аккаунт? ',
-                        secondText: 'Войти',
-                      ),
                     ],
-                  ),
-                ),
+                  );
+                },
               ),
-            ),
+              const SizedBox(height: 16),
+              AuthFooter(
+                onPressed: () => AutoRouter.of(context).back(),
+                firstText: 'Already have an account?',
+                secondText: 'Sign In',
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -36,31 +36,45 @@ class TickersBloc extends Bloc<TickersEvent, TickersState> {
 
   Future<void> _onStart(Start event, Emitter<TickersState> emit) async {
     try {
-      emit(state.copyWith(status: Status.loading));
+      // Показываем кэш из Realm мгновенно, пока грузится сеть
+      if (state.tickers.isEmpty) {
+        final localTickers = await _tickersRepository.fetchAllLocalTickers();
+        if (localTickers.isNotEmpty) {
+          final cachedCombined = localTickers
+              .map((t) => CombinedTicker(
+                    assets: Assets.empty(t.symbol),
+                    tickers: t,
+                  ))
+              .toList();
+          emit(state.copyWith(tickers: cachedCombined, status: Status.loading));
+        } else {
+          emit(state.copyWith(status: Status.loading));
+        }
+      } else {
+        // Уже есть данные — не показываем спиннер, обновляем в фоне
+        emit(state.copyWith(status: Status.loading));
+      }
 
-      final List<CombinedTicker> combinedTickers = [];
       final tickers = await _tickersRepository.fetchAllTickers();
 
-      for (final i in tickers) {
-        final asset = await _assetsRepository.fetchAssetsBySymbol(i.symbol);
-        final signals = await _signalsRepository.fetchSignalsByTickerId(
-          i.id,
-          1,
-          20,
-          i.symbol,
-          i.timeframe,
-          '',
-          '',
-        );
-
-        combinedTickers.add(
-          CombinedTicker(
+      // Параллельно загружаем assets + signals для всех тикеров
+      final combinedTickers = await Future.wait(
+        tickers.map((i) async {
+          final results = await Future.wait([
+            _assetsRepository.fetchAssetsBySymbol(i.symbol),
+            _signalsRepository.fetchSignalsByTickerId(
+              i.id, 1, 20, i.symbol, i.timeframe, '', '',
+            ),
+          ]);
+          final asset = results[0] as Assets;
+          final signals = results[1] as List<Signals>;
+          return CombinedTicker(
             assets: asset,
             tickers: i,
             signals: signals.isEmpty ? null : signals.first,
-          ),
-        );
-      }
+          );
+        }),
+      );
 
       emit(state.copyWith(tickers: combinedTickers, status: Status.loaded));
 
@@ -132,7 +146,7 @@ class TickersBloc extends Bloc<TickersEvent, TickersState> {
 
   Future<void> _onRefresh(Refresh event, Emitter<TickersState> emit) async {
     _assetsSubscription?.cancel();
-    add(Start()); // Переиспользуем логику Start для полного рефреша
+    await _onStart(Start(), emit);
   }
 
   void _onStopPolling(StopTimer event, Emitter<TickersState> emit) {

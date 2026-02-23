@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class ForgotPasswordButton extends StatelessWidget {
@@ -7,16 +8,19 @@ class ForgotPasswordButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Align(
-      alignment: Alignment.topRight,
-      child: TextButton(
-        onPressed: () {},
-        child: Text(
-          'Забыли пароль?',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.primaryColor,
-            fontWeight: FontWeight.w500,
+      alignment: Alignment.centerRight,
+      child: GestureDetector(
+        onTap: onPressed,
+        child: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            'Forgot Password?',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.brand,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ),
