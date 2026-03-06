@@ -23,8 +23,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
 
   @override
   void initState() {
-    context.read<AssetsBloc>().add(Start());
     super.initState();
+    context.read<AssetsBloc>().add(Start());
   }
 
   @override
@@ -58,10 +58,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
             leading: IconButton(
               onPressed: () {
                 context.read<AssetsBloc>().add(StopTimer());
-                AutoRouter.of(context).pushAndPopUntil(
-                  const HomeRoute(),
-                  predicate: (value) => false,
-                );
+                AutoRouter.of(context).maybePop();
               },
               icon: const Icon(
                 Icons.arrow_back_ios,
@@ -226,7 +223,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          'Ничего не найдено',
+                          'Nothing found',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

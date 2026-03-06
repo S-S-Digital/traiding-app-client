@@ -8,7 +8,6 @@ import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_masked_text2/flutter_masked_text2.dart';
 
 @RoutePage()
 class RegisterScreen extends StatefulWidget {
@@ -21,17 +20,15 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final MaskedTextController phoneController = MaskedTextController(
-    mask: '+7(000)-000-00-00',
-  );
+  final phoneController = TextEditingController();
   final emailFocus = FocusNode();
   final passwordFocus = FocusNode();
   final phoneFocus = FocusNode();
 
   @override
   void initState() {
-    context.read<RegisterBloc>().add(Start());
     super.initState();
+    context.read<RegisterBloc>().add(Start());
   }
 
   @override

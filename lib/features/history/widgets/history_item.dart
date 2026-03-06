@@ -7,6 +7,13 @@ class HistoryItem extends StatelessWidget {
 
   final CombinedHistory history;
 
+  String _closeReasonLabel() {
+    final status = history.history.status.toLowerCase();
+    if (status.contains('tp') || status.contains('won')) return 'Take Profit';
+    if (status.contains('sl') || status.contains('lost')) return 'Stop Loss';
+    return 'Closed';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isWin = history.history.status.toLowerCase().contains('won') ||
@@ -65,7 +72,7 @@ class HistoryItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${isWin ? 'Take Profit' : 'Stop Loss'} • ${history.history.duration}',
+                  '${_closeReasonLabel()} • ${history.history.duration}',
                   style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
                 ),
               ],
@@ -73,7 +80,7 @@ class HistoryItem extends StatelessWidget {
           ),
           // P&L %
           Text(
-            '${resultPct > 0 ? '+' : ''}${resultPct}%',
+            '${resultPct > 0 ? '+' : ''}${resultPct.toStringAsFixed(2)}%',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,

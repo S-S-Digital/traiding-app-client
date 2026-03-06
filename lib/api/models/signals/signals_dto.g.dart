@@ -6,6 +6,12 @@ part of 'signals_dto.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+DateTime? _safeDateParse(dynamic value) {
+  if (value == null) return null;
+  if (value is! String) return null;
+  return DateTime.tryParse(value);
+}
+
 SignalsDto _$SignalsDtoFromJson(Map<String, dynamic> json) => SignalsDto(
   id: json['id'] as String,
   tickerId: json['tickerId'] as String?,
@@ -13,9 +19,7 @@ SignalsDto _$SignalsDtoFromJson(Map<String, dynamic> json) => SignalsDto(
   timeframe: json['timeframe'] as String,
   direction: json['direction'] as String,
   price: json['price'] as num?,
-  entryBarTime: json['entryBarTime'] == null
-      ? null
-      : DateTime.parse(json['entryBarTime'] as String),
+  entryBarTime: _safeDateParse(json['entryBarTime']),
   takeProfit: json['takeProfit'] as num?,
   stopLoss: json['stopLoss'] as num?,
   prevMove: json['prevMove'] as num?,
@@ -34,9 +38,7 @@ SignalsDto _$SignalsDtoFromJson(Map<String, dynamic> json) => SignalsDto(
   status: json['status'] as String,
   closePrice: json['closePrice'] as num?,
   closeReason: json['closeReason'] as String?,
-  closedAt: json['closedAt'] == null
-      ? null
-      : DateTime.parse(json['closedAt'] as String),
+  closedAt: _safeDateParse(json['closedAt']),
   profitLoss: json['profitLoss'] as num?,
   profitLossPct: json['profitLossPct'] as num?,
   webhookPayload: json['webhookPayload'] == null
@@ -44,10 +46,10 @@ SignalsDto _$SignalsDtoFromJson(Map<String, dynamic> json) => SignalsDto(
       : WebhookPayloadDto.fromJson(
           json['webhookPayload'] as Map<String, dynamic>,
         ),
-  createdAt: DateTime.parse(json['createdAt'] as String),
-  updatedAt: DateTime.parse(json['updatedAt'] as String),
-  currentPrice: json['currentPrice'] as num,
-  progressPct: json['progressPct'] as num,
+  createdAt: _safeDateParse(json['createdAt']) ?? DateTime.now(),
+  updatedAt: _safeDateParse(json['updatedAt']) ?? DateTime.now(),
+  currentPrice: json['currentPrice'] as num? ?? 0,
+  progressPct: json['progressPct'] as num? ?? 0,
   profitPct: (json['profitPct'] as num?)?.toDouble(),
   profitUsd: json['profitUsd'] as num?,
   signalStatus: json['signalStatus'] as String?,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:aspiro_trade/repositories/auth/auth.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -58,7 +59,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     try {
       if (event.email.isEmpty || event.password.isEmpty) {
         emit(
-          state.copyWith(status: Status.failure, error: 'заполните все поля'),
+          state.copyWith(status: Status.failure, error: AppLocalizations.fillAllFields),
         );
         return;
       }

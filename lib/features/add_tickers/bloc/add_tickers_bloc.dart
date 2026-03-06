@@ -2,6 +2,7 @@ import 'package:aspiro_trade/features/add_tickers/models/models.dart';
 import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/notifications/notifications.dart';
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -66,8 +67,8 @@ class AddTickersBloc extends Bloc<AddTickersEvent, AddTickersState> {
 
       await _notificationsRepository.showLocalNotification(
         Notification(
-          title: 'Тикер добавлен',
-          message: 'Тикер ${event.symbol} успешно добавлен в наблюдение.',
+          title: AppLocalizations.tickerAdded,
+          message: AppLocalizations.tickerAddedMessage(event.symbol),
         ),
       );
 

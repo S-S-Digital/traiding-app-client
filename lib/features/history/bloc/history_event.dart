@@ -15,3 +15,11 @@ class Update extends HistoryEvent{
 }
 
 class StopTimer extends HistoryEvent{}
+
+class ChangePeriod extends HistoryEvent {
+  final String period;
+  const ChangePeriod(this.period);
+
+  @override
+  List<Object> get props => [period];
+}

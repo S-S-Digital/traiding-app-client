@@ -18,11 +18,23 @@ class SignalsScreen extends StatefulWidget {
 class _SignalsScreenState extends State<SignalsScreen> {
   final List<String> filters = ['All', 'Buy', 'Sell'];
   String activeFilter = 'All';
+  late final AppLifecycleListener _lifecycleListener;
 
   @override
   void initState() {
-    context.read<SignalsBloc>().add(Start());
     super.initState();
+    context.read<SignalsBloc>().add(Start());
+    _lifecycleListener = AppLifecycleListener(
+      onResume: () => context.read<SignalsBloc>().add(Start()),
+      onPause: () => context.read<SignalsBloc>().add(StopTimer()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycleListener.dispose();
+    context.read<SignalsBloc>().add(StopTimer());
+    super.dispose();
   }
 
   @override
@@ -236,22 +248,110 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-class _SkeletonCard extends StatelessWidget {
+class _SkeletonCard extends StatefulWidget {
+  @override
+  State<_SkeletonCard> createState() => _SkeletonCardState();
+}
+
+class _SkeletonCardState extends State<_SkeletonCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      height: 140,
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand),
-        ),
-      ),
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.elevated.withValues(alpha: _animation.value),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 14, width: 100,
+                          decoration: BoxDecoration(
+                            color: AppColors.elevated.withValues(alpha: _animation.value),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          height: 10, width: 60,
+                          decoration: BoxDecoration(
+                            color: AppColors.elevated.withValues(alpha: _animation.value),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    height: 28, width: 56,
+                    decoration: BoxDecoration(
+                      color: AppColors.elevated.withValues(alpha: _animation.value),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                height: 10, width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.elevated.withValues(alpha: _animation.value),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                height: 10, width: 180,
+                decoration: BoxDecoration(
+                  color: AppColors.elevated.withValues(alpha: _animation.value),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

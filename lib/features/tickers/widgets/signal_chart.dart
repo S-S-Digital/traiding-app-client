@@ -1,5 +1,6 @@
 
 import 'package:aspiro_trade/repositories/assets/assets.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -17,6 +18,23 @@ class SignalChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Empty candles → show placeholder
+    if (candles.isEmpty) {
+      return Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: AppColors.elevated,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: Text(
+            'No data',
+            style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+          ),
+        ),
+      );
+    }
+
     // создаём споты из close
     final spots = <FlSpot>[];
     for (var i = 0; i < candles.length; i++) {

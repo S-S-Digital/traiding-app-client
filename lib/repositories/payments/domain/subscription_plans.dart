@@ -1,4 +1,6 @@
 
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
+
 class SubscriptionPlans {
   SubscriptionPlans({
     required this.id,
@@ -62,57 +64,11 @@ class SubscriptionPlans {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  String get readableDuration {
-    switch (duration) {
-      case 7:
-        return '/неделя';
-      case 30:
-        return '/месяц';
-      case 365:
-        return '/год';
-      default:
-        return '$duration дней';
-    }
+  String get readableDuration => AppLocalizations.readableDuration(duration);
+
+  List<String> get readableFeatures {
+    return features.map((f) => AppLocalizations.readableFeature(f)).toList();
   }
-
- List<String> get readableFeatures {
-  return features.map((feature) {
-    switch (feature) {
-      case 'view_signals':
-        return 'Просмотр сигналов';
-
-      case 'add_tickers':
-        return 'Добавление тикеров';
-
-      case 'receive_signals':
-        return 'Получение сигналов';
-
-      case 'push_notifications':
-        return 'Push-уведомления';
-
-      case 'signal_history':
-        return 'История сигналов';
-
-      case 'advanced_analytics':
-        return 'Расширенная аналитика';
-
-      case 'priority_support':
-        return 'Приоритетная поддержка';
-
-      case 'unlimited_signals':
-        return 'Неограниченные сигналы';
-
-      case 'custom_alerts':
-        return 'Пользовательские уведомления';
-
-      case 'lifetime_updates':
-        return 'Обновления на всю жизнь';
-
-      default:
-        return feature;
-    }
-  }).toList();
-}
 
 
 

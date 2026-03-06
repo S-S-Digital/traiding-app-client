@@ -21,12 +21,9 @@ class AddTickersScreen extends StatefulWidget {
 }
 
 class _AddTickersScreenState extends State<AddTickersScreen> {
-  final List<Timeframes> timeframeOptions = [
-    Timeframes(title: '15m', value: '15m'),
-    Timeframes(title: '1H', value: '1h'),
-    Timeframes(title: '1D', value: '1d'),
-    Timeframes(title: '1W', value: '1w'),
-    Timeframes(title: '1M', value: '1M'),
+  List<Timeframes> get timeframeOptions => [
+    Timeframes(title: AppLocalizations.tf15m, value: '15m'),
+    Timeframes(title: AppLocalizations.tf1h, value: '1h'),
   ];
 
   @override
@@ -51,7 +48,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
               if (error is ConflictException) {
                 showErrorDialog(
                   context,
-                  'Этот тикер с таким таймфреймом уже добавлен',
+                  AppLocalizations.tickerAlreadyAdded,
                   'OK',
                   () {
                     if (context.mounted) {
@@ -65,7 +62,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
               } else if (error is FordibenException) {
                 showErrorDialog(
                   context,
-                  'Необходимо оформить подписку для добавления тикеров',
+                  AppLocalizations.subscriptionRequired,
                   'OK',
                   () {
                     if (context.mounted) {
@@ -101,14 +98,14 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
         buildWhen: (previous, current) => current.status.isBuildable,
         builder: (context, state) {
           if (state.status == Status.loading) {
-            return const Column(
+            return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(height: 40),
                 PlatformProgressIndicator(),
                 SizedBox(height: 12),
                 Text(
-                  'Загрузка...',
+                  AppLocalizations.loading,
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -130,7 +127,6 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
   Widget _buildContent(BuildContext context, AddTickersState state) {
     final isValid = state.status == Status.submit;
     final canSubmit = isValid &&
-        state.selectedOption != null &&
         state.selectedTimeframe != null;
 
     return Column(
@@ -151,8 +147,8 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
         const SizedBox(height: 14),
 
         // ── Title ──
-        const Text(
-          'Добавить тикер',
+        Text(
+          AppLocalizations.addTicker,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -226,32 +222,15 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                   ],
                 ),
               ),
-              if (isValid)
-                const Text(
-                  'Найден',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.brand,
-                  ),
-                )
-              else
-                const Text(
-                  'Не найден',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.down,
-                  ),
-                ),
+
             ],
           ),
         ),
         const SizedBox(height: 18),
 
         // ── Timeframe ──
-        const Text(
-          'ТАЙМФРЕЙМ',
+        Text(
+          AppLocalizations.timeframe,
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -298,130 +277,6 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
         ),
         const SizedBox(height: 18),
 
-        // ── Notifications ──
-        const Text(
-          'УВЕДОМЛЕНИЯ',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textTertiary,
-            letterSpacing: 0.3,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  final opt = Options(
-                    title: 'Покупка и продажа',
-                    subtitle: '',
-                    notifyBuy: !(state.selectedOption?.notifyBuy ?? false),
-                    notifySell: state.selectedOption?.notifySell ?? true,
-                  );
-                  context.read<AddTickersBloc>().add(SelectOption(option: opt));
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: (state.selectedOption?.notifyBuy ?? false)
-                        ? AppColors.up.withValues(alpha: 0.06)
-                        : AppColors.elevated,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: (state.selectedOption?.notifyBuy ?? false)
-                          ? AppColors.up.withValues(alpha: 0.12)
-                          : AppColors.border,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Buy Signals',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: (state.selectedOption?.notifyBuy ?? false)
-                              ? AppColors.up
-                              : AppColors.textTertiary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        (state.selectedOption?.notifyBuy ?? false)
-                            ? 'Enabled'
-                            : 'Disabled',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: (state.selectedOption?.notifyBuy ?? false)
-                              ? AppColors.up
-                              : AppColors.textQuaternary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  final opt = Options(
-                    title: 'Покупка и продажа',
-                    subtitle: '',
-                    notifyBuy: state.selectedOption?.notifyBuy ?? true,
-                    notifySell: !(state.selectedOption?.notifySell ?? false),
-                  );
-                  context.read<AddTickersBloc>().add(SelectOption(option: opt));
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: (state.selectedOption?.notifySell ?? false)
-                        ? AppColors.down.withValues(alpha: 0.06)
-                        : AppColors.elevated,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: (state.selectedOption?.notifySell ?? false)
-                          ? AppColors.down.withValues(alpha: 0.12)
-                          : AppColors.border,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Sell Signals',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: (state.selectedOption?.notifySell ?? false)
-                              ? AppColors.down
-                              : AppColors.textTertiary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        (state.selectedOption?.notifySell ?? false)
-                            ? 'Enabled'
-                            : 'Disabled',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: (state.selectedOption?.notifySell ?? false)
-                              ? AppColors.down
-                              : AppColors.textQuaternary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-
         // ── Submit ──
         SizedBox(
           width: double.infinity,
@@ -432,8 +287,8 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                       AddNewTicker(
                         symbol: widget.assets.symbol,
                         timeframe: state.selectedTimeframe!.value,
-                        notifyBuy: state.selectedOption!.notifyBuy,
-                        notifySell: state.selectedOption!.notifySell,
+                        notifyBuy: true,
+                        notifySell: true,
                       ),
                     )
                 : null,
@@ -449,7 +304,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
               elevation: 0,
             ),
             child: Text(
-              'Добавить ${widget.assets.symbol}${state.selectedTimeframe != null ? " · ${state.selectedTimeframe!.title}" : ""}',
+              AppLocalizations.addSymbol(widget.assets.symbol, state.selectedTimeframe?.title),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -486,8 +341,8 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
           child: const Icon(Icons.error_outline, size: 32, color: AppColors.down),
         ),
         const SizedBox(height: 16),
-        const Text(
-          'Не удалось загрузить',
+        Text(
+          AppLocalizations.failedToLoad,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -510,7 +365,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
               ),
               elevation: 0,
             ),
-            child: const Text('Попробовать снова'),
+            child: Text(AppLocalizations.tryAgain),
           ),
         ),
         const SizedBox(height: 20),

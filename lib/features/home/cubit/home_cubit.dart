@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:aspiro_trade/repositories/auth/auth.dart';
 import 'package:aspiro_trade/repositories/notifications/notifications.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,18 +17,30 @@ class HomeCubit extends Cubit<HomeState> {
 
   final AuthRepositoryI _authRepository;
   final NotificationsRepositoryI _notificationsRepository;
+
   Future<void> init() async {
     try {
       await _notificationsRepository.init();
-      
       await _notificationsRepository.requestPermission();
-      final token = await _notificationsRepository.getToken() ?? '';
-      // await _notificationsRepository.showLocalNotification(Notification(title: 'Уведомления работают', message: 'точно работает?'));
-      await _authRepository.registerFcmToken(FirebaseToken(fcmToken: token));
-      
-      
-    } catch (_) {
 
+      final token = await _notificationsRepository.getToken() ?? '';
+      log('FCM token: $token');
+
+      await _authRepository.registerFcmToken(FirebaseToken(fcmToken: token));
+      log('FCM token sent to server successfully');
+
+      // Re-send token when Firebase rotates it
+      _notificationsRepository.onTokenRefresh((newToken) async {
+        try {
+          log('FCM token refreshed: $newToken');
+          await _authRepository.registerFcmToken(FirebaseToken(fcmToken: newToken));
+          log('Refreshed FCM token sent to server');
+        } catch (e) {
+          log('Failed to send refreshed FCM token: $e');
+        }
+      });
+    } catch (e) {
+      log('FCM init error: $e');
     }
   }
 }

@@ -16,26 +16,47 @@ extension AppExceptionHandler on BuildContext {
   }) {
     if (error is NetworkException) {
       showNetworkErrorSnackBar();
-    } else {
+    } else if (error is UnauthorizedException) {
+      // Только для Unauthorized — показываем диалог и делаем logout
       _showErrorDialog(
-        title: 'Ошибка',
-        message: error.message,
+        title: 'Сессия истекла',
+        message: 'Войдите в аккаунт заново',
         onPressed: () {
-          // 1. Всегда закрываем диалог
           Navigator.of(context).pop();
-
-          // 2. Кастомное действие (если передали)
           onPressed?.call();
-
-          // 3. Принудительный logout при Unauthorized
-          if (error is UnauthorizedException) {
-            AutoRouter.of(
-              context,
-            ).pushAndPopUntil(const LoginRoute(), predicate: (_) => false);
-          }
+          AutoRouter.of(
+            context,
+          ).pushAndPopUntil(const LoginRoute(), predicate: (_) => false);
         },
       );
+    } else {
+      // Все остальные ошибки — тихий snackbar, не блокирующий UI
+      _showErrorSnackBar(error.message);
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    final messenger = ScaffoldMessenger.of(this);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+            fontSize: 14,
+          ),
+        ),
+        backgroundColor: AppColors.darkAccentRed,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   void showBusinessErrorSnackbar(String text, VoidCallback onPressed) {

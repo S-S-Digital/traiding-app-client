@@ -14,13 +14,13 @@ HistoryDto _$HistoryDtoFromJson(Map<String, dynamic> json) => HistoryDto(
   status: json['status'] as String,
   entry: json['entry'] as num,
   exit: json['exit'] as num,
-  takeProfit: json['takeProfit'] as num,
-  stopLoss: json['stopLoss'] as num,
+  takeProfit: json['takeProfit'] as num?,
+  stopLoss: json['stopLoss'] as num?,
   resultPct: json['resultPct'] as num,
   resultUsd: json['resultUsd'] as num,
   duration: json['duration'] as String,
-  createdAt: DateTime.parse(json['createdAt'] as String),
-  closedAt: DateTime.parse(json['closedAt'] as String),
+  createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+  closedAt: DateTime.tryParse(json['closedAt'] as String? ?? '') ?? DateTime.now(),
 );
 
 Map<String, dynamic> _$HistoryDtoToJson(HistoryDto instance) =>

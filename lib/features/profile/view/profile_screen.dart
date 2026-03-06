@@ -7,6 +7,7 @@ import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 @RoutePage()
@@ -20,8 +21,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
-    context.read<ProfileCubit>().start();
     super.initState();
+    context.read<ProfileCubit>().start();
   }
 
   @override
@@ -31,9 +32,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            title: const Text(
-              'Edit Profile',
-              style: TextStyle(
+            title: Text(
+              AppLocalizations.editProfile,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
@@ -44,7 +45,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             backgroundColor: AppColors.background,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
-              onPressed: () => AutoRouter.of(context).back(),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                AutoRouter.of(context).back();
+              },
               icon: const Icon(
                 Icons.arrow_back_ios,
                 color: AppColors.textSecondary,
@@ -77,143 +81,151 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ? user.email[0].toUpperCase()
                     : '?';
                 return SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      // ── Avatar ──
-                      Container(
-                        width: 68,
-                        height: 68,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [AppColors.brand, AppColors.brandLight],
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            initial,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.background,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 20),
 
-                      // ── Info card ──
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 20),
-                        decoration: BoxDecoration(
-                          color: AppColors.card,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Column(
-                          children: [
-                            _InfoRow(
-                              label: 'Email',
-                              value: user.email,
+                        // ── Avatar ──
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [AppColors.brand, AppColors.brandLight],
                             ),
-                            Container(height: 1, color: AppColors.border),
-                            _InfoRow(
-                              label: 'Телефон',
-                              value: user.phoneFormatted,
-                            ),
-                            Container(height: 1, color: AppColors.border),
-                            _InfoRow(
-                              label: 'План',
-                              value: user.isPremium ? 'Pro' : 'Free',
-                              valueColor: user.isPremium
-                                  ? AppColors.brand
-                                  : AppColors.textSecondary,
-                            ),
-                            Container(height: 1, color: AppColors.border),
-                            _InfoRow(
-                              label: 'Тикеры',
-                              value: limits.maxTickers.type ==
-                                      MaxTickersType.unlimited
-                                  ? 'Безлимит'
-                                  : '${limits.currentTickers}/${limits.maxTickers.value}',
-                            ),
-                            if (user.isPremium) ...[
-                              Container(height: 1, color: AppColors.border),
-                              _InfoRow(
-                                label: 'Премиум до',
-                                value: user.premiumUntilFormatted,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.brand.withValues(alpha: 0.25),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
                               ),
                             ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // ── Features ──
-                      if (limits.readableFeatures.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
+                          ),
+                          child: Center(
                             child: Text(
-                              'ДОСТУПНЫЕ ФУНКЦИИ',
+                              initial,
+                              style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.background,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // ── Name ──
+                        Text(
+                          user.email.split('@').first,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          user.email,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+
+                        // ── Pro badge ──
+                        if (user.isPremium) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color(0xFF20B26C),
+                                  Color(0xFF2DC77A),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.brand.withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Text(
+                              '✦ PRO',
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textTertiary,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
                                 letterSpacing: 0.5,
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children:
-                                limits.readableFeatures.map((f) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+                        ],
+                        const SizedBox(height: 24),
+
+                        // ── Info card ──
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.card,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            children: [
+                              _InfoRow(
+                                icon: Icons.email_outlined,
+                                label: AppLocalizations.email,
+                                value: user.email,
+                              ),
+                              const _Divider(),
+                              _InfoRow(
+                                icon: Icons.workspace_premium_outlined,
+                                label: AppLocalizations.plan,
+                                value: user.isPremium ? 'Pro' : AppLocalizations.free,
+                                valueColor: user.isPremium
+                                    ? AppColors.brand
+                                    : AppColors.textSecondary,
+                              ),
+                              const _Divider(),
+                              _InfoRow(
+                                icon: Icons.show_chart_rounded,
+                                label: AppLocalizations.tickers,
+                                value: limits.maxTickers.type ==
+                                        MaxTickersType.unlimited
+                                    ? AppLocalizations.unlimited
+                                    : '${limits.currentTickers}/${limits.maxTickers.value}',
+                              ),
+                              if (user.isPremium) ...[
+                                const _Divider(),
+                                _InfoRow(
+                                  icon: Icons.event_outlined,
+                                  label: AppLocalizations.premiumUntil,
+                                  value: user.premiumUntilFormatted,
                                 ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      AppColors.brand.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: AppColors.brand
-                                        .withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                child: Text(
-                                  f,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.brand,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                              ],
+                            ],
                           ),
                         ),
-                      ],
-                      const SizedBox(height: 32),
+                        const SizedBox(height: 32),
 
-                      // ── Delete account ──
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: SizedBox(
+                        // ── Delete account ──
+                        SizedBox(
                           width: double.infinity,
                           height: 48,
                           child: OutlinedButton(
                             onPressed: () async {
+                              HapticFeedback.heavyImpact();
                               final isConfirmed =
                                   await context.showDeleteAccountDialog(
                                 context,
@@ -225,15 +237,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             },
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: AppColors.down.withValues(alpha: 0.3),
+                                color: AppColors.down.withValues(alpha: 0.25),
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
-                              'Удалить аккаунт',
-                              style: TextStyle(
+                            child: Text(
+                              AppLocalizations.deleteAccount,
+                              style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.down,
@@ -241,9 +253,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 40),
-                    ],
+                        const SizedBox(height: 40),
+                      ],
+                    ),
                   ),
                 );
               }
@@ -261,12 +273,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
+class _Divider extends StatelessWidget {
+  const _Divider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 0.5,
+      margin: const EdgeInsets.only(left: 48),
+      color: AppColors.border,
+    );
+  }
+}
+
 class _InfoRow extends StatelessWidget {
   const _InfoRow({
+    required this.icon,
     required this.label,
     required this.value,
     this.valueColor,
   });
+  final IconData icon;
   final String label;
   final String value;
   final Color? valueColor;
@@ -274,15 +301,15 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
+          Icon(icon, size: 18, color: AppColors.textTertiary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
             ),
           ),
           Flexible(

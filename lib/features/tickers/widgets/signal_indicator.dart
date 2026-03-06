@@ -1,4 +1,5 @@
 import 'package:aspiro_trade/features/tickers/widgets/widgets.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:flutter/material.dart';
 
@@ -16,16 +17,16 @@ class SignalIndicator extends StatelessWidget {
 
     switch (status) {
       case SignalStatus.buy:
-        color = theme.colorScheme.secondary; // зелёный
-        text = 'ПОКУПКА';
+        color = theme.colorScheme.secondary;
+        text = AppLocalizations.signalBuy;
         break;
       case SignalStatus.sell:
-        color = theme.colorScheme.error; // красный
-        text = 'ПРОДАЖА';
+        color = theme.colorScheme.error;
+        text = AppLocalizations.signalSell;
         break;
       case SignalStatus.none:
-        color = Colors.grey; // нет сигнала
-        text = 'ОЖИДАНИЕ';
+        color = Colors.grey;
+        text = AppLocalizations.signalWait;
         break;
     }
 
@@ -43,7 +44,7 @@ class SignalIndicator extends StatelessWidget {
           BlinkingDot(color: color, size: 10),
           const SizedBox(width: 6),
           Text(
-            'Сигнал: ',
+            AppLocalizations.signalLabel,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: color,
               fontWeight: FontWeight.w700,
@@ -61,3 +62,4 @@ class SignalIndicator extends StatelessWidget {
     );
   }
 }
+

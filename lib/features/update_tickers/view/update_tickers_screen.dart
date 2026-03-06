@@ -58,14 +58,14 @@ class _UpdateTickersScreenState extends State<UpdateTickersScreen> {
         },
         builder: (context, state) {
           if (state is UpdateTickersLoading) {
-            return const Column(
+            return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(height: 40),
                 PlatformProgressIndicator(),
                 SizedBox(height: 12),
                 Text(
-                  'Загрузка...',
+                  AppLocalizations.loading,
                   style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                 ),
                 SizedBox(height: 40),
@@ -99,8 +99,8 @@ class _UpdateTickersScreenState extends State<UpdateTickersScreen> {
         ),
         const SizedBox(height: 14),
 
-        const Text(
-          'Настройки тикера',
+        Text(
+          AppLocalizations.isRu ? 'Настройки тикера' : 'Ticker Settings',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -174,22 +174,14 @@ class _UpdateTickersScreenState extends State<UpdateTickersScreen> {
                   ],
                 ),
               ),
-              Text(
-                state.isValid ? 'Найден' : 'Не найден',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: state.isValid ? AppColors.brand : AppColors.down,
-                ),
-              ),
             ],
           ),
         ),
         const SizedBox(height: 18),
 
         // ── Timeframe ──
-        const Text(
-          'ТАЙМФРЕЙМ',
+        Text(
+          AppLocalizations.timeframe,
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -236,8 +228,8 @@ class _UpdateTickersScreenState extends State<UpdateTickersScreen> {
         const SizedBox(height: 18),
 
         // ── Notifications ──
-        const Text(
-          'УВЕДОМЛЕНИЯ',
+        Text(
+          AppLocalizations.notifications,
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -275,7 +267,7 @@ class _UpdateTickersScreenState extends State<UpdateTickersScreen> {
                   child: Column(
                     children: [
                       Text(
-                        'Buy Signals',
+                        AppLocalizations.isRu ? 'Сигналы покупки' : 'Buy Signals',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -286,7 +278,7 @@ class _UpdateTickersScreenState extends State<UpdateTickersScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        state.selectedOption.notifyBuy ? 'Enabled' : 'Disabled',
+                        state.selectedOption.notifyBuy ? (AppLocalizations.isRu ? 'Включено' : 'Enabled') : (AppLocalizations.isRu ? 'Выключено' : 'Disabled'),
                         style: TextStyle(
                           fontSize: 11,
                           color: state.selectedOption.notifyBuy
@@ -327,7 +319,7 @@ class _UpdateTickersScreenState extends State<UpdateTickersScreen> {
                   child: Column(
                     children: [
                       Text(
-                        'Sell Signals',
+                        AppLocalizations.isRu ? 'Сигналы продажи' : 'Sell Signals',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -338,7 +330,7 @@ class _UpdateTickersScreenState extends State<UpdateTickersScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        state.selectedOption.notifySell ? 'Enabled' : 'Disabled',
+                        state.selectedOption.notifySell ? (AppLocalizations.isRu ? 'Включено' : 'Enabled') : (AppLocalizations.isRu ? 'Выключено' : 'Disabled'),
                         style: TextStyle(
                           fontSize: 11,
                           color: state.selectedOption.notifySell
@@ -382,8 +374,8 @@ class _UpdateTickersScreenState extends State<UpdateTickersScreen> {
               ),
               elevation: 0,
             ),
-            child: const Text(
-              'Сохранить',
+            child: Text(
+              AppLocalizations.isRu ? 'Сохранить' : 'Save',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),

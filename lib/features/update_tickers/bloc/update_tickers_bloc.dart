@@ -3,6 +3,7 @@ import 'package:aspiro_trade/features/tickers/models/models.dart';
 import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -34,32 +35,29 @@ class UpdateTickersBloc extends Bloc<UpdateTickersEvent, UpdateTickersState> {
 
   final AssetsRepositoryI _assetsRepository;
   final TickersRepositoryI _tickersRepository;
-  final List<Options> options = [
+  List<Options> get options => [
     Options(
-      title: 'Покупка и продажа',
-      subtitle: 'уведомления о всех типах сигналов',
+      title: AppLocalizations.buyAndSell,
+      subtitle: AppLocalizations.buyAndSellSubtitle,
       notifyBuy: true,
       notifySell: true,
     ),
     Options(
-      title: 'Только покупка',
-      subtitle: 'Уведомления только о сигналах покупки',
+      title: AppLocalizations.buyOnly,
+      subtitle: AppLocalizations.buyOnlySubtitle,
       notifyBuy: true,
       notifySell: false,
     ),
     Options(
-      title: 'Только продажа',
-      subtitle: 'Уведомления только о сигналах продажи',
+      title: AppLocalizations.sellOnly,
+      subtitle: AppLocalizations.sellOnlySubtitle,
       notifyBuy: false,
       notifySell: true,
     ),
   ];
-  final List<Timeframes> timeframeOptions = [
-    Timeframes(title: '15 минут', value: '15m'),
-    Timeframes(title: '1 час', value: '1h'),
-    Timeframes(title: '1 день', value: '1d'),
-    Timeframes(title: '1 неделя', value: '1w'),
-    Timeframes(title: '1 месяц', value: '1M'),
+  List<Timeframes> get timeframeOptions => [
+    Timeframes(title: AppLocalizations.tf15m, value: '15m'),
+    Timeframes(title: AppLocalizations.tf1h, value: '1h'),
   ];
 
   Options _getOption(bool notifyBuy, bool notifySell) {

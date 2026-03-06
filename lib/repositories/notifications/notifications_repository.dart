@@ -110,4 +110,9 @@ class NotificationsRepository implements NotificationsRepositoryI {
   void enableNotifications() async {
     await FirebaseMessaging.instance.subscribeToTopic('BTCUSDT');
   }
+
+  @override
+  void onTokenRefresh(void Function(String) callback) {
+    _firebaseMessaging.onTokenRefresh.listen(callback);
+  }
 }

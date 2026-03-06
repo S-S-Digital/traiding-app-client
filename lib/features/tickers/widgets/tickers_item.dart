@@ -16,7 +16,10 @@ class TickersItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isNegative = tickers.assets.change24h.startsWith('-');
+    final priceValue = double.tryParse(tickers.assets.price) ?? 0;
+    final hasPrice = priceValue > 0;
+    final changePercent = double.tryParse(tickers.assets.priceChangePercent) ?? 0;
+    final isNegative = changePercent < 0;
 
     return Dismissible(
       key: ValueKey(tickers.tickers.id),
@@ -52,6 +55,8 @@ class TickersItem extends StatelessWidget {
                   child: Image.network(
                     tickers.assets.logoUrl,
                     width: 40, height: 40, fit: BoxFit.cover,
+                    cacheWidth: 80,
+                    cacheHeight: 80,
                     errorBuilder: (_, __, ___) => Center(
                       child: Text(
                         tickers.tickers.symbol.isNotEmpty ? tickers.tickers.symbol[0] : '?',
@@ -115,25 +120,27 @@ class TickersItem extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    tickers.assets.formatPriceLogic(tickers.assets.price),
+                    hasPrice ? tickers.assets.formatPriceLogic(tickers.assets.price) : '—',
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                   ),
-                  const SizedBox(height: 2),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: isNegative ? AppColors.down.withValues(alpha: 0.12) : AppColors.up.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '${isNegative ? '' : '+'}${tickers.assets.formatPriceLogic(tickers.assets.priceChangePercent)}%',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isNegative ? AppColors.down : AppColors.up,
+                  if (hasPrice) ...[
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isNegative ? AppColors.down.withValues(alpha: 0.12) : AppColors.up.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${isNegative ? '' : '+'}${tickers.assets.formatPriceLogic(tickers.assets.priceChangePercent)}%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isNegative ? AppColors.down : AppColors.up,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ],

@@ -72,6 +72,8 @@ class CryptoListTile extends StatelessWidget {
                       width: _iconSize,
                       height: _iconSize,
                       fit: BoxFit.cover,
+                      cacheWidth: (_iconSize * 2).toInt(),
+                      cacheHeight: (_iconSize * 2).toInt(),
                       errorBuilder: (_, __, ___) => _buildFallbackIcon(),
                     ),
                   )

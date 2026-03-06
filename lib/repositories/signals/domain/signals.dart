@@ -50,8 +50,8 @@ class Signals {
     String? direction,
     double? price,
     DateTime? entryBarTime,
-    double? takeProfit,
-    double? stopLoss,
+    num? takeProfit,
+    num? stopLoss,
     double? prevMove,
     double? stochK,
     double? stochD,
@@ -74,9 +74,9 @@ class Signals {
     String? webhookPayload,
     DateTime? createdAt,
     DateTime? updatedAt,
-    double? currentPrice,
+    num? currentPrice,
     double? progressPct,
-    double? profitPct,
+    num? profitPct,
     double? profitUsd,
     String? signalStatus,
     Indicator? indicators,
@@ -131,8 +131,8 @@ class Signals {
   final String direction;
   final num price;
   final DateTime entryBarTime;
-  final num takeProfit;
-  final num stopLoss;
+  final num? takeProfit;
+  final num? stopLoss;
   final num prevMove;
   final num stochK;
   final num stochD;
@@ -155,13 +155,15 @@ class Signals {
   final String webhookPayload;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final num currentPrice;
+  final num? currentPrice;
   final num progressPct;
-  final num profitPct;
-  final num profitUsd;
+  final num? profitPct;
+  final num? profitUsd;
   final String signalStatus;
   final Indicator? indicators;
   final Tickers? ticker;
+
+  bool get isClosed => status.toLowerCase() == 'closed';
 
   String getDirection(String value) =>
       value.toLowerCase().contains('buy') ? 'Покупка' : 'Продажа';
@@ -175,8 +177,8 @@ class Signals {
       direction: '',
       price: 0,
       entryBarTime: DateTime.fromMillisecondsSinceEpoch(0),
-      takeProfit: 0,
-      stopLoss: 0,
+      takeProfit: null,
+      stopLoss: null,
       prevMove: 0,
       stochK: 0,
       stochD: 0,
@@ -199,10 +201,10 @@ class Signals {
       webhookPayload: '',
       createdAt: DateTime.fromMillisecondsSinceEpoch(0),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
-      currentPrice: 0,
+      currentPrice: null,
       progressPct: 0,
-      profitPct: 0,
-      profitUsd: 0,
+      profitPct: null,
+      profitUsd: null,
       signalStatus: '',
       indicators: null,
       ticker: null,

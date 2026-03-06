@@ -167,7 +167,7 @@ class _AssetBody extends StatelessWidget {
         // ── Price centered ──
         Text(
           assets.price.isEmpty
-              ? 'Нет данных'
+              ? (AppLocalizations.isRu ? 'Нет данных' : 'No data')
               : '\$${assets.formatPriceLogic(assets.price)}',
           style: const TextStyle(
             fontSize: 36,
@@ -286,8 +286,8 @@ class _AssetBody extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                'Добавить тикер',
+              child: Text(
+                AppLocalizations.addTicker,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

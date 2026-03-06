@@ -2,7 +2,7 @@ import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/signals/signals.dart';
 
 class CombinedHistory {
-  CombinedHistory({required this.assets, required this.history});
+  CombinedHistory({this.assets, required this.history});
 
     CombinedHistory copyWith({
     Assets? assets,
@@ -14,7 +14,7 @@ class CombinedHistory {
     );
   }
 
-  final Assets assets;
+  final Assets? assets;
   final History history;
 
 

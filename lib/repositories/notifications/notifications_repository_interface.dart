@@ -7,4 +7,5 @@ abstract interface class NotificationsRepositoryI {
   Future<String?> getToken();
   Future<bool> requestPermission();
   Future<void> showLocalNotification(Notification notification);
+  void onTokenRefresh(void Function(String) callback);
 }

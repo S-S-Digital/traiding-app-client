@@ -78,23 +78,25 @@ class SignalsBloc extends Bloc<SignalsEvent, SignalsState> {
         '',
       );
 
+      // Reuse cached assets from previous state to avoid redundant API calls
+      final cachedAssets = {
+        for (final cs in state.signals) cs.signal.symbol: cs.assets,
+      };
+
       List<CombinedSignal> combinedSignals = [];
 
       if (signals.isNotEmpty) {
-        // создаём список future для всех запросов assets
         final futures = signals.map((signal) async {
-          final assets = await _assetsRepository.fetchAssetsBySymbol(
-            signal.symbol,
-          );
+          final assets = cachedAssets[signal.symbol] ??
+              await _assetsRepository.fetchAssetsBySymbol(signal.symbol);
           return CombinedSignal(signal: signal, assets: assets);
         }).toList();
 
-        // ждём все запросы параллельно
         combinedSignals = await Future.wait(futures);
       }
-      emit(state.copyWith( signals: combinedSignals));
-    } catch (error) {
-      emit(state.copyWith( status: Status.failure));
+      emit(state.copyWith(signals: combinedSignals));
+    } catch (_) {
+      // Silently ignore update errors to avoid flickering UI
     }
   }
 }

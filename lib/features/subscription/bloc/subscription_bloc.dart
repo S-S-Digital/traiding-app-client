@@ -40,7 +40,9 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   Future<void> _onStart(Start event, Emitter<SubscriptionState> emit) async {
     emit(state.copyWith(status: SubscriptionStatus.loading));
     try {
-      if (!await _iap.isAvailable()) {
+      final isAvailable = await _iap.isAvailable();
+      talker.debug('IAP isAvailable: $isAvailable');
+      if (!isAvailable) {
         emit(
           state.copyWith(
             status: SubscriptionStatus.failure,
@@ -51,21 +53,32 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       }
 
       final plans = await _paymentsRepository.fetchAllPlans();
+      talker.debug('Plans loaded: ${plans.length}');
+      for (final p in plans) {
+        talker.debug('  Plan: ${p.name} | apple: ${p.appleProductId} | google: ${p.googleProductId} | price: ${p.price}');
+      }
+
       final myPlan = await _paymentsRepository.getCurrentSubscription();
+      talker.debug('Current subscriptions: ${myPlan.length}');
 
       final ids = plans
           .map((p) => Platform.isIOS ? p.appleProductId : p.googleProductId)
           .where((id) => id.isNotEmpty)
           .toSet();
 
+      talker.debug('Querying product IDs: $ids');
       final response = await _iap.queryProductDetails(ids);
 
       if (response.error != null) {
+        talker.error('IAP query error: ${response.error}');
         throw Exception(response.error);
       }
 
-      // МЕТА-КОММЕНТАРИЙ: Не блокируем работу, если какой-то ID не найден,
-      // просто логируем. Это делает приложение стабильнее при проверке.
+      talker.debug('Found products: ${response.productDetails.length}');
+      for (final pd in response.productDetails) {
+        talker.debug('  Product: ${pd.id} | ${pd.title} | ${pd.price}');
+      }
+
       if (response.notFoundIDs.isNotEmpty) {
         talker.error('IAP not found IDs: ${response.notFoundIDs}');
       }
@@ -80,7 +93,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         ),
       );
     } catch (e) {
-      talker.error(e);
+      talker.error('IAP Start error: $e');
       emit(state.copyWith(status: SubscriptionStatus.failure, error: e));
     }
   }
@@ -92,18 +105,18 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     Emitter<SubscriptionState> emit,
   ) async {
     try {
-      // МЕТА-КОММЕНТАРИЙ: Немедленно уведомляем UI, что процесс пошел.
-      // Это уберет претензию Apple "No action followed".
+      talker.debug('Purchase initiated: ${event.productDetails.id} | ${event.productDetails.title} | ${event.productDetails.price}');
       emit(state.copyWith(status: SubscriptionStatus.purchasing));
 
       final param = PurchaseParam(productDetails: event.productDetails);
 
-      // ВАЖНО: Мы не ждем результата покупки здесь,
-      // результат придет в _onUpdatePurchaseStatus через стрим.
-      await _iap.buyNonConsumable(purchaseParam: param);
+      talker.debug('Calling buyNonConsumable...');
+      final result = await _iap.buyNonConsumable(purchaseParam: param);
+      talker.debug('buyNonConsumable returned: $result');
     } catch (e) {
       talker.error('Purchase initiation error: $e');
       if (e is PlatformException && e.code == 'storekit2_purchase_cancelled') {
+        talker.debug('Purchase cancelled by user');
         emit(state.copyWith(status: SubscriptionStatus.loaded));
         return;
       }

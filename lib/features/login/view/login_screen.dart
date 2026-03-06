@@ -7,10 +7,9 @@ import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:talker_flutter/talker_flutter.dart';
+
 
 @RoutePage()
 class LoginScreen extends StatefulWidget {
@@ -37,8 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void initState() {
-    context.read<LoginBloc>().add(LoginStart());
     super.initState();
+    context.read<LoginBloc>().add(LoginStart());
   }
 
   @override
@@ -111,10 +110,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 8),
                   ForgotPasswordButton(
                     onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              TalkerScreen(talker: talker),
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: AppColors.card,
+                          content: Text(
+                            'Password reset is coming soon',
+                            style: TextStyle(color: AppColors.textPrimary),
+                          ),
                         ),
                       );
                     },
@@ -188,28 +190,32 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             children: [
               const TextSpan(text: 'By continuing, you agree to our '),
-              TextSpan(
-                text: 'Privacy Policy',
-                style: const TextStyle(
-                  color: AppColors.brand,
-                  fontWeight: FontWeight.w500,
+              WidgetSpan(
+                child: GestureDetector(
+                  onTap: () => AutoRouter.of(context).push(const PrivacyPolicyRoute()),
+                  child: const Text(
+                    'Privacy Policy',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.brand,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-                recognizer: TapGestureRecognizer()
-                  ..onTap = () {
-                    AutoRouter.of(context).push(const PrivacyPolicyRoute());
-                  },
               ),
               const TextSpan(text: ' and '),
-              TextSpan(
-                text: 'Terms of Use',
-                style: const TextStyle(
-                  color: AppColors.brand,
-                  fontWeight: FontWeight.w500,
+              WidgetSpan(
+                child: GestureDetector(
+                  onTap: () => AutoRouter.of(context).push(const TermsOfUseRoute()),
+                  child: const Text(
+                    'Terms of Use',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.brand,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-                recognizer: TapGestureRecognizer()
-                  ..onTap = () {
-                    AutoRouter.of(context).push(const TermsOfUseRoute());
-                  },
               ),
             ],
           ),

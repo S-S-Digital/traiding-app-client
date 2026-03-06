@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 
 
 Future<void> main() async {
@@ -55,5 +57,11 @@ Future<void> main() async {
   );
 
 
-  runApp(AspiroTradeApp(config: config));
+  // Pre-load saved language before building the app
+  final savedLang = await const FlutterSecureStorage().read(key: 'app_language');
+  if (savedLang == 'ru') {
+    AppLocalizations.setLanguage(AppLanguage.ru);
+  }
+
+  runApp(AspiroTradeApp(config: config, initialLanguage: savedLang == 'ru' ? AppLanguage.ru : AppLanguage.en));
 }

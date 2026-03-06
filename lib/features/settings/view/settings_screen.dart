@@ -1,10 +1,15 @@
 import 'package:aspiro_trade/features/settings/bloc/settings_bloc.dart';
 import 'package:aspiro_trade/features/settings/widgets/widgets.dart';
+import 'package:aspiro_trade/features/settings/widgets/language_picker.dart';
 import 'package:aspiro_trade/router/app_router.dart';
+import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
+import 'package:aspiro_trade/app/aspiro_trade_app.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage()
 class SettingsScreen extends StatefulWidget {
@@ -17,12 +22,13 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
-    context.read<SettingsBloc>().add(Start());
     super.initState();
+    context.read<SettingsBloc>().add(Start());
   }
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -67,7 +73,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 24),
                     child: Column(
                       children: [
-                        // Avatar
                         Container(
                           width: 72, height: 72,
                           decoration: BoxDecoration(
@@ -86,15 +91,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Text(
-                          name,
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                        ),
+                        Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                         const SizedBox(height: 4),
-                        Text(
-                          email,
-                          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
-                        ),
+                        Text(email, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
                         if (isPremium) ...[
                           const SizedBox(height: 8),
                           Container(
@@ -103,10 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: AppColors.warning.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
-                              'PRO',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.warning),
-                            ),
+                            child: const Text('PRO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.warning)),
                           ),
                         ],
                       ],
@@ -131,30 +127,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              isPremium ? 'Pro Plan' : 'Free Plan',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                            ),
+                            Text(isPremium ? AppLocalizations.proPlan : AppLocalizations.freePlan, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                             const Spacer(),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: AppColors.brand.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                isPremium ? 'Active' : 'Upgrade',
-                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.brand),
-                              ),
+                              decoration: BoxDecoration(color: AppColors.brand.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                              child: Text(isPremium ? AppLocalizations.active : AppLocalizations.upgrade, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.brand)),
                             ),
                           ],
                         ),
                         if (premiumUntil.isNotEmpty && premiumUntil != '-') ...[
                           const SizedBox(height: 4),
-                          Text(
-                            'Renews $premiumUntil',
-                            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
-                          ),
+                          Text('${AppLocalizations.renews} $premiumUntil', style: const TextStyle(fontSize: 12, color: AppColors.textTertiary)),
                         ],
                       ],
                     ),
@@ -164,17 +148,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   // ── Account Section ──
                   _SettingsGroup(
-                    title: 'Account',
+                    title: AppLocalizations.account,
                     children: [
                       _SettingsRow(
                         icon: Icons.person_outline, iconColor: AppColors.brand,
-                        title: 'Edit Profile',
+                        title: AppLocalizations.editProfile,
                         onTap: () => context.router.push(const ProfileRoute()),
                       ),
                       _SettingsRow(
                         icon: Icons.workspace_premium_outlined, iconColor: AppColors.warning,
-                        title: 'Subscription',
+                        title: AppLocalizations.subscription,
                         onTap: () => context.router.push(const SubscriptionRoute()),
+                      ),
+                      _SettingsRow(
+                        icon: Icons.language_rounded, iconColor: AppColors.info,
+                        title: AppLocalizations.language,
+                        trailing: Text(
+                          AppLocalizations.languageValue,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+                        ),
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          showLanguagePicker(context);
+                        },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ── Get for Free ──
+                  _SettingsGroup(
+                    children: [
+                      _SettingsRow(
+                        icon: Icons.card_giftcard_rounded, iconColor: AppColors.brand,
+                        title: AppLocalizations.getFree,
+                        onTap: () => launchUrl(
+                          Uri.parse('https://docs.google.com/document/d/1-emJAJQjTSl8Y_crh6LuXqTqzw29J7v364BUC28hFkM/edit?usp=drivesdk'),
+                          mode: LaunchMode.externalApplication,
+                        ),
                       ),
                     ],
                   ),
@@ -183,16 +195,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   // ── Support Section ──
                   _SettingsGroup(
-                    title: 'Support',
+                    title: AppLocalizations.support,
                     children: [
                       _SettingsRow(
                         icon: Icons.description_outlined, iconColor: AppColors.info,
-                        title: 'Terms of Use',
+                        title: AppLocalizations.termsOfUse,
                         onTap: () => context.router.push(const TermsOfUseRoute()),
                       ),
                       _SettingsRow(
                         icon: Icons.shield_outlined, iconColor: AppColors.purple,
-                        title: 'Privacy Policy',
+                        title: AppLocalizations.privacyPolicy,
                         onTap: () => context.router.push(const PrivacyPolicyRoute()),
                       ),
                     ],
@@ -205,7 +217,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       _SettingsRow(
                         icon: Icons.logout, iconColor: AppColors.down,
-                        title: 'Sign Out',
+                        title: AppLocalizations.signOut,
                         titleColor: AppColors.down,
                         showArrow: false,
                         onTap: () {
@@ -224,12 +236,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
 
                   const SizedBox(height: 24),
-
-                  // ── Version ──
-                  Text(
-                    'Aspiro Trade v$appVersion',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textQuaternary),
-                  ),
+                  Text('Aspiro Trade v$appVersion', style: const TextStyle(fontSize: 12, color: AppColors.textQuaternary)),
                   const SizedBox(height: 100),
                 ],
               ),
@@ -254,10 +261,7 @@ class _SettingsGroup extends StatelessWidget {
         if (title != null)
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 8),
-            child: Text(
-              title!,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textTertiary),
-            ),
+            child: Text(title!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textTertiary)),
           ),
         Container(
           decoration: BoxDecoration(
@@ -283,7 +287,7 @@ class _SettingsGroup extends StatelessWidget {
   }
 }
 
-class _SettingsRow extends StatelessWidget {
+class _SettingsRow extends StatefulWidget {
   const _SettingsRow({
     required this.icon,
     required this.iconColor,
@@ -291,6 +295,7 @@ class _SettingsRow extends StatelessWidget {
     required this.onTap,
     this.titleColor,
     this.showArrow = true,
+    this.trailing,
   });
 
   final IconData icon;
@@ -298,33 +303,53 @@ class _SettingsRow extends StatelessWidget {
   final String title;
   final Color? titleColor;
   final bool showArrow;
+  final Widget? trailing;
   final VoidCallback onTap;
+
+  @override
+  State<_SettingsRow> createState() => _SettingsRowState();
+}
+
+class _SettingsRowState extends State<_SettingsRow> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        HapticFeedback.lightImpact();
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
       behavior: HitTestBehavior.opaque,
-      child: Padding(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        color: _pressed ? AppColors.elevated : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         child: Row(
           children: [
             Container(
               width: 32, height: 32,
               decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.12),
+                color: widget.iconColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 18, color: iconColor),
+              child: Icon(widget.icon, size: 18, color: widget.iconColor),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                title,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: titleColor ?? AppColors.textPrimary),
+                widget.title,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: widget.titleColor ?? AppColors.textPrimary),
               ),
             ),
-            if (showArrow)
+            if (widget.trailing != null) ...[
+              widget.trailing!,
+              const SizedBox(width: 4),
+            ],
+            if (widget.showArrow)
               const Icon(Icons.chevron_right, size: 20, color: AppColors.textQuaternary),
           ],
         ),

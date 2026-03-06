@@ -20,8 +20,8 @@ class TickersScreen extends StatefulWidget {
 class _TickersScreenState extends State<TickersScreen> {
   @override
   void initState() {
-    context.read<TickersBloc>().add(Start());
     super.initState();
+    context.read<TickersBloc>().add(Start());
   }
 
   @override

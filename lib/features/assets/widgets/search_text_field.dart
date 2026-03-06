@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -68,8 +69,8 @@ class _SearchTextFieldState extends State<SearchTextField> {
                 fontSize: 14,
                 color: AppColors.textPrimary,
               ),
-              decoration: const InputDecoration(
-                hintText: 'Поиск монет...',
+              decoration: InputDecoration(
+                hintText: AppLocalizations.searchCoins,
                 hintStyle: TextStyle(
                   fontSize: 14,
                   color: AppColors.textTertiary,

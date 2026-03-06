@@ -23,8 +23,8 @@ class History {
   final String status;
   final num entry;
   final num exit;
-  final num takeProfit;
-  final num stopLoss;
+  final num? takeProfit;
+  final num? stopLoss;
   final num resultPct;
   final num resultUsd;
   final String duration;

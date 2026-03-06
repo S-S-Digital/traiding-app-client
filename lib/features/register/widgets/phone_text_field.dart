@@ -1,6 +1,5 @@
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_masked_text2/flutter_masked_text2.dart';
 
 class PhoneTextField extends StatelessWidget {
   const PhoneTextField({
@@ -10,7 +9,7 @@ class PhoneTextField extends StatelessWidget {
     required this.onChanged,
   });
 
-  final MaskedTextController phoneController;
+  final TextEditingController phoneController;
   final FocusNode phoneFocus;
   final ValueChanged<String> onChanged;
 
@@ -36,7 +35,7 @@ class PhoneTextField extends StatelessWidget {
           style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
           onChanged: onChanged,
           onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
-          decoration: const InputDecoration(hintText: '+7(___)-___-__-__'),
+          decoration: const InputDecoration(hintText: '+1 234 567 8900'),
         ),
       ],
     );
