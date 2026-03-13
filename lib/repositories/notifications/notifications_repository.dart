@@ -96,7 +96,7 @@ class NotificationsRepository implements NotificationsRepositoryI {
             channelDescription: _defaultChannel.description,
             importance: Importance.max, 
             priority: Priority.high, 
-            icon: '@mipmap/ic_launcher',
+            icon: '@mipmap/launcher_icon',
 
           ),
         ));

@@ -35,7 +35,7 @@ dependencies:
 
   mask_text_input_formatter: ^2.9.0
   fl_chart: ^0.69.0
-  realm: ^20.1.1
+  realm: ^20.2.0
   flutter_secure_storage: ^9.2.4
 
   flutter_svg: ^2.2.1
@@ -71,6 +71,9 @@ dev_dependencies:
   json_serializable: ^6.9.5
   change_app_package_name: ^1.5.0
   flutter_launcher_icons: "^0.14.4"
+
+dependency_overrides:
+  build: 2.4.2
 
 
 flutter:
