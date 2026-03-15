@@ -46,7 +46,7 @@ android {
         applicationId = "com.aspiro.trade"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
         targetSdk = 35
         versionCode = 11
         versionName = flutter.versionName
