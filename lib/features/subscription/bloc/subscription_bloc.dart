@@ -55,7 +55,9 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       final plans = await _paymentsRepository.fetchAllPlans();
       talker.debug('Plans loaded: ${plans.length}');
       for (final p in plans) {
-        talker.debug('  Plan: ${p.name} | apple: ${p.appleProductId} | google: ${p.googleProductId} | price: ${p.price}');
+        talker.debug(
+          '  Plan: ${p.name} | apple: ${p.appleProductId} | google: ${p.googleProductId} | price: ${p.price}',
+        );
       }
 
       final myPlan = await _paymentsRepository.getCurrentSubscription();
@@ -105,7 +107,9 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     Emitter<SubscriptionState> emit,
   ) async {
     try {
-      talker.debug('Purchase initiated: ${event.productDetails.id} | ${event.productDetails.title} | ${event.productDetails.price}');
+      talker.debug(
+        'Purchase initiated: ${event.productDetails.id} | ${event.productDetails.title} | ${event.productDetails.price}',
+      );
       emit(state.copyWith(status: SubscriptionStatus.purchasing));
 
       final param = PurchaseParam(productDetails: event.productDetails);
@@ -130,7 +134,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     Emitter<SubscriptionState> emit,
   ) async {
     for (final purchase in event.purchases) {
-      talker.debug(purchase.status);
+      talker.debug('Purchase status: ${purchase.status}');
+
       if (purchase.status == PurchaseStatus.pending) {
         emit(state.copyWith(status: SubscriptionStatus.purchasing));
         continue;
@@ -140,20 +145,20 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         if (purchase.pendingCompletePurchase) {
           await _iap.completePurchase(purchase);
         }
-
         emit(
           state.copyWith(
             status: SubscriptionStatus.failure,
             error: purchase.error?.message ?? 'Purchase error',
           ),
         );
-
         add(Start());
         continue;
       }
 
       if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
+        bool verificationSuccess = false;
+
         try {
           if (Platform.isIOS) {
             await _paymentsRepository.applePayments(
@@ -162,24 +167,29 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
                 transactionId: purchase.purchaseID ?? '',
               ),
             );
-          } else {
+          } else if (Platform.isAndroid) {
             await _paymentsRepository.googlePayments(
               GoogleReceipts(
-                purchaseToken: purchase.verificationData.serverVerificationData,
+                purchaseToken: purchase.purchaseID!, // ✅ ВОТ ТАК!
                 productId: purchase.productID,
                 packageName: 'com.aspiro.trade',
               ),
             );
           }
 
+          verificationSuccess = true;
+        } catch (e) {
+          talker.error('Verification error: $e');
+        } finally {
           if (purchase.pendingCompletePurchase) {
             await _iap.completePurchase(purchase);
           }
+        }
 
+        if (verificationSuccess) {
           emit(state.copyWith(status: SubscriptionStatus.success));
           add(Start());
-        } catch (e) {
-          talker.error('Verification error: $e');
+        } else {
           emit(
             state.copyWith(
               status: SubscriptionStatus.failure,
@@ -190,7 +200,6 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       }
     }
   }
-
   /* ---------------- RESTORE ---------------- */
 
   Future<void> _onRestorePurchases(
