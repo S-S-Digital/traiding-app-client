@@ -8,7 +8,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:aspiro_trade/ui/localization/app_localizations.dart';
@@ -23,9 +22,11 @@ Future<void> main() async {
 
   final firebaseAuth = FirebaseAuth.instanceFor(app: app);
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  await dotenv.load(fileName: ".env");
 
-  final apiUrl = dotenv.env['API_URL'];
+  const apiUrl = String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://localhost:3001',
+  );
   await RealmInitializer.init();
   BlocInitializer.init();
 
@@ -50,7 +51,7 @@ Future<void> main() async {
 
   final config = AppConfig(
     talker: talker,
-    apiUrl: apiUrl ?? '',
+    apiUrl: apiUrl,
     api: api,
     realm: realm,
     tokenStorage: tokenStorage,

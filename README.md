@@ -1,16 +1,51 @@
 # aspiro_trade
 
-A new Flutter project.
+Aspiro Trade mobile client (Flutter).
 
-## Getting Started
+## Configuration
 
-This project is a starting point for a Flutter application.
+The API base URL is injected at build time via `--dart-define` (no `.env`
+bundled into the APK/IPA).
 
-A few resources to get you started if this is your first Flutter project:
+```dart
+const apiUrl = String.fromEnvironment(
+  'API_URL',
+  defaultValue: 'http://localhost:3001',
+);
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Build
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Debug / local run:
+
+```bash
+flutter pub get
+flutter run --dart-define=API_URL=http://localhost:3001
+```
+
+Release Android:
+
+```bash
+flutter build apk --release \
+  --dart-define=API_URL=https://api.tradeaspiro.ru
+
+flutter build appbundle --release \
+  --dart-define=API_URL=https://api.tradeaspiro.ru
+```
+
+Release iOS:
+
+```bash
+flutter build ipa --release \
+  --dart-define=API_URL=https://api.tradeaspiro.ru
+```
+
+Versioning is controlled from `pubspec.yaml` (`version: X.Y.Z+build`).
+iOS `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in
+`ios/Runner.xcodeproj/project.pbxproj` must be kept in sync with it.
+
+## Signing
+
+Android keystore (`aspiro_trade_key.jks`) and `key.properties` are
+git-ignored. Keep them in secure storage — losing the keystore means
+the app cannot be updated on Google Play without a key reset.

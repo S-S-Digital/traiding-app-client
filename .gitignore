@@ -47,3 +47,10 @@ app.*.map.json
 
 
 .env
+
+# Signing keys — never commit
+*.jks
+*.keystore
+android/key.properties
+android/app/key.properties
+upload_certificate.pem
