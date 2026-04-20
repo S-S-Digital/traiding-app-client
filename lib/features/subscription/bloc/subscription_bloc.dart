@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:aspiro_trade/api/api.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
-import 'package:aspiro_trade/repositories/notifications/notifications.dart';
 import 'package:aspiro_trade/repositories/payments/payments.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,9 +22,7 @@ const Duration _restoreTimeout = Duration(seconds: 15);
 class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   SubscriptionBloc({
     required PaymentsRepositoryI paymentsRepository,
-    required NotificationsRepositoryI notificationsRepository,
   }) : _paymentsRepository = paymentsRepository,
-       _notificationsRepository = notificationsRepository,
        super(const SubscriptionState()) {
     on<Start>(_onStart);
     on<PurchasePlan>(_onPurchasePlan);
@@ -39,7 +36,6 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   }
 
   final PaymentsRepositoryI _paymentsRepository;
-  final NotificationsRepositoryI _notificationsRepository;
   final InAppPurchase _iap = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 

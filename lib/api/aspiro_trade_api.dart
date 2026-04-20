@@ -4,6 +4,7 @@ import 'package:aspiro_trade/repositories/auth/auth.dart';
 import 'package:aspiro_trade/repositories/payments/payments.dart';
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:talker/talker.dart';
 import 'package:talker_dio_logger/talker_dio_logger.dart';
@@ -25,7 +26,15 @@ abstract class AspiroTradeApi {
   }) {
     final dio = Dio();
     dio.interceptors.addAll([
-      TalkerDioLogger(talker: talker),
+      TalkerDioLogger(
+        talker: talker,
+        settings: TalkerDioLoggerSettings(
+          printRequestHeaders: false,
+          printResponseHeaders: false,
+          printRequestData: kDebugMode,
+          printResponseData: kDebugMode,
+        ),
+      ),
       AuthInterceptor(
         dio: dio,
         getTokens: getTokens,

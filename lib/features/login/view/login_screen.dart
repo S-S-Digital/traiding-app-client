@@ -9,6 +9,7 @@ import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart' as siwa;
 
 
 @RoutePage()
@@ -143,14 +144,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (Platform.isIOS)
-                        SocialsButton(
-                          text: 'Apple',
-                          picturePath: 'assets/svg/apple_logo.svg',
-                          onTap: () {
-                            context.read<LoginBloc>().add(
-                              LoginWithApple(),
-                            );
-                          },
+                        SizedBox(
+                          width: 56,
+                          height: 48,
+                          child: siwa.SignInWithAppleButton(
+                            onPressed: () {
+                              context.read<LoginBloc>().add(LoginWithApple());
+                            },
+                            style: siwa.SignInWithAppleButtonStyle.black,
+                            iconAlignment: siwa.IconAlignment.center,
+                            text: '',
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       if (Platform.isIOS) const SizedBox(width: 16),
                       if (Platform.isIOS || Platform.isAndroid)

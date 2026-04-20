@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:aspiro_trade/features/profile/cubit/profile_cubit.dart';
 import 'package:aspiro_trade/features/subscription/bloc/subscription_bloc.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
+import 'package:aspiro_trade/repositories/payments/payments.dart';
 import 'package:aspiro_trade/router/router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
@@ -89,6 +90,48 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         },
       ),
     );
+  }
+
+  ProductDetails? _productFor(SubscriptionState state, SubscriptionPlans plan) {
+    final productId = Platform.isIOS ? plan.appleProductId : plan.googleProductId;
+    for (final p in state.productDetails) {
+      if (p.id == productId) return p;
+    }
+    return null;
+  }
+
+  String _localizedPrice(SubscriptionPlans plan, ProductDetails? product) {
+    if (product != null) return product.price;
+    final amount = double.tryParse(plan.price) ?? 0;
+    try {
+      return NumberFormat.currency(
+        locale: Platform.localeName,
+        name: plan.currency,
+      ).format(amount);
+    } catch (_) {
+      return '${plan.currency} ${plan.price}';
+    }
+  }
+
+  double? _localizedMonthlyAmount(ProductDetails? product) {
+    if (product == null) return null;
+    final raw = product.rawPrice;
+    if (raw > 0) return raw / 12;
+    return null;
+  }
+
+  String _localizedMonthlyString(SubscriptionPlans plan, ProductDetails? product) {
+    final amount = _localizedMonthlyAmount(product) ??
+        ((double.tryParse(plan.price) ?? 0) / 12);
+    final currencyCode = product?.currencyCode ?? plan.currency;
+    try {
+      return NumberFormat.currency(
+        locale: Platform.localeName,
+        name: currencyCode,
+      ).format(amount);
+    } catch (_) {
+      return '$currencyCode ${amount.toStringAsFixed(2)}';
+    }
   }
 
   Widget _buildPaywall(BuildContext context, SubscriptionState state) {
@@ -343,9 +386,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 final plan = paidPlans[i];
                 final isSelected = _selectedPlanIndex == i;
                 final isAnnual = plan.duration >= 365;
-                final monthlyEquivalent = isAnnual
-                    ? (double.tryParse(plan.price) ?? 0) / 12
-                    : null;
+                final product = _productFor(state, plan);
+                final displayPrice = _localizedPrice(plan, product);
+                final monthlyPriceStr =
+                    isAnnual ? _localizedMonthlyString(plan, product) : null;
 
                 return GestureDetector(
                   onTap: () {
@@ -423,9 +467,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                 ],
                               ),
                               const SizedBox(height: 2),
-                              if (isAnnual && monthlyEquivalent != null)
+                              if (isAnnual && monthlyPriceStr != null)
                                 Text(
-                                  AppLocalizations.equivalentPerMonth('\$${monthlyEquivalent.toStringAsFixed(1)}'),
+                                  AppLocalizations.equivalentPerMonth(monthlyPriceStr),
                                   style: const TextStyle(fontSize: 12, color: AppColors.up, fontWeight: FontWeight.w500),
                                 )
                               else
@@ -437,7 +481,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text('\$${plan.price}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                            Text(displayPrice, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
                             Text(plan.readableDuration, style: const TextStyle(fontSize: 12, color: AppColors.textTertiary)),
                           ],
                         ),
@@ -494,14 +538,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           HapticFeedback.mediumImpact();
                           if (_selectedPlanIndex >= 0 && _selectedPlanIndex < paidPlans.length) {
                             final plan = paidPlans[_selectedPlanIndex];
-                            final productId = Platform.isIOS ? plan.appleProductId : plan.googleProductId;
-                            ProductDetails? product;
-                            for (final p in state.productDetails) {
-                              if (p.id == productId) {
-                                product = p;
-                                break;
-                              }
-                            }
+                            var product = _productFor(state, plan);
                             product ??= state.productDetails.isNotEmpty ? state.productDetails.first : null;
                             if (product != null) {
                               context.read<SubscriptionBloc>().add(PurchasePlan(product));
@@ -531,46 +568,63 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ],
 
             // ── Restore ──
-            TextButton(
-              onPressed: state.isRestoring
-                  ? null
-                  : () {
-                      HapticFeedback.lightImpact();
-                      context.read<SubscriptionBloc>().add(RestorePurchases());
-                    },
-              child: Text(
-                state.isRestoring ? AppLocalizations.restoring : AppLocalizations.cancelRestore,
-                style: const TextStyle(fontSize: 11, color: AppColors.textQuaternary),
+            if (!hasActivePro)
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: state.isRestoring
+                      ? null
+                      : () {
+                          HapticFeedback.lightImpact();
+                          context.read<SubscriptionBloc>().add(RestorePurchases());
+                        },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.brand),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(
+                    state.isRestoring ? AppLocalizations.restoring : AppLocalizations.cancelRestore,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.brand),
+                  ),
+                ),
               ),
-            ),
+            const SizedBox(height: 12),
 
             // ── Legal ──
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 GestureDetector(
-                  onTap: () {
-                    if (Platform.isIOS) {
-                      _launchURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
-                    } else {
-                      context.router.push(TermsOfUseRoute());
-                    }
-                  },
+                  onTap: () => context.router.push(TermsOfUseRoute()),
                   child: Text(
                     AppLocalizations.termsOfService,
-                    style: const TextStyle(fontSize: 10, color: AppColors.textQuaternary),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ),
-                const Text(' · ', style: TextStyle(fontSize: 10, color: AppColors.textQuaternary)),
+                const Text(' · ', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                 GestureDetector(
                   onTap: () => context.router.push(PrivacyPolicyRoute()),
                   child: Text(
                     AppLocalizations.privacyPolicy,
-                    style: const TextStyle(fontSize: 10, color: AppColors.textQuaternary),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ),
               ],
             ),
+            if (Platform.isIOS) ...[
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: () => _launchURL(
+                    'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'),
+                child: Text(
+                  AppLocalizations.isRu
+                      ? 'См. также: Apple Standard EULA'
+                      : 'See also: Apple Standard EULA',
+                  style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+                ),
+              ),
+            ],
           ],
         ),
       ),

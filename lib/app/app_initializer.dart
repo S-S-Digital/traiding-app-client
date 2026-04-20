@@ -124,7 +124,6 @@ class AppInitializer extends StatelessWidget {
           BlocProvider(
             create: (context) => SubscriptionBloc(
               paymentsRepository: context.read<PaymentsRepositoryI>(),
-              notificationsRepository: context.read<NotificationsRepositoryI>(),
             ),
           ),
 
