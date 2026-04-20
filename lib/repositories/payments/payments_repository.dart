@@ -1,4 +1,5 @@
 import 'package:aspiro_trade/api/api.dart';
+import 'package:aspiro_trade/repositories/auth/realm/user_local.dart';
 import 'package:aspiro_trade/repositories/base/base.dart';
 import 'package:aspiro_trade/repositories/payments/payments.dart';
 import 'package:realm/realm.dart';
@@ -8,6 +9,12 @@ class PaymentsRepository extends BaseRepository implements PaymentsRepositoryI {
 
   final AspiroTradeApi api;
   final Realm realm;
+
+  @override
+  String? getCurrentUserId() {
+    final users = realm.all<UserLocal>();
+    return users.isNotEmpty ? users.first.id : null;
+  }
   @override
   Future<List<SubscriptionPlans>> fetchAllPlans() => safeApiCall(() async {
     final response = await api.fetchAllPlans();

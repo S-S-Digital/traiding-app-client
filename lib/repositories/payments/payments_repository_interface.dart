@@ -7,4 +7,5 @@ abstract interface class PaymentsRepositoryI{
   Future<List<SubscriptionsDto>> getCurrentSubscription();
   Future<void> applePayments(AppleReceipts receipts);
   Future<PaymentReceiptDto> googlePayments(GoogleReceipts receipts);
+  String? getCurrentUserId();
 }

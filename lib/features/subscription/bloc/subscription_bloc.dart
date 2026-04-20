@@ -13,6 +13,13 @@ import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 part 'subscription_event.dart';
 part 'subscription_state.dart';
 
+const String _packageName = String.fromEnvironment(
+  'PACKAGE_NAME',
+  defaultValue: 'com.aspiro.trade',
+);
+
+const Duration _restoreTimeout = Duration(seconds: 15);
+
 class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   SubscriptionBloc({
     required PaymentsRepositoryI paymentsRepository,
@@ -109,7 +116,16 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       talker.debug('Purchase initiated: ${event.productDetails.id} | ${event.productDetails.title} | ${event.productDetails.price}');
       emit(state.copyWith(status: SubscriptionStatus.purchasing));
 
-      final param = PurchaseParam(productDetails: event.productDetails);
+      final PurchaseParam param;
+      if (Platform.isAndroid) {
+        final userId = _paymentsRepository.getCurrentUserId();
+        param = GooglePlayPurchaseParam(
+          productDetails: event.productDetails,
+          applicationUserName: userId,
+        );
+      } else {
+        param = PurchaseParam(productDetails: event.productDetails);
+      }
 
       talker.debug('Calling buyNonConsumable...');
       final result = await _iap.buyNonConsumable(purchaseParam: param);
@@ -166,63 +182,58 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
       if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
+        final verifyData = purchase.verificationData.serverVerificationData;
+        talker.debug(
+          'Verify data type: ${verifyData.startsWith('eyJ') ? 'JWS' : 'legacy'}, len=${verifyData.length}',
+        );
+
+        bool verified = false;
         try {
           if (Platform.isIOS) {
             await _paymentsRepository.applePayments(
               AppleReceipts(
-                receiptData: purchase.verificationData.serverVerificationData,
+                receiptData: verifyData,
                 transactionId: purchase.purchaseID ?? '',
               ),
             );
           } else {
-            // Cast to GooglePlayPurchaseDetails to get the REAL purchase token
-            // serverVerificationData may return order ID instead of purchase token
+            // Cast to GooglePlayPurchaseDetails to get the REAL purchase token —
+            // serverVerificationData may return order ID instead of purchase token.
             final googleDetails = purchase as GooglePlayPurchaseDetails;
             final realToken = googleDetails.billingClientPurchase.purchaseToken;
-            
+
             talker.debug('Google purchase token length: ${realToken.length}');
-            talker.debug('Google purchase token start: ${realToken.substring(0, realToken.length > 30 ? 30 : realToken.length)}');
-            talker.debug('serverVerificationData: ${purchase.verificationData.serverVerificationData}');
-            
+
             await _paymentsRepository.googlePayments(
               GoogleReceipts(
                 purchaseToken: realToken,
                 productId: purchase.productID,
-                packageName: 'com.aspiro.trade',
+                packageName: _packageName,
               ),
             );
           }
-
-          if (purchase.pendingCompletePurchase) {
-            await _iap.completePurchase(purchase);
-          }
-
-          emit(state.copyWith(status: SubscriptionStatus.success));
-          add(Start());
+          verified = true;
         } catch (e) {
           talker.error('Verification error: $e');
-          
-          // CRITICAL: always complete the purchase even if backend verification fails
-          // Otherwise the purchase stays pending and Google re-delivers it every app restart
-          if (purchase.pendingCompletePurchase) {
-            try {
-              await _iap.completePurchase(purchase);
-              talker.debug('Purchase completed despite verification failure');
-            } catch (completeError) {
-              talker.error('Failed to complete purchase after error: $completeError');
-            }
-          }
-
           emit(
             state.copyWith(
               status: SubscriptionStatus.failure,
               error: 'Verification failed: $e',
             ),
           );
-
-          // Retry loading subscription state — backend may have saved it despite error
-          add(Start());
+          // Do NOT completePurchase on verification failure: Apple/Google will
+          // re-deliver the purchase on next app launch via purchaseStream so we
+          // can retry the server verify. Completing here would drop the purchase.
         }
+
+        if (verified) {
+          if (purchase.pendingCompletePurchase) {
+            await _iap.completePurchase(purchase);
+          }
+          emit(state.copyWith(status: SubscriptionStatus.success));
+        }
+
+        add(Start());
       }
     }
   }
@@ -238,10 +249,21 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     emit(state.copyWith(status: SubscriptionStatus.restoring));
 
     try {
-      await _iap.restorePurchases();
-
+      await _iap.restorePurchases().timeout(_restoreTimeout);
       await _iap.isAvailable();
-      // результат придёт через purchaseStream
+      // результат придёт через purchaseStream; если за таймаут ничего не пришло —
+      // возвращаем UI в loaded, чтобы loader не висел вечно.
+      if (state.status == SubscriptionStatus.restoring) {
+        emit(state.copyWith(status: SubscriptionStatus.loaded));
+      }
+    } on TimeoutException {
+      talker.debug('Restore timed out after ${_restoreTimeout.inSeconds}s');
+      emit(
+        state.copyWith(
+          status: SubscriptionStatus.failure,
+          error: 'Nothing to restore',
+        ),
+      );
     } catch (e) {
       emit(
         state.copyWith(
