@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io' show Platform;
 
 import 'package:aspiro_trade/repositories/auth/auth.dart';
 import 'package:aspiro_trade/repositories/notifications/notifications.dart';
@@ -26,14 +27,20 @@ class HomeCubit extends Cubit<HomeState> {
       final token = await _notificationsRepository.getToken() ?? '';
       log('FCM token: $token');
 
-      await _authRepository.registerFcmToken(FirebaseToken(fcmToken: token));
+      final platform = Platform.isIOS ? 'ios' : 'android';
+
+      await _authRepository.registerFcmToken(
+        FirebaseToken(fcmToken: token, platform: platform),
+      );
       log('FCM token sent to server successfully');
 
       // Re-send token when Firebase rotates it
       _notificationsRepository.onTokenRefresh((newToken) async {
         try {
           log('FCM token refreshed: $newToken');
-          await _authRepository.registerFcmToken(FirebaseToken(fcmToken: newToken));
+          await _authRepository.registerFcmToken(
+            FirebaseToken(fcmToken: newToken, platform: platform),
+          );
           log('Refreshed FCM token sent to server');
         } catch (e) {
           log('Failed to send refreshed FCM token: $e');

@@ -9,7 +9,7 @@ part of 'users_dto.dart';
 UsersDto _$UsersDtoFromJson(Map<String, dynamic> json) => UsersDto(
   id: json['id'] as String,
   email: json['email'] as String,
-  passwordHash: json['passwordHash'] as String,
+  passwordHash: json['passwordHash'] as String?,
   phone: json['phone'] as String?,
   fcmToken: json['fcmToken'] as String?,
   isActive: json['isActive'] as bool,

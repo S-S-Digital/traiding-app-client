@@ -9,9 +9,9 @@ class UsersDto extends Equatable {
   const UsersDto({
     required this.id,
     required this.email,
-    required this.passwordHash,
+    this.passwordHash,
     required this.phone,
-    required this.fcmToken,
+    this.fcmToken,
     required this.isActive,
     required this.isPremium,
     required this.premiumUntil,
@@ -21,7 +21,7 @@ class UsersDto extends Equatable {
 
   final String id;
   final String email;
-  final String passwordHash;
+  final String? passwordHash;
   final String? phone;
   final String? fcmToken;
   final bool isActive;
@@ -38,7 +38,7 @@ class UsersDto extends Equatable {
   Users toEntity() => Users(
     id: id,
     email: email,
-    passwordHash: passwordHash,
+    passwordHash: passwordHash ?? '',
     phone: phone ?? '',
     fcmToken: fcmToken ?? '',
     isActive: isActive,

@@ -7,19 +7,19 @@ class GoogleAuth {
     GoogleAuth({
     required this.provider,
     required this.providerId,
-    required this.email,
-    required this.firstName,
-    required this.lastName,
-    required this.picture,
+    this.email,
+    this.firstName,
+    this.lastName,
+    this.picture,
     required this.accessToken,
   });
-  
+
   final String provider;
   final String providerId;
-  final String email;
-  final String firstName;
-  final String lastName;
-  final String picture;
+  final String? email;
+  final String? firstName;
+  final String? lastName;
+  final String? picture;
   final String accessToken;
 
 

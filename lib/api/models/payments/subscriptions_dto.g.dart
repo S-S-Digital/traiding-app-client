@@ -24,6 +24,13 @@ SubscriptionsDto _$SubscriptionsDtoFromJson(Map<String, dynamic> json) =>
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       plan: SubscriptionPlansDto.fromJson(json['plan'] as Map<String, dynamic>),
+      isSandbox: json['isSandbox'] as bool?,
+      ownershipType: json['ownershipType'] as String?,
+      linkedPurchaseToken: json['linkedPurchaseToken'] as String?,
+      isTrial: json['isTrial'] as bool?,
+      trialEndDate: json['trialEndDate'] == null
+          ? null
+          : DateTime.parse(json['trialEndDate'] as String),
     );
 
 Map<String, dynamic> _$SubscriptionsDtoToJson(SubscriptionsDto instance) =>
@@ -42,4 +49,9 @@ Map<String, dynamic> _$SubscriptionsDtoToJson(SubscriptionsDto instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
       'plan': instance.plan,
+      'isSandbox': instance.isSandbox,
+      'ownershipType': instance.ownershipType,
+      'linkedPurchaseToken': instance.linkedPurchaseToken,
+      'isTrial': instance.isTrial,
+      'trialEndDate': instance.trialEndDate?.toIso8601String(),
     };
