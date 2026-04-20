@@ -84,20 +84,27 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       }
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+
+      final accessToken = googleAuth.accessToken;
+      if (accessToken == null || accessToken.isEmpty) {
+        emit(
+          state.copyWith(
+            status: Status.failure,
+            error: 'Please retry sign-in',
+          ),
+        );
+        return;
+      }
 
       await _authRepository.googleSignIn(
         GoogleAuth(
           provider: 'google.com',
-          providerId: credential.providerId,
+          providerId: googleUser.id,
           email: googleUser.email,
           firstName: googleUser.displayName ?? '',
           lastName: googleUser.displayName ?? '',
           picture: googleUser.photoUrl ?? '',
-          accessToken: googleAuth.accessToken ?? '',
+          accessToken: accessToken,
         ),
       );
 
@@ -122,28 +129,35 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         ],
         nonce: nonce,
       );
- 
-       OAuthProvider(
+
+      final identityToken = appleCredential.identityToken;
+      final userIdentifier = appleCredential.userIdentifier;
+      if (identityToken == null ||
+          identityToken.isEmpty ||
+          userIdentifier == null ||
+          userIdentifier.isEmpty) {
+        emit(
+          state.copyWith(
+            status: Status.failure,
+            error: 'Please retry sign-in',
+          ),
+        );
+        return;
+      }
+
+      OAuthProvider(
         "apple.com",
-      ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce);
+      ).credential(idToken: identityToken, rawNonce: rawNonce);
 
       await _authRepository.appleSignIn(
         AppleAuth(
           provider: 'apple.com',
-
-          // бек хочет providerId → даём стабильный Apple user id
-          providerId: appleCredential.userIdentifier ?? '',
-
-          // email / имя — только если есть
+          providerId: userIdentifier,
           email: appleCredential.email ?? '',
           firstName: appleCredential.givenName ?? '',
           lastName: appleCredential.familyName ?? '',
-
-          // Apple не даёт аватар
           picture: '',
-
-          // accessToken у Apple отсутствует → пустая строка, не null
-          accessToken: appleCredential.identityToken ?? '',
+          accessToken: identityToken,
         ),
       );
 

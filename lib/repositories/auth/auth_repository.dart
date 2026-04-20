@@ -39,6 +39,9 @@ class AuthRepository extends BaseRepository implements AuthRepositoryI {
   Future<void> logout() => safeApiCall(() async {
     await api.logout();
     await tokenStorage.clear();
+    realm.write(() {
+      realm.deleteAll<UserLocal>();
+    });
   });
 
   @override
@@ -95,6 +98,7 @@ class AuthRepository extends BaseRepository implements AuthRepositoryI {
 
   @override
   Future<User> appleSignIn(AppleAuth appleAuth) => safeApiCall(() async {
+    talker.debug('Apple auth completed (email=${appleAuth.email})');
     final response = await api.appleSignIn(appleAuth);
 
     await tokenStorage.saveTokens(response.accessToken, response.refreshToken);
@@ -108,7 +112,7 @@ class AuthRepository extends BaseRepository implements AuthRepositoryI {
 
   @override
   Future<User> googleSignIn(GoogleAuth googleAuth) => safeApiCall(() async {
-    talker.debug(googleAuth.toJson());
+    talker.debug('Google auth completed (email=${googleAuth.email})');
     final response = await api.googleSignIn(googleAuth);
 
     await tokenStorage.saveTokens(response.accessToken, response.refreshToken);

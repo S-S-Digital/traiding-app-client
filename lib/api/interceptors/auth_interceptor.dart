@@ -99,15 +99,11 @@ class AuthInterceptor extends Interceptor {
         return null;
       }
 
-      final response = await dio.post(
-        '/auth/refresh',
-        data: {'refreshToken': refreshToken},
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        ),
-      );
+      final response = await _refreshWithRetry(refreshToken);
+      if (response == null) {
+        _refreshCompleter!.complete(null);
+        return null;
+      }
 
       final newAccess = response.data['accessToken'] as String?;
       final newRefresh = response.data['refreshToken'] as String?;
@@ -126,5 +122,46 @@ class AuthInterceptor extends Interceptor {
     } finally {
       _refreshCompleter = null;
     }
+  }
+
+  /// Posts /auth/refresh with exponential backoff on 429 (max 3 attempts).
+  /// Respects Retry-After header when present.
+  /// Returns null if all retries exhausted or a non-429 error occurred.
+  Future<Response?> _refreshWithRetry(String refreshToken) async {
+    const maxAttempts = 3;
+    var delay = const Duration(seconds: 1);
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await dio.post(
+          '/auth/refresh',
+          data: {'refreshToken': refreshToken},
+          options: Options(
+            headers: {'Content-Type': 'application/json'},
+          ),
+        );
+      } on DioException catch (e) {
+        if (e.response?.statusCode != 429 || attempt == maxAttempts) {
+          if (e.response?.statusCode == 429) {
+            return null;
+          }
+          rethrow;
+        }
+
+        final retryAfter = _parseRetryAfter(e.response?.headers.value('retry-after'));
+        await Future<void>.delayed(retryAfter ?? delay);
+        delay *= 2;
+      }
+    }
+    return null;
+  }
+
+  Duration? _parseRetryAfter(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final seconds = int.tryParse(value.trim());
+    if (seconds != null && seconds > 0) {
+      return Duration(seconds: seconds);
+    }
+    return null;
   }
 }
