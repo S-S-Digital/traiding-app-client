@@ -2,6 +2,7 @@ import 'package:aspiro_trade/features/history/bloc/history_bloc.dart';
 import 'package:aspiro_trade/features/history/models/models.dart';
 import 'package:aspiro_trade/features/history/widgets/widgets.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
+import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
@@ -92,14 +93,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
               BlocConsumer<HistoryBloc, HistoryState>(
                 listener: (context, state) {
                   if (state.status == Status.failure) {
-                    if (state.error is AppException) {
+                    if (state.error is AppException && state.error is! FordibenException) {
                       final error = state.error as AppException;
                       context.handleException(error, context);
                     }
                   }
                 },
-                buildWhen: (previous, current) => current.status.isBuildable,
+                buildWhen: (previous, current) =>
+                    current.status.isBuildable || (current.status == Status.failure && current.error is FordibenException),
                 builder: (context, state) {
+                  // 403 — Premium required: show inline upsell
+                  if (state.status == Status.failure && state.error is FordibenException) {
+                    return const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: PremiumRequiredView(),
+                    );
+                  }
+
                   if (state.status == Status.loading) {
                     return const SliverFillRemaining(
                       child: Center(

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 
 part 'subscription_event.dart';
 part 'subscription_state.dart';
@@ -115,7 +116,10 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       talker.debug('buyNonConsumable returned: $result');
     } catch (e) {
       talker.error('Purchase initiation error: $e');
-      if (e is PlatformException && e.code == 'storekit2_purchase_cancelled') {
+      // Handle cancellation on both iOS (StoreKit2) and Android
+      if (e is PlatformException && 
+          (e.code == 'storekit2_purchase_cancelled' || 
+           e.code == 'purchase_cancelled')) {
         talker.debug('Purchase cancelled by user');
         emit(state.copyWith(status: SubscriptionStatus.loaded));
         return;
@@ -131,6 +135,14 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   ) async {
     for (final purchase in event.purchases) {
       talker.debug(purchase.status);
+      
+      // Handle cancellation (Android sends this via stream)
+      if (purchase.status == PurchaseStatus.canceled) {
+        talker.debug('Purchase cancelled by user (stream)');
+        emit(state.copyWith(status: SubscriptionStatus.loaded));
+        continue;
+      }
+      
       if (purchase.status == PurchaseStatus.pending) {
         emit(state.copyWith(status: SubscriptionStatus.purchasing));
         continue;
@@ -163,9 +175,18 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
               ),
             );
           } else {
+            // Cast to GooglePlayPurchaseDetails to get the REAL purchase token
+            // serverVerificationData may return order ID instead of purchase token
+            final googleDetails = purchase as GooglePlayPurchaseDetails;
+            final realToken = googleDetails.billingClientPurchase.purchaseToken;
+            
+            talker.debug('Google purchase token length: ${realToken.length}');
+            talker.debug('Google purchase token start: ${realToken.substring(0, realToken.length > 30 ? 30 : realToken.length)}');
+            talker.debug('serverVerificationData: ${purchase.verificationData.serverVerificationData}');
+            
             await _paymentsRepository.googlePayments(
               GoogleReceipts(
-                purchaseToken: purchase.verificationData.serverVerificationData,
+                purchaseToken: realToken,
                 productId: purchase.productID,
                 packageName: 'com.aspiro.trade',
               ),
@@ -180,12 +201,27 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           add(Start());
         } catch (e) {
           talker.error('Verification error: $e');
+          
+          // CRITICAL: always complete the purchase even if backend verification fails
+          // Otherwise the purchase stays pending and Google re-delivers it every app restart
+          if (purchase.pendingCompletePurchase) {
+            try {
+              await _iap.completePurchase(purchase);
+              talker.debug('Purchase completed despite verification failure');
+            } catch (completeError) {
+              talker.error('Failed to complete purchase after error: $completeError');
+            }
+          }
+
           emit(
             state.copyWith(
               status: SubscriptionStatus.failure,
-              error: 'Payment verification failed',
+              error: 'Verification failed: $e',
             ),
           );
+
+          // Retry loading subscription state — backend may have saved it despite error
+          add(Start());
         }
       }
     }

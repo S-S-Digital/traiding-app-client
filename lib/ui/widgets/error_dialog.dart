@@ -7,19 +7,23 @@ class ErrorDialog extends StatelessWidget {
     required this.message,
     required this.title,
     required this.onPressed,
+    this.dialogTitle,
+    this.buttonColor,
   });
   final String message;
   final String title;
   final VoidCallback onPressed;
+  final String? dialogTitle;
+  final Color? buttonColor;
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: AppColors.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: const Text(
-        'Error',
-        style: TextStyle(
+      title: Text(
+        dialogTitle ?? 'Error',
+        style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
@@ -39,7 +43,7 @@ class ErrorDialog extends StatelessWidget {
           child: ElevatedButton(
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.down,
+              backgroundColor: buttonColor ?? AppColors.down,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

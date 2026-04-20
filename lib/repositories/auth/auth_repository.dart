@@ -25,7 +25,7 @@ class AuthRepository extends BaseRepository implements AuthRepositoryI {
 
     await tokenStorage.saveTokens(userDto.accessToken, userDto.refreshToken);
 
-    talker.info(userDto.accessToken);
+    talker.info('Login successful, token length: ${userDto.accessToken.length}');
 
     realm.write(() {
       realm.deleteAll<UserLocal>();

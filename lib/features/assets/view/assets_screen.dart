@@ -137,14 +137,23 @@ class _AssetsScreenState extends State<AssetsScreen> {
           BlocConsumer<AssetsBloc, AssetsState>(
             listener: (context, state) {
               if (state.status == Status.failure) {
-                if (state.error is AppException) {
+                if (state.error is AppException && state.error is! FordibenException) {
                   final error = state.error as AppException;
                   context.handleException(error, context);
                 }
               }
             },
-            buildWhen: (previous, current) => current.status.isBuildable,
+            buildWhen: (previous, current) =>
+                current.status.isBuildable || (current.status == Status.failure && current.error is FordibenException),
             builder: (context, state) {
+              // 403 — Premium required: show inline upsell
+              if (state.status == Status.failure && state.error is FordibenException) {
+                return const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: PremiumRequiredView(),
+                );
+              }
+
               if (state.status == Status.loading) {
                 return const SliverFillRemaining(
                   child: Center(child: PlatformProgressIndicator()),

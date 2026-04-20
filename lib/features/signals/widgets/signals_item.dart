@@ -133,8 +133,8 @@ class SignalsItem extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('SL ${sl!.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, color: AppColors.down, fontWeight: FontWeight.w500)),
-                      Text('TP ${tp!.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, color: AppColors.up, fontWeight: FontWeight.w500)),
+                      Text('SL $sl', style: const TextStyle(fontSize: 11, color: AppColors.down, fontWeight: FontWeight.w500)),
+                      Text('TP $tp', style: const TextStyle(fontSize: 11, color: AppColors.up, fontWeight: FontWeight.w500)),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -171,11 +171,11 @@ class SignalsItem extends StatelessWidget {
             decoration: BoxDecoration(color: AppColors.elevated, borderRadius: BorderRadius.circular(8)),
             child: Row(
               children: [
-                _GridCell(label: 'Entry', value: '\$${entry.toStringAsFixed(2)}', valueColor: AppColors.textPrimary),
+                _GridCell(label: 'Entry', value: '\$$entry', valueColor: AppColors.textPrimary),
                 Container(width: 1, height: 32, color: AppColors.border),
                 _GridCell(
                   label: isClosed ? 'Close' : 'Current',
-                  value: current != null ? '\$${current.toStringAsFixed(2)}' : '—',
+                  value: current != null ? '\$$current' : '—',
                   valueColor: AppColors.textPrimary,
                 ),
               ],

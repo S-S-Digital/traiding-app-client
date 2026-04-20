@@ -16,7 +16,7 @@ PaymentReceiptDto _$PaymentReceiptDtoFromJson(Map<String, dynamic> json) =>
       endDate: DateTime.parse(json['endDate'] as String),
       platform: json['platform'] as String,
       autoRenew: json['autoRenew'] as bool,
-      cancelledAt: DateTime.parse(json['cancelledAt'] as String),
+      cancelledAt: json['cancelledAt'] != null ? DateTime.parse(json['cancelledAt'] as String) : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
       plan: json['plan'],
     );
@@ -31,7 +31,7 @@ Map<String, dynamic> _$PaymentReceiptDtoToJson(PaymentReceiptDto instance) =>
       'endDate': instance.endDate.toIso8601String(),
       'platform': instance.platform,
       'autoRenew': instance.autoRenew,
-      'cancelledAt': instance.cancelledAt.toIso8601String(),
+      'cancelledAt': instance.cancelledAt?.toIso8601String(),
       'createdAt': instance.createdAt.toIso8601String(),
       'plan': instance.plan,
     };

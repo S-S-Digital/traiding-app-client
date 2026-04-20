@@ -21,11 +21,17 @@ abstract class AspiroTradeApi {
     Talker? talker,
     required Future<(String?, String?)> Function() getTokens,
     required Future<void> Function(String access, String refresh) saveTokens,
+    required Future<void> Function() onForceLogout,
   }) {
     final dio = Dio();
     dio.interceptors.addAll([
       TalkerDioLogger(talker: talker),
-      AuthInterceptor(dio: dio, getTokens: getTokens, saveTokens: saveTokens),
+      AuthInterceptor(
+        dio: dio,
+        getTokens: getTokens,
+        saveTokens: saveTokens,
+        onForceLogout: onForceLogout,
+      ),
     ]);
     if (apiUrl != null) {
       return AspiroTradeApi(dio, baseUrl: apiUrl);

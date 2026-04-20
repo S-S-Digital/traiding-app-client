@@ -91,6 +91,22 @@ class AppLocalizations {
       isRu ? 'Подписка Pro для полного доступа' : 'Pro subscription for full access';
   static String get unlockAccess =>
       isRu ? 'Разблокировать' : 'Unlock Access';
+  static String get premiumRequired =>
+      isRu ? 'Требуется подписка' : 'Premium Required';
+  static String get premiumSubtitle =>
+      isRu ? 'Оформите Pro подписку\nчтобы разблокировать все функции' : 'Upgrade to Pro to unlock\nall features and tools';
+  static String get premiumSignals =>
+      isRu ? 'Сигналы' : 'Signals';
+  static String get premiumAnalytics =>
+      isRu ? 'Аналитика' : 'Analytics';
+  static String get premiumTickers =>
+      isRu ? 'Тикеры' : 'Tickers';
+  static String get premiumAlerts =>
+      isRu ? 'Оповещения' : 'Alerts';
+  static String get upgradeToPlan =>
+      isRu ? 'Оформить Pro' : 'Upgrade to Pro';
+  static String get maybeLater =>
+      isRu ? 'Позже' : 'Maybe Later';
   static String get trialEndsIn => isRu ? 'Trial заканчивается через' : 'Trial ends in';
   static String hoursRemaining(int hours) => isRu ? '$hours ч' : '${hours}h';
 

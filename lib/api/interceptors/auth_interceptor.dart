@@ -5,14 +5,17 @@ class AuthInterceptor extends Interceptor {
   final Future<(String?, String?)> Function() getTokens;
   final Future<void> Function(String accessToken, String refreshToken)
       saveTokens;
+  final Future<void> Function() onForceLogout;
   final Dio dio;
 
   // Mutex: if a refresh is already in progress, all other 401s wait for it
   Completer<String?>? _refreshCompleter;
+  bool _isLoggingOut = false;
 
   AuthInterceptor({
     required this.getTokens,
     required this.saveTokens,
+    required this.onForceLogout,
     required this.dio,
   });
 
@@ -50,6 +53,12 @@ class AuthInterceptor extends Interceptor {
       final newAccessToken = await _refreshOrWait();
 
       if (newAccessToken == null) {
+        // Refresh failed — force logout and kick to login screen
+        if (!_isLoggingOut) {
+          _isLoggingOut = true;
+          await onForceLogout();
+          _isLoggingOut = false;
+        }
         return handler.next(err);
       }
 

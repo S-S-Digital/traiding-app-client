@@ -153,12 +153,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _SettingsRow(
                         icon: Icons.person_outline, iconColor: AppColors.brand,
                         title: AppLocalizations.editProfile,
-                        onTap: () => context.router.push(const ProfileRoute()),
+                        onTap: () => context.router.push(const ProfileRoute()).then((_) {
+                          if (mounted) context.read<SettingsBloc>().add(Start());
+                        }),
                       ),
                       _SettingsRow(
                         icon: Icons.workspace_premium_outlined, iconColor: AppColors.warning,
                         title: AppLocalizations.subscription,
-                        onTap: () => context.router.push(const SubscriptionRoute()),
+                        onTap: () => context.router.push(const SubscriptionRoute()).then((_) {
+                          if (mounted) context.read<SettingsBloc>().add(Start());
+                        }),
                       ),
                       _SettingsRow(
                         icon: Icons.language_rounded, iconColor: AppColors.info,

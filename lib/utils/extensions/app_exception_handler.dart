@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/router/app_router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
+import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -29,10 +30,130 @@ extension AppExceptionHandler on BuildContext {
           ).pushAndPopUntil(const LoginRoute(), predicate: (_) => false);
         },
       );
+    } else if (error is FordibenException) {
+      // 403 — Premium required: handled inline by each screen, suppress snackbar
+      return;
     } else {
       // Все остальные ошибки — тихий snackbar, не блокирующий UI
       _showErrorSnackBar(error.message);
     }
+  }
+
+  void _showPremiumRequiredSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.textQuaternary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Lock icon
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.brand.withValues(alpha: 0.15),
+                    AppColors.brand.withValues(alpha: 0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(36),
+              ),
+              child: const Icon(
+                Icons.lock_outline_rounded,
+                size: 36,
+                color: AppColors.brand,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Premium Required',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Upgrade to Pro to unlock all features',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textTertiary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            // Feature list
+            _PremiumFeatureRow(icon: Icons.cell_tower_rounded, text: 'Unlimited trading signals'),
+            const SizedBox(height: 12),
+            _PremiumFeatureRow(icon: Icons.analytics_outlined, text: 'Advanced analytics & history'),
+            const SizedBox(height: 12),
+            _PremiumFeatureRow(icon: Icons.add_chart_rounded, text: 'Unlimited ticker tracking'),
+            const SizedBox(height: 12),
+            _PremiumFeatureRow(icon: Icons.notifications_active_outlined, text: 'Real-time push notifications'),
+            const SizedBox(height: 28),
+            // CTA Button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  AutoRouter.of(context).push(const SubscriptionRoute());
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brand,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Upgrade to Pro',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Close
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text(
+                'Maybe Later',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showErrorSnackBar(String message) {
@@ -234,11 +355,12 @@ extension AppExceptionHandler on BuildContext {
           milliseconds: 600,
         ), // Оптимально для EaseOutBack
         pageBuilder: (context, animation, secondaryAnimation) {
-          // Здесь вызывается твой кастомный виджет ErrorDialog
           return ErrorDialog(
             message: message,
             title: title,
             onPressed: onPressed,
+            dialogTitle: '✓',
+            buttonColor: AppColors.brand,
           );
         },
         transitionBuilder: (context, animation, secondaryAnimation, child) {
@@ -325,6 +447,45 @@ extension AppExceptionHandler on BuildContext {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PremiumFeatureRow extends StatelessWidget {
+  const _PremiumFeatureRow({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.brand.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.brand),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        const Icon(
+          Icons.check_circle_rounded,
+          size: 18,
+          color: AppColors.brand,
+        ),
+      ],
     );
   }
 }

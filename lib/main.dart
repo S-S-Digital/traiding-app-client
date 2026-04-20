@@ -40,9 +40,12 @@ Future<void> main() async {
     apiUrl: apiUrl,
     talker: talker,
     getTokens: tokenStorage.getTokens,
-
     saveTokens: (String access, String refresh) =>
         tokenStorage.saveTokens(access, refresh),
+    onForceLogout: () async {
+      await tokenStorage.clear();
+      // Router will detect missing token and redirect to login
+    },
   );
 
   final config = AppConfig(

@@ -66,7 +66,10 @@ class AppInitializer extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (context) => SplashCubit(storage: config.tokenStorage),
+            create: (context) => SplashCubit(
+              storage: config.tokenStorage,
+              authRepository: context.read<AuthRepositoryI>(),
+            ),
           ),
           BlocProvider(
             create: (context) =>

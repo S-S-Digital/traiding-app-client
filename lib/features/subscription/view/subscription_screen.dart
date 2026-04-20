@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:aspiro_trade/features/profile/cubit/profile_cubit.dart';
 import 'package:aspiro_trade/features/subscription/bloc/subscription_bloc.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/router/router.dart';
@@ -29,7 +30,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   void initState() {
     super.initState();
+    // Always refresh both subscription data and profile (isPremium)
     context.read<SubscriptionBloc>().add(Start());
+    context.read<ProfileCubit>().start();
   }
 
   Future<void> _launchURL(String url) async {
@@ -63,6 +66,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           }
           if (state.status == SubscriptionStatus.success) {
             HapticFeedback.heavyImpact();
+            // Refresh profile to update isPremium immediately
+            context.read<ProfileCubit>().start();
+            // Reload subscription data so paywall UI updates
+            context.read<SubscriptionBloc>().add(Start());
             context.showSuccesDialog(
               title: AppLocalizations.accessGranted,
               message: AppLocalizations.accessGrantedMessage,
@@ -300,6 +307,31 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // ── Manage / Cancel subscription ──
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: () {
+                    HapticFeedback.mediumImpact();
+                    if (Platform.isAndroid) {
+                      _launchURL('https://play.google.com/store/account/subscriptions?package=com.aspiro.trade');
+                    } else {
+                      _launchURL('https://apps.apple.com/account/subscriptions');
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.border),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(
+                    AppLocalizations.isRu ? 'Управление подпиской' : 'Manage Subscription',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),

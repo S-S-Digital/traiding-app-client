@@ -1,8 +1,9 @@
 import 'package:aspiro_trade/app/app.dart';
-
+import 'package:aspiro_trade/features/profile/cubit/profile_cubit.dart';
 import 'package:aspiro_trade/router/router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AspiroTradeApp extends StatefulWidget {
   const AspiroTradeApp({super.key, required this.config, required this.initialLanguage});
@@ -34,6 +35,19 @@ class _AspiroTradeAppState extends State<AspiroTradeApp>
     _localeProvider.dispose();
     widget.config.realm.close();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refresh profile data (isPremium, limits, etc.) when app is reopened
+      try {
+        final profileCubit = context.read<ProfileCubit>();
+        profileCubit.start();
+      } catch (_) {
+        // ProfileCubit may not be available yet
+      }
+    }
   }
 
   @override

@@ -6,10 +6,7 @@ class TokenStorage {
   final _storage = const FlutterSecureStorage();
 
   Future<void> saveTokens(String access, String refresh) async {
-    await _storage.delete(key: _accessKey);
-    await _storage.delete(key: _refreshKey);
-
-    
+    // write() overwrites existing values, no need to delete first
     await _storage.write(key: _accessKey, value: access);
     await _storage.write(key: _refreshKey, value: refresh);
   }

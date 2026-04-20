@@ -67,19 +67,9 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
   }
 
   String _normalizePhone(String phone) {
+    // Phone already comes as "+{dialCode}{localDigits}" from PhoneTextField
     final digits = phone.replaceAll(RegExp(r'\D'), '');
-
-    // Если номер начинается с 8 — заменяем на +7
-    if (digits.startsWith('8')) {
-      return '+7${digits.substring(1)}';
-    }
-
-    // Если номер начинается с 7 и без плюса — добавляем +
-    if (digits.startsWith('7') && !phone.startsWith('+')) {
-      return '+$digits';
-    }
-
-    // Если уже содержит +7 — оставляем
+    if (digits.isEmpty) return '';
     return phone.startsWith('+') ? phone : '+$digits';
   }
 
@@ -92,7 +82,8 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     final digits = phone.replaceAll(RegExp(r'\D'), '');
 
     final isEmailValid = emailRegex.hasMatch(email);
-    final isPhoneValid = digits.length == 11;
+    // E.164: international numbers are 7-15 digits (including country code)
+    final isPhoneValid = digits.length >= 7 && digits.length <= 15;
     final isPasswordValid = password.length >= 6;
 
     return isEmailValid && isPhoneValid && isPasswordValid;
