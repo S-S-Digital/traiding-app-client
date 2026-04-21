@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:aspiro_trade/repositories/notifications/notifications.dart';
+import 'package:aspiro_trade/services/widget_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -64,6 +65,16 @@ class NotificationsRepository implements NotificationsRepositoryI {
             title: notification.title!,
             message: notification.body!,
           ),
+        );
+      }
+
+      if (message.data['type'] == 'trading_signal') {
+        WidgetService.pushSignal(
+          symbol: message.data['symbol'] ?? '',
+          direction: message.data['direction'] ?? 'BUY',
+          price: double.tryParse(message.data['price'] ?? '') ?? 0,
+          tp: double.tryParse(message.data['TP'] ?? '') ?? 0,
+          sl: double.tryParse(message.data['SL'] ?? '') ?? 0,
         );
       }
     });

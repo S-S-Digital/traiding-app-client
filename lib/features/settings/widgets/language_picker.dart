@@ -48,8 +48,8 @@ class _LanguagePickerSheetState extends State<_LanguagePickerSheet>
   late Animation<double> _fadeAnim;
 
   static const _languages = [
-    _LangOption(flag: '🇬🇧', name: 'English', nameNative: 'English', lang: AppLanguage.en),
-    _LangOption(flag: '🇷🇺', name: 'Русский', nameNative: 'Russian', lang: AppLanguage.ru),
+    _LangOption(code: 'EN', name: 'English', nameNative: 'English', lang: AppLanguage.en),
+    _LangOption(code: 'RU', name: 'Русский', nameNative: 'Russian', lang: AppLanguage.ru),
   ];
 
   @override
@@ -193,15 +193,32 @@ class _LanguagePickerSheetState extends State<_LanguagePickerSheet>
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  lang.flag,
-                                  style: TextStyle(
-                                    fontSize: isActive ? 24 : 20,
-                                    fontFamilyFallback: const [
-                                      'Apple Color Emoji',
-                                      'Segoe UI Emoji',
-                                      'Noto Color Emoji',
-                                    ],
+                                Container(
+                                  width: 34,
+                                  height: 24,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: isActive
+                                        ? AppColors.brand.withValues(alpha: 0.2)
+                                        : Colors.white.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: isActive
+                                          ? AppColors.brand.withValues(alpha: 0.5)
+                                          : Colors.white.withValues(alpha: 0.12),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    lang.code,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
+                                      color: isActive
+                                          ? Colors.white
+                                          : Colors.white.withValues(alpha: 0.5),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -258,12 +275,12 @@ class _LanguagePickerSheetState extends State<_LanguagePickerSheet>
 
 class _LangOption {
   const _LangOption({
-    required this.flag,
+    required this.code,
     required this.name,
     required this.nameNative,
     required this.lang,
   });
-  final String flag;
+  final String code; // ISO-like label: EN, RU
   final String name;
   final String nameNative;
   final AppLanguage lang;

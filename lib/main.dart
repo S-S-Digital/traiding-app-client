@@ -3,6 +3,7 @@ import 'package:aspiro_trade/app/app_config.dart';
 import 'package:aspiro_trade/app/aspiro_trade_app.dart';
 import 'package:aspiro_trade/firebase_options.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
+import 'package:aspiro_trade/services/widget_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -20,6 +21,8 @@ Future<void> main() async {
   final app = await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await WidgetService.init();
 
   final firebaseAuth = FirebaseAuth.instanceFor(app: app);
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);

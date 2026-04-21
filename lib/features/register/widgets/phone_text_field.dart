@@ -135,15 +135,22 @@ class _PhoneTextFieldState extends State<PhoneTextField> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      _selected.flag,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontFamilyFallback: [
-                          'Apple Color Emoji',
-                          'Segoe UI Emoji',
-                          'Noto Color Emoji',
-                        ],
+                    Container(
+                      width: 30,
+                      height: 20,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _selected.code,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.4,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -290,15 +297,24 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                 final isSelected = country.code == widget.selected.code;
                 return ListTile(
                   onTap: () => widget.onSelect(country),
-                  leading: Text(
-                    country.flag,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontFamilyFallback: [
-                        'Apple Color Emoji',
-                        'Segoe UI Emoji',
-                        'Noto Color Emoji',
-                      ],
+                  leading: Container(
+                    width: 38,
+                    height: 26,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : Colors.white.withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      country.code,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   title: Text(
