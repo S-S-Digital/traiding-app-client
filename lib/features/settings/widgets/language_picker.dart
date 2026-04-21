@@ -193,7 +193,17 @@ class _LanguagePickerSheetState extends State<_LanguagePickerSheet>
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(lang.flag, style: TextStyle(fontSize: isActive ? 24 : 20)),
+                                Text(
+                                  lang.flag,
+                                  style: TextStyle(
+                                    fontSize: isActive ? 24 : 20,
+                                    fontFamilyFallback: const [
+                                      'Apple Color Emoji',
+                                      'Segoe UI Emoji',
+                                      'Noto Color Emoji',
+                                    ],
+                                  ),
+                                ),
                                 const SizedBox(width: 12),
                                 Text(lang.name),
                               ],

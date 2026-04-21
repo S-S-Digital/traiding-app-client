@@ -137,7 +137,14 @@ class _PhoneTextFieldState extends State<PhoneTextField> {
                   children: [
                     Text(
                       _selected.flag,
-                      style: const TextStyle(fontSize: 20),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontFamilyFallback: [
+                          'Apple Color Emoji',
+                          'Segoe UI Emoji',
+                          'Noto Color Emoji',
+                        ],
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -285,7 +292,14 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                   onTap: () => widget.onSelect(country),
                   leading: Text(
                     country.flag,
-                    style: const TextStyle(fontSize: 24),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontFamilyFallback: [
+                        'Apple Color Emoji',
+                        'Segoe UI Emoji',
+                        'Noto Color Emoji',
+                      ],
+                    ),
                   ),
                   title: Text(
                     country.name,

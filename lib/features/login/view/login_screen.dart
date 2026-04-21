@@ -145,15 +145,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       if (Platform.isIOS)
                         SizedBox(
-                          width: 56,
+                          width: 160,
                           height: 48,
                           child: siwa.SignInWithAppleButton(
                             onPressed: () {
                               context.read<LoginBloc>().add(LoginWithApple());
                             },
                             style: siwa.SignInWithAppleButtonStyle.black,
-                            iconAlignment: siwa.IconAlignment.center,
-                            text: '',
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
