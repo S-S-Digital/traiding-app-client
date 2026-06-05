@@ -1,4 +1,5 @@
 import 'package:aspiro_trade/ui/theme/theme.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class ExitDialog extends StatelessWidget {
@@ -11,18 +12,18 @@ class ExitDialog extends StatelessWidget {
     return AlertDialog(
       backgroundColor: AppColors.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text(
-        'Sign Out',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+      title: Text(
+        AppLocalizations.signOut,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
       ),
-      content: const Text(
-        'Are you sure you want to sign out?',
-        style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+      content: Text(
+        AppLocalizations.confirmSignOut,
+        style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+          child: Text(AppLocalizations.cancel, style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
         ),
         FilledButton(
           onPressed: confirm,
@@ -30,7 +31,7 @@ class ExitDialog extends StatelessWidget {
             backgroundColor: AppColors.down,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          child: const Text('Sign Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          child: Text(AppLocalizations.signOut, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
         ),
       ],
     );

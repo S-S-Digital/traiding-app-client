@@ -109,25 +109,47 @@ class _PhoneTextFieldState extends State<PhoneTextField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Phone',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textSecondary,
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          child: Text(
+            'Phone'.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textSecondary.withOpacity(0.8),
+              letterSpacing: 0.8,
+            ),
           ),
         ),
-        const SizedBox(height: 5),
         TextFormField(
           controller: widget.phoneController,
           focusNode: widget.phoneFocus,
           keyboardType: TextInputType.phone,
           textInputAction: TextInputAction.done,
-          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
+          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
           onChanged: _onPhoneChanged,
           onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
           decoration: InputDecoration(
             hintText: '000 000 0000',
+            filled: true,
+            fillColor: AppColors.background.withOpacity(0.4),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppColors.border, width: 1.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppColors.down, width: 1.0),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppColors.down, width: 1.5),
+            ),
             prefixIcon: GestureDetector(
               onTap: _showCountryPicker,
               child: Container(
@@ -136,11 +158,11 @@ class _PhoneTextFieldState extends State<PhoneTextField> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 30,
+                      width: 32,
                       height: 20,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: Colors.white.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -153,7 +175,7 @@ class _PhoneTextFieldState extends State<PhoneTextField> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Text(
                       _selected.dialCode,
                       style: const TextStyle(

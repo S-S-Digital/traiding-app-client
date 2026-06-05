@@ -10,4 +10,8 @@ abstract interface class TickersRepositoryI{
 
   Future<List<Tickers>> fetchAllLocalTickers();
 
+  /// Evicts the persisted (Realm) tickers cache. Used on a premium/subscription
+  /// transition so stale gated content is not served from disk.
+  void clearLocalCache();
+
 }

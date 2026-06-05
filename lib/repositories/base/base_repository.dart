@@ -10,22 +10,10 @@ abstract class BaseRepository {
   Future<T> safeApiCall<T>(Future<T> Function() call) async {
     try {
       return await call();
-
-    } on AppException catch(error){
-   
-      throw AppExceptionFactory.fromStatusCode(error.statusCode);
-    } on DioException catch(error) {
-      
-      final status = error.response?.statusCode;
-
-    talker.error(
-      'DioException: $status',
-      error,
-      error.stackTrace,
-    );
-
-    // Преобразуем в AppException
-    throw AppExceptionFactory.fromStatusCode(status);
+    } on AppException {
+      rethrow;
+    } on DioException catch (error) {
+      throw DioExceptionFactory.fromDioException(error, talker);
     } catch (e, stack) {
       // Любые другие неожиданные ошибки
       talker.error('Unknown error', e, stack);

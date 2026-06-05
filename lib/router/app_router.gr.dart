@@ -121,6 +121,22 @@ class AssetsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [DigestScreen]
+class DigestRoute extends PageRouteInfo<void> {
+  const DigestRoute({List<PageRouteInfo>? children})
+    : super(DigestRoute.name, initialChildren: children);
+
+  static const String name = 'DigestRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DigestScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [HistoryScreen]
 class HistoryRoute extends PageRouteInfo<void> {
   const HistoryRoute({List<PageRouteInfo>? children})

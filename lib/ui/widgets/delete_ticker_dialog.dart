@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -9,26 +10,26 @@ class DeleteTickerDialog extends StatelessWidget {
     return AlertDialog(
       backgroundColor: AppColors.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: const Text(
-        'Delete ticker?',
-        style: TextStyle(
+      title: Text(
+        AppLocalizations.deleteTicker,
+        style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
       ),
-      content: const Text(
-        'This action cannot be undone.',
-        style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+      content: Text(
+        AppLocalizations.cannotUndo,
+        style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          child: Text(AppLocalizations.cancel, style: const TextStyle(color: AppColors.textSecondary)),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('Delete', style: TextStyle(color: AppColors.down, fontWeight: FontWeight.w600)),
+          child: Text(AppLocalizations.delete, style: const TextStyle(color: AppColors.down, fontWeight: FontWeight.w600)),
         ),
       ],
     );

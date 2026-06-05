@@ -95,24 +95,35 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
             }
           }
         },
-        buildWhen: (previous, current) => current.status.isBuildable,
         builder: (context, state) {
           if (state.status == Status.loading) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(height: 40),
-                PlatformProgressIndicator(),
-                SizedBox(height: 12),
-                Text(
-                  AppLocalizations.loading,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
+            return Container(
+              width: double.infinity,
+              height: 240,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand),
+                    ),
                   ),
-                ),
-                SizedBox(height: 40),
-              ],
+                  const SizedBox(height: 16),
+                  Text(
+                    AppLocalizations.loading,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textSecondary,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
             );
           }
           if (state.status == Status.submit || state.status == Status.loaded) {
@@ -126,8 +137,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
 
   Widget _buildContent(BuildContext context, AddTickersState state) {
     final isValid = state.status == Status.submit;
-    final canSubmit = isValid &&
-        state.selectedTimeframe != null;
+    final canSubmit = isValid && state.selectedTimeframe != null;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -136,49 +146,60 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
         // ── Handle ──
         Center(
           child: Container(
-            width: 36,
+            width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.elevated,
+              color: AppColors.border.withOpacity(0.5),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
 
         // ── Title ──
         Text(
           AppLocalizations.addTicker,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
+            letterSpacing: -0.2,
           ),
         ),
         const SizedBox(height: 14),
 
         // ── Selected asset ──
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isValid
-                ? AppColors.brand.withValues(alpha: 0.06)
-                : AppColors.elevated,
-            borderRadius: BorderRadius.circular(10),
+            color: AppColors.background.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isValid
-                  ? AppColors.brand.withValues(alpha: 0.15)
-                  : Colors.transparent,
+              color: isValid ? AppColors.brand.withOpacity(0.3) : AppColors.border.withOpacity(0.3),
+              width: 1,
             ),
+            boxShadow: isValid
+                ? [
+                    BoxShadow(
+                      color: AppColors.brand.withOpacity(0.04),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             children: [
               Container(
-                width: 30,
-                height: 30,
-                decoration: const BoxDecoration(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.elevated,
+                  border: Border.all(
+                    color: AppColors.border.withOpacity(0.6),
+                    width: 1.5,
+                  ),
                 ),
                 child: ClipOval(
                   child: Image.network(
@@ -190,8 +211,8 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                             ? widget.assets.baseAsset[0]
                             : '?',
                         style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
                       ),
@@ -199,7 +220,7 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,80 +228,107 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                     Text(
                       widget.assets.symbol,
                       style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       widget.assets.name,
                       style: const TextStyle(
                         fontSize: 12,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.textTertiary,
                       ),
                     ),
                   ],
                 ),
               ),
-
             ],
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 20),
 
         // ── Timeframe ──
         Text(
           AppLocalizations.timeframe,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
             color: AppColors.textTertiary,
-            letterSpacing: 0.3,
+            letterSpacing: 0.8,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Wrap(
-          spacing: 6,
+          spacing: 8,
+          runSpacing: 8,
           children: timeframeOptions.map((tf) {
             final isSelected = state.selectedTimeframe == tf;
             return GestureDetector(
               onTap: () => context
                   .read<AddTickersBloc>()
                   .add(SelectTimeframe(timeframe: tf)),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.brand.withValues(alpha: 0.1)
-                      : AppColors.elevated,
-                  borderRadius: BorderRadius.circular(6),
+                      ? AppColors.brand.withOpacity(0.12)
+                      : AppColors.elevated.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected
-                        ? AppColors.brand.withValues(alpha: 0.3)
-                        : AppColors.border,
+                    color: isSelected ? AppColors.brand : AppColors.border.withOpacity(0.5),
+                    width: isSelected ? 1.5 : 1.0,
                   ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.brand.withOpacity(0.08),
+                            blurRadius: 6,
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Text(
                   tf.title,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected
-                        ? AppColors.brand
-                        : AppColors.textTertiary,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    color: isSelected ? AppColors.brand : AppColors.textSecondary,
                   ),
                 ),
               ),
             );
           }).toList(),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 24),
 
         // ── Submit ──
-        SizedBox(
-          width: double.infinity,
+        Container(
           height: 48,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: canSubmit
+                ? const LinearGradient(
+                    colors: [AppColors.brand, AppColors.brandLight],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: canSubmit ? null : AppColors.elevated.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: canSubmit
+                ? [
+                    BoxShadow(
+                      color: AppColors.brand.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
           child: ElevatedButton(
             onPressed: canSubmit
                 ? () => context.read<AddTickersBloc>().add(
@@ -293,21 +341,20 @@ class _AddTickersScreenState extends State<AddTickersScreen> {
                     )
                 : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  canSubmit ? AppColors.brand : AppColors.elevated,
-              foregroundColor: AppColors.background,
-              disabledBackgroundColor: AppColors.elevated,
-              disabledForegroundColor: AppColors.textQuaternary,
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              disabledBackgroundColor: Colors.transparent,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(24),
               ),
-              elevation: 0,
             ),
             child: Text(
               AppLocalizations.addSymbol(widget.assets.symbol, state.selectedTimeframe?.title),
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: canSubmit ? Colors.white : AppColors.textQuaternary,
+                letterSpacing: 0.3,
               ),
             ),
           ),

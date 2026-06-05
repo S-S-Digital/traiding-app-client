@@ -50,3 +50,11 @@ final class UpdateAsset extends AssetDetailsEvent {}
 
 
 final class StopTimer extends AssetDetailsEvent{}
+
+final class UpdatePrice extends AssetDetailsEvent {
+  const UpdatePrice({required this.price});
+  final String price;
+
+  @override
+  List<Object> get props => [price];
+}

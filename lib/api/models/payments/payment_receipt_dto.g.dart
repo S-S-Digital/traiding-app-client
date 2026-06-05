@@ -16,7 +16,9 @@ PaymentReceiptDto _$PaymentReceiptDtoFromJson(Map<String, dynamic> json) =>
       endDate: DateTime.parse(json['endDate'] as String),
       platform: json['platform'] as String,
       autoRenew: json['autoRenew'] as bool,
-      cancelledAt: json['cancelledAt'] != null ? DateTime.parse(json['cancelledAt'] as String) : null,
+      cancelledAt: json['cancelledAt'] == null
+          ? null
+          : DateTime.parse(json['cancelledAt'] as String),
       createdAt: DateTime.parse(json['createdAt'] as String),
       plan: json['plan'],
     );

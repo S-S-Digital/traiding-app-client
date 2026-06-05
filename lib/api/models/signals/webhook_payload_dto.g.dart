@@ -18,7 +18,7 @@ WebhookPayloadDto _$WebhookPayloadDtoFromJson(Map<String, dynamic> json) =>
       indicators: IndicatorsDto.fromJson(
         json['indicators'] as Map<String, dynamic>,
       ),
-      entryBarTime: DateTime.tryParse(json['entry_bar_time'] as String? ?? '') ?? DateTime.now(),
+      entryBarTime: DateTime.parse(json['entry_bar_time'] as String),
     );
 
 Map<String, dynamic> _$WebhookPayloadDtoToJson(WebhookPayloadDto instance) =>

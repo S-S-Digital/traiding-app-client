@@ -91,7 +91,7 @@ class SubscriptionItem extends StatelessWidget {
               ),
             ),
             Text(
-              'Включено:',
+              AppLocalizations.includedLabel,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -139,7 +139,7 @@ class SubscriptionItem extends StatelessWidget {
                     text: TextSpan(
                       style: theme.textTheme.bodyLarge, // общий стиль
                       children: [
-                        const TextSpan(text: 'до '),
+                        TextSpan(text: AppLocalizations.untilPrefix),
                         TextSpan(
                           text: plans.maxTickers.toString(),
                           style: theme.textTheme.bodyLarge?.copyWith(
@@ -149,7 +149,7 @@ class SubscriptionItem extends StatelessWidget {
                                 .onPrimary, // или любой другой стиль для цифр
                           ),
                         ),
-                        const TextSpan(text: ' тикеров, '),
+                        TextSpan(text: ' ${AppLocalizations.tickersWord}, '),
                         TextSpan(
                           text: plans.duration.toString(),
                           style: theme.textTheme.bodyLarge?.copyWith(
@@ -157,7 +157,7 @@ class SubscriptionItem extends StatelessWidget {
                             color: theme.colorScheme.onPrimary,
                           ),
                         ),
-                        const TextSpan(text: ' дней'),
+                        TextSpan(text: ' ${AppLocalizations.daysWord}'),
                       ],
                     ),
                   ),
@@ -192,7 +192,7 @@ class SubscriptionItem extends StatelessWidget {
                         talker.debug(isFreePlan);
 
                         if (isThisPlanActive) {
-                          return const Text('Ваш текущий тариф');
+                          return Text(AppLocalizations.currentPlan);
                         }
 
                         if (isFreePlan) {
@@ -201,7 +201,7 @@ class SubscriptionItem extends StatelessWidget {
                           return const Text('');
                         }
 
-                        return Text('Подписаться за ${plans.price} \$');
+                        return Text(AppLocalizations.subscribeFor(plans.price.toString()));
                       }(),
               ),
             if (subscriptions == null)
@@ -218,16 +218,16 @@ class SubscriptionItem extends StatelessWidget {
                       plans.price == "0" || plans.price == "0.0";
 
                   if (isThisPlanActive) {
-                    return const Text('Ваш текущий тариф');
+                    return Text(AppLocalizations.currentPlan);
                   }
 
                   if (isFreePlan) {
                     // Если у пользователя есть ЛЮБАЯ активная подписка (например PRO),
                     // а мы смотрим на карточку FREE
-                    return const Text('У вас обычный тариф');
+                    return Text(AppLocalizations.basicPlanLabel);
                   }
 
-                  return Text('Подписаться за ${plans.price} \$');
+                  return Text(AppLocalizations.subscribeFor(plans.price.toString()));
                 }(),
               ),
           ],

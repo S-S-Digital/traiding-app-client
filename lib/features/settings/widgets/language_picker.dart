@@ -253,7 +253,7 @@ class _LanguagePickerSheetState extends State<_LanguagePickerSheet>
                           elevation: 0,
                         ),
                         child: Text(
-                          AppLocalizations.isRu ? 'Готово' : 'Done',
+                          AppLocalizations.done,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

@@ -2,6 +2,7 @@
 import 'dart:io' show Platform;
 
 import 'package:aspiro_trade/features/settings/widgets/widgets.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -41,12 +42,12 @@ Future<Object?> showExitDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('Выход'),
-        content: const Text('Вы уверены, что хотите выйти?'),
+        title: Text(AppLocalizations.signOut),
+        content: Text(AppLocalizations.confirmSignOut),
         actions: [
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(context), // Отмена
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.cancel),
           ),
           CupertinoDialogAction(
             onPressed: () {
@@ -54,7 +55,7 @@ Future<Object?> showExitDialog(
               confirm(); // Подтверждение выхода
             },
             isDestructiveAction: true,
-            child: const Text('Выйти'),
+            child: Text(AppLocalizations.signOut),
           ),
         ],
       ),

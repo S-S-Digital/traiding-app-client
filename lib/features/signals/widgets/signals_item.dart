@@ -1,5 +1,8 @@
+import 'dart:math';
 import 'package:aspiro_trade/features/signals/models/models.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
+import 'package:aspiro_trade/utils/methods/price_formatter.dart';
 import 'package:flutter/material.dart';
 
 class SignalsItem extends StatelessWidget {
@@ -21,9 +24,21 @@ class SignalsItem extends StatelessWidget {
     }
   }
 
+  // Crypto = live data via WebSocket (exchange-accurate). Non-crypto = no live
+  // feed → static Entry/SL/TP only. Mirrors backend regex /USDT$|USDC$|BTC$|ETH$|BNB$/.
+  static bool _isCrypto(String symbol) {
+    final s = symbol.toUpperCase();
+    return s.endsWith('USDT') ||
+        s.endsWith('USDC') ||
+        s.endsWith('BTC') ||
+        s.endsWith('ETH') ||
+        s.endsWith('BNB');
+  }
+
   @override
   Widget build(BuildContext context) {
     final isBuy = signal.signal.direction.toLowerCase() == 'buy';
+    final isCrypto = _isCrypto(signal.signal.symbol);
     final profitPct = signal.signal.profitPct?.toDouble() ?? 0;
     final isProfit = profitPct >= 0;
     final isClosed = signal.signal.isClosed;
@@ -33,155 +48,350 @@ class SignalsItem extends StatelessWidget {
     final current = signal.signal.currentPrice?.toDouble();
     final entry = signal.signal.price.toDouble();
 
-    // Progress bar: only if SL and TP are known
+    // Visual ranges: Left is always Stop Loss, Right is always Take Profit
     final hasRange = sl != null && tp != null;
-    double progress = 0.5;
-    if (hasRange && current != null) {
-      final range = (tp - sl).abs();
-      progress = range > 0 ? ((current - sl).abs() / range).clamp(0.0, 1.0) : 0.5;
+    
+    // Progress calculation for slider
+    double entryRatio = 0.3;
+    double currentRatio = 0.5;
+    if (hasRange) {
+      final totalDiff = (tp - sl).abs();
+      if (totalDiff > 0) {
+        entryRatio = ((entry - sl).abs() / totalDiff).clamp(0.0, 1.0);
+        currentRatio = current != null 
+            ? ((current - sl).abs() / totalDiff).clamp(0.0, 1.0)
+            : entryRatio;
+      }
     }
 
     final statusColor = _statusColor(signal.signal.signalStatus);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border, width: 0.5),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ── Header ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-            child: Row(
-              children: [
-                // Icon
-                Container(
-                  width: 36, height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.elevated,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: Image.network(
-                      signal.assets.logoUrl,
-                      width: 36, height: 36, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Center(
-                        child: Text(
-                          signal.signal.symbol.isNotEmpty ? signal.signal.symbol[0] : '?',
-                          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 14),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                // Pair + pills
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        signal.signal.symbol,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          _DirectionPill(isBuy: isBuy),
-                          const SizedBox(width: 6),
-                          _TimeframePill(timeframe: signal.signal.timeframe),
-                          const SizedBox(width: 6),
-                          if (isClosed)
-                            _StatusPill(label: 'CLOSED', color: statusColor)
-                          else
-                            Text(
-                              TimeOfDay.fromDateTime(signal.signal.entryBarTime).format(context),
-                              style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // P&L badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isProfit ? AppColors.up.withValues(alpha: 0.12) : AppColors.down.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '${isProfit ? '+' : ''}${profitPct.toStringAsFixed(2)}%',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: isProfit ? AppColors.up : AppColors.down),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── Progress Bar (SL → TP) — only if both are available ──
-          if (hasRange)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('SL $sl', style: const TextStyle(fontSize: 11, color: AppColors.down, fontWeight: FontWeight.w500)),
-                      Text('TP $tp', style: const TextStyle(fontSize: 11, color: AppColors.up, fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: AppColors.elevated,
-                      valueColor: AlwaysStoppedAnimation<Color>(isProfit ? AppColors.up : AppColors.down),
-                      minHeight: 4,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('SL —', style: TextStyle(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500)),
-                  Text('TP —', style: TextStyle(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500)),
-                ],
-              ),
-            ),
-
-          const SizedBox(height: 10),
-
-          // ── Grid: Entry / Current ──
-          Container(
-            margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-            decoration: BoxDecoration(color: AppColors.elevated, borderRadius: BorderRadius.circular(8)),
-            child: Row(
-              children: [
-                _GridCell(label: 'Entry', value: '\$$entry', valueColor: AppColors.textPrimary),
-                Container(width: 1, height: 32, color: AppColors.border),
-                _GridCell(
-                  label: isClosed ? 'Close' : 'Current',
-                  value: current != null ? '\$$current' : '—',
-                  valueColor: AppColors.textPrimary,
-                ),
-              ],
-            ),
+        color: AppColors.card.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withOpacity(0.6), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            // Left direction color stripe (BUY: Green, SELL: Red)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 4,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isBuy
+                        ? [AppColors.up, AppColors.up.withOpacity(0.3)]
+                        : [AppColors.down, AppColors.down.withOpacity(0.3)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+            ),
+
+            // Content
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Header (Coin logo, Pair, Timeframe, Direction, P&L) ──
+                  Row(
+                    children: [
+                      // Circular coin avatar with sleek border glow
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.08),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(19),
+                          child: Image.network(
+                            signal.assets.logoUrl,
+                            width: 38,
+                            height: 38,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: AppColors.elevated,
+                              alignment: Alignment.center,
+                              child: Text(
+                                signal.signal.symbol.isNotEmpty ? signal.signal.symbol[0] : '?',
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+
+                      // Pair and tags
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              signal.signal.symbol,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                                letterSpacing: 0.1,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                _DirectionPill(isBuy: isBuy),
+                                const SizedBox(width: 6),
+                                _TimeframePill(timeframe: signal.signal.timeframe),
+                                const SizedBox(width: 6),
+                                if (isClosed)
+                                  _StatusPill(label: AppLocalizations.statusClosed, color: statusColor)
+                                else
+                                  Text(
+                                    // .toLocal() so the entry chip shows the user's
+                                    // wall-clock time, not the backend UTC hour (audit #6).
+                                    TimeOfDay.fromDateTime(signal.signal.entryBarTime.toLocal()).format(context),
+                                    style: const TextStyle(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // P&L Badge with glow — CRYPTO ONLY.
+                      // Non-crypto (stocks/forex/commodities) has no accurate live
+                      // feed (app feed ≠ TradingView entry coords) → live % is bogus,
+                      // so we hide it entirely. Non-crypto shows only Entry/SL/TP.
+                      if (isCrypto)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isProfit ? AppColors.up.withOpacity(0.08) : AppColors.down.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isProfit ? AppColors.up.withOpacity(0.2) : AppColors.down.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isProfit ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                              size: 14,
+                              color: isProfit ? AppColors.up : AppColors.down,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              PriceFormatter.percent(profitPct),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: isProfit ? AppColors.up : AppColors.down,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // ── Visual Interactive Progress Slider (SL → Entry → Current → TP) ──
+                  // CRYPTO ONLY. Non-crypto has no live feed → no slider (it was the
+                  // thing visually breaking: stale/wrong current price drove the dot).
+                  if (isCrypto && hasRange) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('SL ${PriceFormatter.price(sl)}', style: const TextStyle(fontSize: 10, color: AppColors.down, fontWeight: FontWeight.w600)),
+                          Text('TP ${PriceFormatter.price(tp)}', style: const TextStyle(fontSize: 10, color: AppColors.up, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        final entryPosition = entryRatio * width;
+                        final currentPosition = currentRatio * width;
+
+                        return SizedBox(
+                          height: 16,
+                          child: Stack(
+                            alignment: Alignment.centerLeft,
+                            clipBehavior: Clip.none,
+                            children: [
+                              // Background track
+                              Container(
+                                width: width,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: AppColors.elevated,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+
+                              // Active segment (Entry to Current)
+                              Positioned(
+                                left: min(entryPosition, currentPosition),
+                                width: max((entryPosition - currentPosition).abs(), 1.0),
+                                child: Container(
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: isProfit ? AppColors.up : AppColors.down,
+                                    borderRadius: BorderRadius.circular(2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: (isProfit ? AppColors.up : AppColors.down).withOpacity(0.4),
+                                        blurRadius: 4,
+                                        spreadRadius: 0.5,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // Entry Anchor Node
+                              Positioned(
+                                left: entryPosition - 2,
+                                child: Tooltip(
+                                  message: '${AppLocalizations.entryLabel}: ${PriceFormatter.price(entry)}',
+                                  child: Container(
+                                    width: 4,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(2),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.white.withOpacity(0.5),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              // Current price floating slider dot
+                              Positioned(
+                                left: currentPosition - 5,
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: isProfit ? AppColors.brandLight : AppColors.down,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: (isProfit ? AppColors.brandLight : AppColors.down).withOpacity(0.6),
+                                        blurRadius: 8,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                  ] else if (isCrypto) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('SL —', style: TextStyle(fontSize: 10, color: AppColors.textTertiary, fontWeight: FontWeight.w500)),
+                          Text('TP —', style: TextStyle(fontSize: 10, color: AppColors.textTertiary, fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  // ── Details visual grid ──
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.elevated.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.border.withOpacity(0.4),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: isCrypto
+                        ? Row(
+                            children: [
+                              _GridCell(label: AppLocalizations.entryLabel, value: PriceFormatter.price(entry, withSymbol: true), valueColor: AppColors.textPrimary),
+                              Container(width: 1, height: 24, color: AppColors.border.withOpacity(0.5)),
+                              _GridCell(
+                                label: isClosed ? AppLocalizations.closeLabel : AppLocalizations.currentLabel,
+                                value: current != null ? PriceFormatter.price(current, withSymbol: true) : '—',
+                                valueColor: current != null
+                                    ? (isClosed
+                                        ? AppColors.textPrimary
+                                        : (isProfit ? AppColors.brandLight : AppColors.down))
+                                    : AppColors.textPrimary,
+                              ),
+                            ],
+                          )
+                        // Non-crypto: only Entry / SL / TP — no live Current, no %, no slider.
+                        : Row(
+                            children: [
+                              _GridCell(label: AppLocalizations.entryLabel, value: PriceFormatter.price(entry, withSymbol: true), valueColor: AppColors.textPrimary),
+                              Container(width: 1, height: 24, color: AppColors.border.withOpacity(0.5)),
+                              _GridCell(label: 'SL', value: sl != null ? PriceFormatter.price(sl, withSymbol: true) : '—', valueColor: AppColors.down),
+                              Container(width: 1, height: 24, color: AppColors.border.withOpacity(0.5)),
+                              _GridCell(label: 'TP', value: tp != null ? PriceFormatter.price(tp, withSymbol: true) : '—', valueColor: AppColors.up),
+                            ],
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -194,19 +404,48 @@ class _DirectionPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isBuy ? AppColors.up.withValues(alpha: 0.15) : AppColors.down.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(4),
+        color: isBuy ? AppColors.up.withOpacity(0.08) : AppColors.down.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isBuy ? AppColors.up.withOpacity(0.2) : AppColors.down.withOpacity(0.2),
+          width: 0.5,
+        ),
       ),
-      child: Text(
-        isBuy ? 'LONG' : 'SHORT',
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: isBuy ? AppColors.up : AppColors.down),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              color: isBuy ? AppColors.up : AppColors.down,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: isBuy ? AppColors.up.withOpacity(0.6) : AppColors.down.withOpacity(0.6),
+                  blurRadius: 4,
+                  spreadRadius: 0.5,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            isBuy ? AppLocalizations.directionLong : AppLocalizations.directionShort,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: isBuy ? AppColors.up : AppColors.down,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
-
 
 class _TimeframePill extends StatelessWidget {
   const _TimeframePill({required this.timeframe});
@@ -215,11 +454,22 @@ class _TimeframePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: AppColors.elevated, borderRadius: BorderRadius.circular(4)),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.elevated.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: AppColors.border.withOpacity(0.3),
+          width: 0.5,
+        ),
+      ),
       child: Text(
         timeframe.toUpperCase(),
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textSecondary,
+        ),
       ),
     );
   }
@@ -233,14 +483,22 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(4),
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 0.5,
+        ),
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          color: color,
+        ),
       ),
     );
   }
@@ -258,9 +516,24 @@ class _GridCell extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.textTertiary,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.1,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: valueColor,
+            ),
+          ),
         ],
       ),
     );

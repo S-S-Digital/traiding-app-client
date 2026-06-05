@@ -15,6 +15,7 @@ import 'package:aspiro_trade/features/register/register.dart';
 import 'package:aspiro_trade/features/settings/settings.dart';
 import 'package:aspiro_trade/features/signals/signals.dart';
 import 'package:aspiro_trade/features/update_tickers/update_tickers.dart';
+import 'package:aspiro_trade/features/digest/digest.dart';
 import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +30,11 @@ class AppRouter extends RootStackRouter {
   @override
   List<AutoRoute> get routes => [
     AutoRoute(page: SplashRoute.page, initial: true),
-    AutoRoute(page: LoginRoute.page),
+    CustomRoute(
+      page: LoginRoute.page,
+      transitionsBuilder: TransitionsBuilders.fadeIn,
+      duration: const Duration(milliseconds: 500),
+    ),
     AutoRoute(page: RegisterRoute.page),
     AutoRoute(page: AssetsRoute.page),
     AutoRoute(page: AssetDetailsRoute.page),
@@ -38,11 +43,14 @@ class AppRouter extends RootStackRouter {
     AutoRoute(page: ProfileRoute.page),
     AutoRoute(page: PrivacyPolicyRoute.page),
     AutoRoute(page: TermsOfUseRoute.page),
-    AutoRoute(
+    CustomRoute(
       page: HomeRoute.page,
+      transitionsBuilder: TransitionsBuilders.fadeIn,
+      duration: const Duration(milliseconds: 500),
       children: [
         AutoRoute(page: TickersRoute.page),
         AutoRoute(page: SignalsRoute.page),
+        AutoRoute(page: DigestRoute.page),
         AutoRoute(page: HistoryRoute.page),
         AutoRoute(page: SettingsRoute.page),
       ],

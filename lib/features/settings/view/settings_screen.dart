@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:aspiro_trade/features/settings/bloc/settings_bloc.dart';
+import 'package:aspiro_trade/repositories/signals/signals.dart';
 import 'package:aspiro_trade/features/settings/widgets/widgets.dart';
 import 'package:aspiro_trade/features/settings/widgets/language_picker.dart';
 import 'package:aspiro_trade/router/app_router.dart';
@@ -63,20 +64,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
           builder: (context, state) {
             String email = '';
-            String name = 'User';
+            String name = AppLocalizations.defaultUserName;
             bool isPremium = false;
             String premiumUntil = '';
             String appVersion = '1.0.0';
 
+            bool isAnnual = false;
             if (state is SettingsLoaded) {
               email = state.users.email;
               name = state.users.email.split('@').first;
               isPremium = state.users.isPremiumActive;
               premiumUntil = state.users.premiumUntilFormatted;
               appVersion = state.appVersion;
+              isAnnual = isPremium && state.users.premiumUntil != null &&
+                  state.users.premiumUntil!.difference(DateTime.now()).inDays > 60;
             }
 
-            final themeColor = isPremium ? AppColors.brand : AppColors.info;
+            final themeColor = isAnnual
+                ? const Color(0xFFD4AF37)
+                : (isPremium ? AppColors.brand : AppColors.info);
 
             return Stack(
               children: [
@@ -110,7 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 20),
 
                       // ── 1. Top Welcome Greeting Row (Reference 2 style!) ──
-                      _buildWelcomeHeader(name, email, isPremium, themeColor, premiumUntil),
+                      _buildWelcomeHeader(name, email, isPremium, themeColor, premiumUntil, isAnnual: isAnnual),
 
                       const SizedBox(height: 24),
 
@@ -119,6 +125,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         isPremium: isPremium,
                         obscureBalance: _obscureBalance,
                         onToggleObscure: () => setState(() => _obscureBalance = !_obscureBalance),
+                        stats: state is SettingsLoaded ? (state as SettingsLoaded).currentStats : null,
+                        category: state is SettingsLoaded ? (state as SettingsLoaded).currentCategory : StatsCategory.all,
+                        onToggleCategory: () => context.read<SettingsBloc>().add(ToggleStatsCategory()),
                       ),
 
                       const SizedBox(height: 24),
@@ -128,22 +137,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       const SizedBox(height: 28),
 
-                      // ── 4. Active Signal Pipeline & Sparklines (Reference 1 & 2 styles!) ──
-                      _buildCopytradingPipeline(),
+                      // ── 4. Trading Results Pipeline & Stats ──
+                      _buildTradingResults(
+                        state is SettingsLoaded ? (state as SettingsLoaded).currentStats : null,
+                        state is SettingsLoaded ? (state as SettingsLoaded).currentCategory : StatsCategory.all,
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // ── Account-level strategy mode selector (Task #4) ──
+                      const StrategyModeSelector(),
 
                       const SizedBox(height: 28),
 
                       // ── 5. Clean Legal Rows (Reference 2 style!) ──
-                      _buildSectionHeader('LEGAL & SECURITY'),
+                      _buildSectionHeader(AppLocalizations.legalSecurity),
                       const SizedBox(height: 6),
                       PremiumOptionRow(
                         icon: Icons.description_outlined,
-                        title: 'Terms of Use',
+                        title: AppLocalizations.termsOfUse,
                         onTap: () => context.router.push(const TermsOfUseRoute()),
                       ),
                       PremiumOptionRow(
                         icon: Icons.shield_outlined,
-                        title: 'Privacy Policy',
+                        title: AppLocalizations.privacyPolicy,
                         onTap: () => context.router.push(const PrivacyPolicyRoute()),
                       ),
 
@@ -173,10 +190,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               width: 1.2,
                             ),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
-                              'Disconnect Session',
-                              style: TextStyle(
+                              AppLocalizations.disconnectSession,
+                              style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.down,
@@ -212,7 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildWelcomeHeader(String name, String email, bool isPremium, Color themeColor, String premiumUntil) {
+  Widget _buildWelcomeHeader(String name, String email, bool isPremium, Color themeColor, String premiumUntil, {bool isAnnual = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -222,6 +239,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               OrbitingTokenAvatar(
                 name: name,
                 isPremium: isPremium,
+                isAnnual: isAnnual,
                 imageUrl: 'assets/logo/elon_musk_nft.png',
               ),
               const SizedBox(width: 16),
@@ -230,7 +248,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Welcome back!',
+                      '${AppLocalizations.welcomeBack}!',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -250,11 +268,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (isPremium && premiumUntil.isNotEmpty) ...[
                       const SizedBox(height: 3),
                       Text(
-                        'PRO node active • $premiumUntil',
-                        style: const TextStyle(
+                        '${AppLocalizations.proNodeActive} • $premiumUntil',
+                        style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.brand,
+                          color: themeColor,
                           letterSpacing: 0.2,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -299,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: QuickActionTile(
             icon: Icons.person_outline_rounded,
             iconColor: AppColors.brand,
-            title: 'Profile',
+            title: AppLocalizations.profile,
             onTap: () async {
               await context.router.push(const ProfileRoute());
               if (!context.mounted) return;
@@ -312,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: QuickActionTile(
             icon: Icons.stars_rounded,
             iconColor: AppColors.warning,
-            title: 'Subscription',
+            title: AppLocalizations.subscription,
             onTap: () async {
               await context.router.push(const SubscriptionRoute());
               if (!context.mounted) return;
@@ -325,7 +343,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: QuickActionTile(
             icon: Icons.language_rounded,
             iconColor: AppColors.info,
-            title: 'Language',
+            title: AppLocalizations.language,
             onTap: () {
               HapticFeedback.mediumImpact();
               showLanguagePicker(context);
@@ -337,7 +355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: QuickActionTile(
             icon: Icons.wallet_giftcard_rounded,
             iconColor: const Color(0xFFFF5A79),
-            title: 'Earn Free',
+            title: AppLocalizations.earnFree,
             onTap: () => launchUrl(
               Uri.parse('https://docs.google.com/document/d/1-emJAJQjTSl8Y_crh6LuXqTqzw29J7v364BUC28hFkM/edit?usp=drivesdk'),
               mode: LaunchMode.externalApplication,
@@ -348,14 +366,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildCopytradingPipeline() {
-    Widget pipelineRow(
-      String symbol,
-      String allocation,
-      List<double> points,
-      Color chartColor,
-      String earnings,
-      String yieldPct,
+  Widget _buildTradingResults(SignalStats? stats, StatsCategory category) {
+    Widget resultRow(
+      String title,
+      String subtitle,
+      String value,
+      String detail,
       bool isPositive,
       IconData icon,
       Color iconColor,
@@ -370,7 +386,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         child: Row(
           children: [
-            // Coin avatar icon
+            // Icon
             Container(
               width: 36,
               height: 36,
@@ -385,14 +401,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(width: 12),
 
-            // Text titles
+            // Title + subtitle
             Expanded(
-              flex: 4,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    symbol,
+                    title,
                     style: const TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
@@ -401,7 +416,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    allocation,
+                    subtitle,
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -411,26 +426,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-
-            // Animated Sparkline Chart (Image 1 style!)
-            Expanded(
-              flex: 3,
-              child: Center(
-                child: _AnimatedSparkline(
-                  points: points,
-                  color: chartColor,
-                ),
-              ),
-            ),
             
             const SizedBox(width: 12),
 
-            // Earnings values
+            // Values
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  earnings,
+                  value,
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
@@ -439,7 +443,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  yieldPct,
+                  detail,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -453,47 +457,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader('ACTIVE COPYTRADING PIPELINE'),
-        const SizedBox(height: 8),
-        pipelineRow(
-          'Bitcoin Copy Node',
-          '1.5x allocation',
-          [1.0, 1.15, 0.95, 1.25, 1.4, 1.3, 1.55],
-          AppColors.brand,
-          '+\$184.20',
-          '+5.82%',
-          true,
-          Icons.currency_bitcoin_rounded,
-          AppColors.btc,
-        ),
-        pipelineRow(
-          'Ethereum Copy Node',
-          '1.0x allocation',
-          [1.4, 1.3, 1.5, 1.2, 1.1, 1.0, 0.95],
-          AppColors.down,
-          '-\$12.40',
-          '-1.14%',
-          false,
-          Icons.token_rounded,
-          AppColors.eth,
-        ),
-        pipelineRow(
-          'Solana Copy Node',
-          '2.0x allocation',
-          [0.8, 1.0, 0.9, 1.2, 1.35, 1.6, 1.85],
-          AppColors.brand,
-          '+\$482.50',
-          '+12.65%',
-          true,
-          Icons.bolt_rounded,
-          AppColors.sol,
-        ),
-      ],
+    final isRu = AppLocalizations.isRu;
+    final winRate = stats?.winRate.toDouble() ?? 0;
+    final totalProfit = stats?.totalProfitLossPct.toDouble() ?? 0;
+    final avgProfit = stats?.avgProfitLossPct.toDouble() ?? 0;
+    final closed = stats?.closed.toInt() ?? 0;
+    final active = stats?.active.toInt() ?? 0;
+    final profitable = stats?.profitable.toInt() ?? 0;
+    final unprofitable = stats?.unprofitable.toInt() ?? 0;
+
+    final categoryLabel = switch (category) {
+      StatsCategory.all => isRu ? 'Все активы' : 'All Assets',
+      StatsCategory.crypto => isRu ? 'Крипто' : 'Crypto',
+      StatsCategory.nonCrypto => isRu ? 'Не крипто' : 'Non-crypto',
+    };
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 350),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.05, 0),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
+      },
+      child: Column(
+        key: ValueKey(category),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader(isRu ? 'РЕЗУЛЬТАТЫ ТОРГОВЛИ • $categoryLabel' : 'TRADING RESULTS • $categoryLabel'),
+          const SizedBox(height: 8),
+          resultRow(
+            'Win Rate',
+            isRu ? '$profitable из $closed ${closed == 1 ? 'сделки' : 'сделок'}' : '$profitable of $closed trades',
+            '${winRate.toStringAsFixed(1)}%',
+            isRu ? 'Точность' : 'Accuracy',
+            winRate >= 50,
+            Icons.analytics_rounded,
+            AppColors.brand,
+          ),
+          resultRow(
+            isRu ? 'Чистый профит' : 'Net Profit',
+            isRu ? 'Общий процент за всё время' : 'Total % all time',
+            '${totalProfit >= 0 ? '+' : ''}${totalProfit.toStringAsFixed(2)}%',
+            isRu ? 'Сред. ${avgProfit >= 0 ? '+' : ''}${avgProfit.toStringAsFixed(2)}%' : 'Avg ${avgProfit >= 0 ? '+' : ''}${avgProfit.toStringAsFixed(2)}%',
+            totalProfit >= 0,
+            Icons.trending_up_rounded,
+            totalProfit >= 0 ? AppColors.brand : AppColors.down,
+          ),
+          resultRow(
+            isRu ? 'Сделки' : 'Trades',
+            isRu ? '$active активных сейчас' : '$active active now',
+            '$closed',
+            isRu ? 'Закрыто' : 'Closed',
+            true,
+            Icons.swap_vert_rounded,
+            AppColors.info,
+          ),
+        ],
+      ),
     );
   }
+
 
   Widget _buildSectionHeader(String title) {
     return Padding(
@@ -517,11 +549,13 @@ class OrbitingTokenAvatar extends StatefulWidget {
     super.key,
     required this.name,
     required this.isPremium,
+    this.isAnnual = false,
     this.imageUrl,
   });
 
   final String name;
   final bool isPremium;
+  final bool isAnnual;
   final String? imageUrl;
 
   @override
@@ -548,7 +582,9 @@ class _OrbitingTokenAvatarState extends State<OrbitingTokenAvatar> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = widget.isPremium ? AppColors.brand : AppColors.info;
+    final themeColor = widget.isAnnual
+        ? const Color(0xFFD4AF37)
+        : (widget.isPremium ? AppColors.brand : AppColors.info);
     final oppositeColor = widget.isPremium ? AppColors.info : AppColors.brand;
 
     return Stack(
@@ -608,7 +644,9 @@ class _OrbitingTokenAvatarState extends State<OrbitingTokenAvatar> with SingleTi
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: widget.isPremium
-                    ? [AppColors.brand.withValues(alpha: 0.16), AppColors.brand.withValues(alpha: 0.04)]
+                    ? (widget.isAnnual
+                        ? [const Color(0xFFD4AF37).withValues(alpha: 0.16), const Color(0xFFD4AF37).withValues(alpha: 0.04)]
+                        : [AppColors.brand.withValues(alpha: 0.16), AppColors.brand.withValues(alpha: 0.04)])
                     : [AppColors.elevated, AppColors.card],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -722,15 +760,30 @@ class TradingNodeBalanceCard extends StatelessWidget {
     required this.isPremium,
     required this.obscureBalance,
     required this.onToggleObscure,
+    this.stats,
+    this.category = StatsCategory.all,
+    this.onToggleCategory,
   });
 
   final bool isPremium;
   final bool obscureBalance;
   final VoidCallback onToggleObscure;
+  final SignalStats? stats;
+  final StatsCategory category;
+  final VoidCallback? onToggleCategory;
 
   @override
   Widget build(BuildContext context) {
     final themeColor = isPremium ? AppColors.brand : AppColors.info;
+    final isRu = AppLocalizations.isRu;
+    final winRate = stats?.winRate.toDouble() ?? 0;
+    final avgProfit = stats?.avgProfitLossPct.toDouble() ?? 0;
+
+    final categoryLabel = switch (category) {
+      StatsCategory.all => isRu ? 'Все' : 'All',
+      StatsCategory.crypto => isRu ? 'Крипто' : 'Crypto',
+      StatsCategory.nonCrypto => isRu ? 'Не крипто' : 'Non-crypto',
+    };
 
     return Container(
       width: double.infinity,
@@ -751,7 +804,7 @@ class TradingNodeBalanceCard extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Subtle glow gradient inside card (Bybit ambient style!)
+          // Subtle glow gradient inside card
           Positioned(
             right: -30,
             top: -30,
@@ -782,13 +835,16 @@ class TradingNodeBalanceCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            'ESTIMATED NODE VALUE',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textSecondary.withValues(alpha: 0.8),
-                              letterSpacing: 0.8,
+                          Flexible(
+                            child: Text(
+                              AppLocalizations.estimatedNodeValue,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textSecondary.withValues(alpha: 0.8),
+                                letterSpacing: 0.8,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -808,84 +864,115 @@ class TradingNodeBalanceCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        obscureBalance ? '••••••' : '\$24,568.25',
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.5,
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+                        child: Text(
+                          obscureBalance ? '••••••' : '${winRate.toStringAsFixed(1)}%',
+                          key: ValueKey('wr_${category}_$obscureBalance'),
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.5,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 6),
                       // Yield indicator
                       Row(
                         children: [
-                          const Icon(
-                            Icons.trending_up_rounded,
+                          Icon(
+                            winRate >= 50 ? Icons.check_circle_outline_rounded : Icons.warning_amber_rounded,
                             size: 13,
-                            color: AppColors.brand,
+                            color: winRate >= 50 ? AppColors.brand : AppColors.down,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            obscureBalance ? '•••' : '+\$8,450.00',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.brand,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.brand.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              '+34.2%',
+                          Flexible(
+                            child: Text(
+                              obscureBalance ? '•••' : (isRu ? 'Точность стратегии' : 'Strategy Accuracy'),
                               style: TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.brand,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: winRate >= 50 ? AppColors.brand : AppColors.down,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Modern Pill Button (Matches View More button in Reference 1!)
-                      ElevatedButton(
-                        onPressed: () {
-                          HapticFeedback.mediumImpact();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.textPrimary,
-                          foregroundColor: AppColors.background,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: (avgProfit >= 0 ? AppColors.brand : AppColors.down).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              child: Text(
+                                obscureBalance
+                                    ? '•••'
+                                    : '${avgProfit >= 0 ? '+' : ''}${avgProfit.toStringAsFixed(1)}% ${isRu ? 'сред. профит' : 'avg profit'}',
+                                key: ValueKey('ap_${category}_$obscureBalance'),
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: avgProfit >= 0 ? AppColors.brand : AppColors.down,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          'View More',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                          const SizedBox(width: 8),
+                          // ── Category toggle button with rotation icon ──
+                          if (onToggleCategory != null)
+                            GestureDetector(
+                              onTap: () {
+                                HapticFeedback.mediumImpact();
+                                onToggleCategory!();
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: themeColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: themeColor.withValues(alpha: 0.3), width: 1.0),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.sync_rounded, size: 12, color: themeColor),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      categoryLabel,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: themeColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
                 ),
                 
-                // Overlapping 3D card stack
-                const _GlassmorphicCardStack(),
+                // Overlapping 3D card stack — tappable, reorders by category
+                GestureDetector(
+                  onTap: () {
+                    if (onToggleCategory != null) {
+                      HapticFeedback.mediumImpact();
+                      onToggleCategory!();
+                    }
+                  },
+                  child: _GlassmorphicCardStack(category: category),
+                ),
               ],
             ),
           ),
@@ -895,96 +982,123 @@ class TradingNodeBalanceCard extends StatelessWidget {
   }
 }
 
-// ── Overlapping 3D-Style Copied Node Cards Stack ──
+// ── Overlapping 3D-Style Card Stack — reorders by category ──
 class _GlassmorphicCardStack extends StatelessWidget {
-  const _GlassmorphicCardStack();
+  const _GlassmorphicCardStack({this.category = StatsCategory.all});
+
+  final StatsCategory category;
 
   @override
   Widget build(BuildContext context) {
-    Widget card(String symbol, IconData icon, Color color, double rotateRad, double offsetX, double offsetY) {
-      return Transform.translate(
-        offset: Offset(offsetX, offsetY),
+    Widget card(String symbol, IconData icon, Color color, double rotateRad) {
+      return Container(
+        width: 86,
+        height: 52,
+        decoration: BoxDecoration(
+          color: AppColors.card.withValues(alpha: 0.88),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: color.withValues(alpha: 0.36),
+            width: 1.0,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Transform.rotate(
           angle: rotateRad,
-          child: Container(
-            width: 90,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.card.withValues(alpha: 0.88),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: color.withValues(alpha: 0.36),
-                width: 1.0,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+          child: Padding(
+            padding: const EdgeInsets.all(6.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Icon(icon, size: 13, color: color),
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.brand.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  symbol,
+                  style: TextStyle(
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary.withValues(alpha: 0.9),
+                    fontFamily: 'monospace',
+                  ),
                 ),
               ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Icon(icon, size: 14, color: color),
-                      Container(
-                        width: 5,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.brand.withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    symbol,
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary.withValues(alpha: 0.9),
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ),
       );
     }
 
-    return SizedBox(
-      width: 130,
-      height: 90,
-      child: Stack(
-        children: [
-          // SOL card (bottom)
-          Positioned(
-            right: 28,
-            top: 0,
-            child: card('SOL NODE', Icons.bolt_rounded, AppColors.sol, -0.22, 0, 0),
+    // Define cards: (symbol, icon, color)
+    final cryptoCard = card('BINANCE #9', Icons.currency_bitcoin_rounded, AppColors.btc, 0);
+    final nonCryptoCard = card('STOCKS', Icons.show_chart_rounded, AppColors.info, 0);
+    final smcCard = card('SMC SCAN', Icons.bolt_rounded, AppColors.sol, 0);
+
+    // Order: [bottom, middle, top] — top card = front
+    final List<Widget> ordered = switch (category) {
+      StatsCategory.all => [smcCard, nonCryptoCard, cryptoCard],
+      StatsCategory.crypto => [nonCryptoCard, smcCard, cryptoCard],
+      StatsCategory.nonCrypto => [cryptoCard, smcCard, nonCryptoCard],
+    };
+
+    // Positions: bottom → middle → top (closer to user)
+    final positions = [
+      (right: 20.0, top: 0.0, rotate: -0.22),   // bottom
+      (right: 10.0, top: 8.0, rotate: -0.12),    // middle
+      (right: 0.0, top: 16.0, rotate: -0.02),    // top (front)
+    ];
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      switchInCurve: Curves.easeOutBack,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.15, 0),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
           ),
-          // ETH card (middle)
-          Positioned(
-            right: 14,
-            top: 8,
-            child: card('ETH NODE', Icons.token_rounded, AppColors.eth, -0.12, 0, 0),
-          ),
-          // BTC card (top)
-          Positioned(
-            right: 0,
-            top: 16,
-            child: card('BTC NODE', Icons.currency_bitcoin_rounded, AppColors.btc, -0.02, 0, 0),
-          ),
-        ],
+        );
+      },
+      child: SizedBox(
+        key: ValueKey(category),
+        width: 110,
+        height: 90,
+        child: Stack(
+          children: [
+            for (int i = 0; i < 3; i++)
+              Positioned(
+                right: positions[i].right,
+                top: positions[i].top,
+                child: Transform.rotate(
+                  angle: positions[i].rotate,
+                  child: ordered[i],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -37,3 +37,13 @@ final class UpdateAsset extends TickersEvent {
   @override
   List<Object?> get props => [newAssets];
 }
+
+/// Обновление цены одного актива через WebSocket
+final class UpdatePrice extends TickersEvent {
+  final String symbol;
+  final String price;
+  const UpdatePrice({required this.symbol, required this.price});
+
+  @override
+  List<Object?> get props => [symbol, price];
+}

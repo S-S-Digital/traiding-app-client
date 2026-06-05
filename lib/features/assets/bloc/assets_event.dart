@@ -18,3 +18,12 @@ class SearchAsset extends AssetsEvent {
 final class UpdateAsset extends AssetsEvent {}
 
 final class StopTimer extends AssetsEvent{}
+
+final class UpdatePrice extends AssetsEvent {
+  const UpdatePrice({required this.symbol, required this.price});
+  final String symbol;
+  final String price;
+
+  @override
+  List<Object> get props => [symbol, price];
+}

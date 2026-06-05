@@ -12,3 +12,5 @@ class Start extends SettingsEvent{}
 
 
 class Exit extends SettingsEvent{}
+
+class ToggleStatsCategory extends SettingsEvent{}

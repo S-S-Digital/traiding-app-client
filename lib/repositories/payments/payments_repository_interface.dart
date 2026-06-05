@@ -7,5 +7,9 @@ abstract interface class PaymentsRepositoryI{
   Future<List<SubscriptionsDto>> getCurrentSubscription();
   Future<void> applePayments(AppleReceipts receipts);
   Future<PaymentReceiptDto> googlePayments(GoogleReceipts receipts);
+
+  /// Cancels the subscription record on our backend. Does NOT stop store
+  /// auto-renewal (see [AspiroTradeApi.cancelSubscription]).
+  Future<void> cancelSubscription(String id);
   String? getCurrentUserId();
 }

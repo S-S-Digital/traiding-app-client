@@ -1,4 +1,5 @@
 import 'package:aspiro_trade/repositories/users/users.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class UserCard extends StatelessWidget {
@@ -55,13 +56,13 @@ class UserCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'План: ',
+                '${AppLocalizations.plan}: ',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
-                users.isPremium ? 'Премиум' : 'Базовый',
+                users.isPremiumActive ? AppLocalizations.premiumWord : AppLocalizations.basicWord,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.onPrimary,
@@ -73,7 +74,7 @@ class UserCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Премиум до: ',
+                '${AppLocalizations.premiumUntil}: ',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),

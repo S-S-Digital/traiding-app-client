@@ -1,4 +1,5 @@
 import 'package:aspiro_trade/repositories/signals/signals.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 
 class Signals {
   Signals({
@@ -166,7 +167,7 @@ class Signals {
   bool get isClosed => status.toLowerCase() == 'closed';
 
   String getDirection(String value) =>
-      value.toLowerCase().contains('buy') ? 'Покупка' : 'Продажа';
+      value.toLowerCase().contains('buy') ? AppLocalizations.filterBuy : AppLocalizations.filterSell;
 
   factory Signals.empty() {
     return Signals(
@@ -214,15 +215,15 @@ class Signals {
   String formatTimeframe(String timeframe) {
     switch (timeframe) {
       case '15m':
-        return '15 минут';
+        return AppLocalizations.isRu ? '15 минут' : '15 min';
       case '1h':
-        return '1 час';
+        return AppLocalizations.isRu ? '1 час' : '1 hour';
       case '1d':
-        return '1 день';
+        return AppLocalizations.isRu ? '1 день' : '1 day';
       case '1w':
-        return '1 неделя';
+        return AppLocalizations.isRu ? '1 неделя' : '1 week';
       case '1M':
-        return '1 месяц';
+        return AppLocalizations.isRu ? '1 месяц' : '1 month';
       default:
         return timeframe;
     }

@@ -7,6 +7,7 @@ abstract interface class AssetsRepositoryI {
   Future<List<Assets>> fetchPopularAssets();
   Future<List<Assets>> searchAssets(String query);
   Future<Assets> fetchAssetsBySymbol(String symbol);
+  Future<Assets?> fetchLocalAssetsBySymbol(String symbol);
   Future<ValidateSymbolDto> validateSymbol(String symbol);
   Future<List<Candles>> fetchCandlesForSymbol(
     String symbol,
@@ -19,5 +20,8 @@ abstract interface class AssetsRepositoryI {
     Duration interval,
   );
 
-  
+  /// Evicts the persisted (Realm) assets + candles cache. Used on a
+  /// premium/subscription transition so stale gated content is not served
+  /// from disk.
+  void clearLocalCache();
 }

@@ -48,115 +48,181 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 40),
-              const WelcomeHeader(
-                title: 'Create Account',
-                subtitle: 'Join Aspiro Trade today',
-              ),
-              const SizedBox(height: 32),
-              BlocConsumer<RegisterBloc, RegisterState>(
-                listener: (context, state) {
-                  if (state.status == Status.failure) {
-                    if (state.error is AppException) {
-                      context.handleException(
-                        state.error as AppException,
-                        context,
-                      );
-                    } else {
-                      context.showBusinessErrorSnackbar(
-                        state.error.toString(),
-                        () {
-                          context.read<RegisterBloc>().add(Start());
-                        },
-                      );
-                    }
-                  } else if (state.status == Status.success) {
-                    AutoRouter.of(context).pushAndPopUntil(
-                      const HomeRoute(),
-                      predicate: (value) => false,
-                    );
-                  }
-                },
-                buildWhen: (previous, current) =>
-                    current.status.isBuildable,
-                builder: (context, state) {
-                  if (state.status == Status.loading) {
-                    return const SizedBox(
-                      height: 300,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.brand,
-                          strokeWidth: 2.5,
-                        ),
-                      ),
-                    );
-                  }
-                  if (state.status == Status.initial) {
-                    return const SizedBox(height: 300);
-                  }
-                  return Column(
-                    children: [
-                      EmailTextField(
-                        emailFocus: emailFocus,
-                        emailController: emailController,
-                        passwordFocus: passwordFocus,
-                        onChanged: (String value) {
-                          bloc.add(ChangeEmail(email: value));
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      PasswordTextField(
-                        passwordFocus: passwordFocus,
-                        passwordController: passwordController,
-                        textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) => FocusScope.of(
-                          context,
-                        ).requestFocus(phoneFocus),
-                        onChanged: (String value) {
-                          bloc.add(ChangePassword(password: value));
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      PhoneTextField(
-                        phoneController: phoneController,
-                        phoneFocus: phoneFocus,
-                        onChanged: (String value) {
-                          bloc.add(ChangePhone(phone: value));
-                        },
-                      ),
-                      const SizedBox(height: 32),
-                      AuthButton(
-                        isValid: state.status == Status.submit,
-                        text: 'Create Account',
-                        onPressed: () {
-                          if (state.status == Status.submit) {
-                            bloc.add(
-                              Auth(
-                                phone: phoneController.text.trim(),
-                                password: passwordController.text.trim(),
-                                email: emailController.text.trim(),
-                              ),
-                            );
-                          }
-                        },
-                      ),
+        child: Stack(
+          children: [
+            // ── Ambient Background Radial Glow 1 (Emerald Brand Green) ──
+            Positioned(
+              top: -140,
+              left: -50,
+              right: -50,
+              child: Container(
+                height: 380,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.brand.withOpacity(0.09),
+                      Colors.transparent,
                     ],
-                  );
-                },
+                    radius: 0.7,
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
-              AuthFooter(
-                onPressed: () => AutoRouter.of(context).back(),
-                firstText: 'Already have an account?',
-                secondText: 'Sign In',
+            ),
+
+            // ── Ambient Background Radial Glow 2 (Sapphire/Purple Brand Accent) ──
+            Positioned(
+              bottom: -100,
+              right: -80,
+              child: Container(
+                width: 320,
+                height: 320,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.purple.withOpacity(0.06),
+                      Colors.transparent,
+                    ],
+                    radius: 0.75,
+                  ),
+                ),
               ),
-            ],
-          ),
+            ),
+
+            SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 32),
+                  WelcomeHeader(
+                    title: AppLocalizations.createAccount,
+                    subtitle: AppLocalizations.joinSubtitle,
+                  ),
+                  const SizedBox(height: 32),
+
+                  BlocConsumer<RegisterBloc, RegisterState>(
+                    listener: (context, state) {
+                      if (state.status == Status.failure) {
+                        context.handleException(
+                          state.error,
+                          context,
+                          kickToLoginOnUnauthorized: false,
+                        );
+                      } else if (state.status == Status.success) {
+                        AutoRouter.of(context).pushAndPopUntil(
+                          const HomeRoute(),
+                          predicate: (value) => false,
+                        );
+                      }
+                    },
+                    buildWhen: (previous, current) =>
+                        current.status.isBuildable,
+                    builder: (context, state) {
+                      return Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.card,
+                              AppColors.elevated.withOpacity(0.85),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: AppColors.border.withOpacity(0.7),
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.4),
+                              blurRadius: 28,
+                              offset: const Offset(0, 12),
+                            ),
+                            BoxShadow(
+                              color: AppColors.brand.withOpacity(0.03),
+                              blurRadius: 40,
+                              offset: const Offset(0, 2),
+                              spreadRadius: -4,
+                            ),
+                          ],
+                        ),
+                        child: state.status == Status.loading || state.status == Status.initial
+                            ? const SizedBox(
+                                height: 260,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.brand,
+                                    strokeWidth: 2.5,
+                                  ),
+                                ),
+                              )
+                            : Column(
+                                children: [
+                                  EmailTextField(
+                                    emailFocus: emailFocus,
+                                    emailController: emailController,
+                                    passwordFocus: passwordFocus,
+                                    onChanged: (String value) {
+                                      bloc.add(ChangeEmail(email: value));
+                                    },
+                                  ),
+                                  const SizedBox(height: 18),
+                                  PasswordTextField(
+                                    passwordFocus: passwordFocus,
+                                    passwordController: passwordController,
+                                    textInputAction: TextInputAction.next,
+                                    onFieldSubmitted: (_) => FocusScope.of(
+                                      context,
+                                    ).requestFocus(phoneFocus),
+                                    onChanged: (String value) {
+                                      bloc.add(ChangePassword(password: value));
+                                    },
+                                  ),
+                                  const SizedBox(height: 18),
+                                  PhoneTextField(
+                                    phoneController: phoneController,
+                                    phoneFocus: phoneFocus,
+                                    onChanged: (String value) {
+                                      bloc.add(ChangePhone(phone: value));
+                                    },
+                                  ),
+                                  const SizedBox(height: 28),
+                                  AuthButton(
+                                    isValid: state.status == Status.submit,
+                                    text: AppLocalizations.createAccount,
+                                    onPressed: () {
+                                      if (state.status == Status.submit) {
+                                        bloc.add(
+                                          Auth(
+                                            phone: phoneController.text.trim(),
+                                            password: passwordController.text.trim(),
+                                            email: emailController.text.trim(),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  AuthFooter(
+                    onPressed: () => AutoRouter.of(context).back(),
+                    firstText: AppLocalizations.alreadyHaveAccount,
+                    secondText: AppLocalizations.login,
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

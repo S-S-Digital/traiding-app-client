@@ -106,7 +106,7 @@ class PrimeSubscription extends StatelessWidget {
                 ),
               ),
               Text(
-                'Включено:',
+                AppLocalizations.includedLabel,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -164,7 +164,7 @@ class PrimeSubscription extends StatelessWidget {
                       text: TextSpan(
                         style: theme.textTheme.bodyLarge, // общий стиль
                         children: [
-                          const TextSpan(text: 'до '),
+                          TextSpan(text: AppLocalizations.untilPrefix),
                           TextSpan(
                             text: plans.maxTickers.toString(),
                             style: theme.textTheme.bodyLarge?.copyWith(
@@ -174,7 +174,7 @@ class PrimeSubscription extends StatelessWidget {
                                   .onPrimary, // или любой другой стиль для цифр
                             ),
                           ),
-                          const TextSpan(text: ' тикеров, '),
+                          TextSpan(text: ' ${AppLocalizations.tickersWord}, '),
                           TextSpan(
                             text: plans.duration.toString(),
                             style: theme.textTheme.bodyLarge?.copyWith(
@@ -182,7 +182,7 @@ class PrimeSubscription extends StatelessWidget {
                               color: theme.colorScheme.onPrimary,
                             ),
                           ),
-                          const TextSpan(text: ' дней'),
+                          TextSpan(text: ' ${AppLocalizations.daysWord}'),
                         ],
                       ),
                     ),
@@ -229,8 +229,8 @@ class PrimeSubscription extends StatelessWidget {
                     child: Text(
                       subscriptions!.planId.contains(plans.id) &&
                               subscriptions != null
-                          ? ('Ваш текущий тариф')
-                          : ('Подписаться за ${plans.price}\$'),
+                          ? (AppLocalizations.currentPlan)
+                          : (AppLocalizations.subscribeFor(plans.price.toString())),
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: Colors.black,
                         fontWeight: FontWeight.w600,
@@ -280,7 +280,7 @@ class PrimeSubscription extends StatelessWidget {
                             child: PlatformProgressIndicator(),
                           )
                         : Text(
-                            ('Подписаться за ${plans.price}\$'),
+                            (AppLocalizations.subscribeFor(plans.price.toString())),
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: Colors.black,
                               fontWeight: FontWeight.w600,

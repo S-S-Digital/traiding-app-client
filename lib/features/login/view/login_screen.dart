@@ -9,7 +9,6 @@ import 'package:aspiro_trade/utils/utils.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart' as siwa;
 
 
 @RoutePage()
@@ -49,19 +48,11 @@ class _LoginScreenState extends State<LoginScreen> {
         child: BlocConsumer<LoginBloc, LoginState>(
           listener: (context, state) {
             if (state.status == Status.failure) {
-              if (state.error is AppException) {
-                context.handleException(
-                  state.error as AppException,
-                  context,
-                );
-              } else {
-                context.showBusinessErrorSnackbar(
-                  state.error.toString(),
-                  () {
-                    context.read<LoginBloc>().add(LoginStart());
-                  },
-                );
-              }
+              context.handleException(
+                state.error,
+                context,
+                kickToLoginOnUnauthorized: false,
+              );
             } else if (state.status == Status.success) {
               AutoRouter.of(context).pushAndPopUntil(
                 const HomeRoute(),
@@ -77,107 +68,192 @@ class _LoginScreenState extends State<LoginScreen> {
             if (state.status == Status.initial) {
               return const SizedBox();
             }
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 40),
-                  const WelcomeHeader(
-                    title: 'Welcome back',
-                    subtitle: 'Sign in to Aspiro Trade',
+            return Stack(
+              children: [
+                // ── Ambient Background Radial Glow 1 (Emerald Brand Green) ──
+                Positioned(
+                  top: -140,
+                  left: -50,
+                  right: -50,
+                  child: Container(
+                    height: 380,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.brand.withOpacity(0.09),
+                          Colors.transparent,
+                        ],
+                        radius: 0.7,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 32),
-                  EmailTextField(
-                    emailFocus: emailFocus,
-                    emailController: emailController,
-                    passwordFocus: passwordFocus,
-                    onChanged: (String value) {
-                      context.read<LoginBloc>().add(
-                        OnChangedEmail(email: value),
-                      );
-                    },
+                ),
+
+                // ── Ambient Background Radial Glow 2 (Sapphire/Purple Brand Accent) ──
+                Positioned(
+                  bottom: -100,
+                  right: -80,
+                  child: Container(
+                    width: 320,
+                    height: 320,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.purple.withOpacity(0.06),
+                          Colors.transparent,
+                        ],
+                        radius: 0.75,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  PasswordTextField(
-                    passwordFocus: passwordFocus,
-                    passwordController: passwordController,
-                    onChanged: (String value) {
-                      context.read<LoginBloc>().add(
-                        OnChangedPassword(password: value),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  ForgotPasswordButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          backgroundColor: AppColors.card,
-                          content: Text(
-                            'Password reset is coming soon',
-                            style: TextStyle(color: AppColors.textPrimary),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  AuthButton(
-                    isValid: state.status == Status.submit,
-                    text: 'Sign In',
-                    onPressed: () {
-                      if (state.status == Status.submit) {
-                        context.read<LoginBloc>().add(
-                          Auth(
-                            email: emailController.text.trim(),
-                            password: passwordController.text.trim(),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  const DividerWithText(),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                ),
+
+                SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (Platform.isIOS)
-                        SizedBox(
-                          width: 160,
-                          height: 48,
-                          child: siwa.SignInWithAppleButton(
-                            onPressed: () {
-                              context.read<LoginBloc>().add(LoginWithApple());
-                            },
-                            style: siwa.SignInWithAppleButtonStyle.black,
-                            borderRadius: BorderRadius.circular(8),
+                      const SizedBox(height: 32),
+                      WelcomeHeader(
+                        title: AppLocalizations.welcomeBack,
+                        subtitle: AppLocalizations.signInSubtitle,
+                      ),
+                      const SizedBox(height: 32),
+
+                      // ── Premium Form Glass Card ──
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.card,
+                              AppColors.elevated.withOpacity(0.85),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: AppColors.border.withOpacity(0.7),
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.4),
+                              blurRadius: 28,
+                              offset: const Offset(0, 12),
+                            ),
+                            BoxShadow(
+                              color: AppColors.brand.withOpacity(0.03),
+                              blurRadius: 40,
+                              offset: const Offset(0, 2),
+                              spreadRadius: -4,
+                            ),
+                          ],
                         ),
-                      if (Platform.isIOS) const SizedBox(width: 16),
-                      if (Platform.isIOS || Platform.isAndroid)
-                        SocialsButton(
-                          text: 'Google',
-                          picturePath: 'assets/svg/google_logo.svg',
-                          onTap: () {
-                            context.read<LoginBloc>().add(
-                              LoginWithGoogle(),
-                            );
-                          },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            EmailTextField(
+                              emailFocus: emailFocus,
+                              emailController: emailController,
+                              passwordFocus: passwordFocus,
+                              onChanged: (String value) {
+                                context.read<LoginBloc>().add(
+                                  OnChangedEmail(email: value),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 20),
+                            PasswordTextField(
+                              passwordFocus: passwordFocus,
+                              passwordController: passwordController,
+                              onChanged: (String value) {
+                                context.read<LoginBloc>().add(
+                                  OnChangedPassword(password: value),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            ForgotPasswordButton(
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: AppColors.card,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    content: Text(
+                                      AppLocalizations.forgotPassword,
+                                      style: const TextStyle(color: AppColors.textPrimary),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 26),
+                            AuthButton(
+                              isValid: state.status == Status.submit,
+                              text: AppLocalizations.login,
+                              onPressed: () {
+                                if (state.status == Status.submit) {
+                                  context.read<LoginBloc>().add(
+                                    Auth(
+                                      email: emailController.text.trim(),
+                                      password: passwordController.text.trim(),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
                         ),
+                      ),
+
+                      const SizedBox(height: 24),
+                      const DividerWithText(),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (Platform.isIOS)
+                            SocialsButton(
+                              text: 'Apple',
+                              picturePath: 'assets/svg/apple_logo.svg',
+                              onTap: () {
+                                context.read<LoginBloc>().add(LoginWithApple());
+                              },
+                            ),
+                          if (Platform.isIOS) const SizedBox(width: 16),
+                          if (Platform.isIOS || Platform.isAndroid)
+                            SocialsButton(
+                              text: 'Google',
+                              picturePath: 'assets/svg/google_logo.svg',
+                              onTap: () {
+                                context.read<LoginBloc>().add(
+                                  LoginWithGoogle(),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+                      AuthFooter(
+                        firstText: AppLocalizations.noAccount,
+                        secondText: AppLocalizations.register,
+                        onPressed: () => AutoRouter.of(
+                          context,
+                        ).push(const RegisterRoute()),
+                      ),
+                      const SizedBox(height: 24),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  AuthFooter(
-                    firstText: "Don't have an account?",
-                    secondText: 'Sign Up',
-                    onPressed: () => AutoRouter.of(
-                      context,
-                    ).push(const RegisterRoute()),
-                  ),
-                ],
-              ),
+                ),
+              ],
             );
           },
         ),
@@ -192,12 +268,12 @@ class _LoginScreenState extends State<LoginScreen> {
               color: AppColors.textQuaternary,
             ),
             children: [
-              const TextSpan(text: 'By continuing, you agree to our '),
+              TextSpan(text: AppLocalizations.agreePrefix),
               WidgetSpan(
                 child: GestureDetector(
                   onTap: () => AutoRouter.of(context).push(const PrivacyPolicyRoute()),
-                  child: const Text(
-                    'Privacy Policy',
+                  child: Text(
+                    AppLocalizations.privacyPolicy,
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.brand,
@@ -206,12 +282,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const TextSpan(text: ' and '),
+              TextSpan(text: AppLocalizations.and),
               WidgetSpan(
                 child: GestureDetector(
                   onTap: () => AutoRouter.of(context).push(const TermsOfUseRoute()),
-                  child: const Text(
-                    'Terms of Use',
+                  child: Text(
+                    AppLocalizations.termsOfUse,
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.brand,

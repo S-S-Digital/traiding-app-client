@@ -2,6 +2,7 @@
 import 'package:aspiro_trade/api/api.dart';
 import 'package:aspiro_trade/repositories/users/users.dart';
 import 'package:aspiro_trade/ui/ui.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class LimitCard extends StatelessWidget {
@@ -13,10 +14,10 @@ class LimitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final statusText = limits.maxTickers.type == MaxTickersType.unlimited
-        ? 'Безлимит'
+        ? AppLocalizations.unlimited
         : limits.canAddMoreTickers
-        ? 'Можно добавлять'
-        : 'Достигнут лимит';
+        ? AppLocalizations.canAdd
+        : AppLocalizations.limitReached;
 
     return Container(
       margin: const EdgeInsets.all(15),
@@ -33,14 +34,14 @@ class LimitCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Тикеры: ',
+                '${AppLocalizations.tickers}: ',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
                 limits.maxTickers.type == MaxTickersType.unlimited
-                    ? 'Безлимит'
+                    ? AppLocalizations.unlimited
                     : '${limits.currentTickers}/${limits.maxTickers.value}',
 
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -55,7 +56,7 @@ class LimitCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Статус: ',
+                '${AppLocalizations.statusLabel}: ',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
@@ -72,7 +73,7 @@ class LimitCard extends StatelessWidget {
           const SizedBox(height: 10),
 
           Text(
-            'Доступные функции:',
+            AppLocalizations.availableFeatures,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w500,
             ),

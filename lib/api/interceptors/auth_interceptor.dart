@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
+
 class AuthInterceptor extends Interceptor {
   final Future<(String?, String?)> Function() getTokens;
   final Future<void> Function(String accessToken, String refreshToken)
@@ -11,6 +13,13 @@ class AuthInterceptor extends Interceptor {
   // Mutex: if a refresh is already in progress, all other 401s wait for it
   Completer<String?>? _refreshCompleter;
   bool _isLoggingOut = false;
+
+  // Set by the current refresh cycle: true only when the refresh failed for a
+  // DEFINITIVE auth reason (missing refresh token, or the refresh endpoint
+  // rejected us with 401/403). Transient failures (no network, timeout, 5xx,
+  // 429-exhausted, malformed 200) leave this false so we DON'T log the user out
+  // for a connectivity blip.
+  bool _refreshAuthFailure = false;
 
   AuthInterceptor({
     required this.getTokens,
@@ -30,6 +39,9 @@ class AuthInterceptor extends Interceptor {
   @override
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
+    // Add dynamic language header on every outgoing API request
+    options.headers['Accept-Language'] = AppLocalizations.isRu ? 'ru' : 'en';
+
     if (_skipPaths.contains(options.path)) {
       return handler.next(options);
     }
@@ -37,15 +49,34 @@ class AuthInterceptor extends Interceptor {
     final (accessToken, _) = await getTokens();
     if (accessToken != null && accessToken.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $accessToken';
+      return handler.next(options);
     }
 
-    handler.next(options);
+    // No access token for a protected request. Do NOT fire it tokenless:
+    // during cold start (before secure storage hydrates) or while logged out,
+    // a tokenless request would 401 and trigger a spurious force-logout. Reject
+    // locally instead — routing/auth gating (splash) decides login vs home.
+    return handler.reject(
+      DioException(
+        requestOptions: options,
+        type: DioExceptionType.cancel,
+        error: 'No auth token — request suppressed',
+      ),
+    );
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
+    // Only a 401 on a request that ACTUALLY carried a token is a real session
+    // failure worth refreshing / logging out for. A 401 on a tokenless request
+    // (cold-start race / already logged out) must never force a logout — there
+    // was no session to lose.
+    final hadToken =
+        err.requestOptions.headers['Authorization']?.toString().isNotEmpty ??
+            false;
     if (err.response?.statusCode != 401 ||
-        err.requestOptions.path.contains('/auth/refresh')) {
+        err.requestOptions.path.contains('/auth/refresh') ||
+        !hadToken) {
       return handler.next(err);
     }
 
@@ -53,8 +84,11 @@ class AuthInterceptor extends Interceptor {
       final newAccessToken = await _refreshOrWait();
 
       if (newAccessToken == null) {
-        // Refresh failed — force logout and kick to login screen
-        if (!_isLoggingOut) {
+        // Refresh did not yield a token. Only force a logout if the refresh
+        // failed for a definitive auth reason. On transient failures (offline,
+        // timeout, 5xx, 429) keep the session and just surface the error —
+        // logging the user out for a network blip is the bug we're fixing.
+        if (_refreshAuthFailure && !_isLoggingOut) {
           _isLoggingOut = true;
           await onForceLogout();
           _isLoggingOut = false;
@@ -91,32 +125,59 @@ class AuthInterceptor extends Interceptor {
     }
 
     _refreshCompleter = Completer<String?>();
+    // Default to transient: only flip to true on a proven auth failure so a
+    // thrown/unexpected error never causes a spurious logout.
+    _refreshAuthFailure = false;
 
     try {
       final (_, refreshToken) = await getTokens();
       if (refreshToken == null || refreshToken.isEmpty) {
+        // No refresh token at all => the session is genuinely gone.
+        _refreshAuthFailure = true;
         _refreshCompleter!.complete(null);
         return null;
       }
 
-      final response = await _refreshWithRetry(refreshToken);
+      final Response? response;
+      try {
+        response = await _refreshWithRetry(refreshToken);
+      } on DioException catch (e) {
+        final status = e.response?.statusCode;
+        // 401/403 from the refresh endpoint = the refresh token is invalid/
+        // revoked => real auth failure. Anything else (offline, timeout, 5xx)
+        // is transient => keep the session.
+        _refreshAuthFailure = status == 401 || status == 403;
+        _refreshCompleter!.complete(null);
+        return null;
+      }
+
+      // 429 retries exhausted (rate limited) — transient, do not log out.
       if (response == null) {
         _refreshCompleter!.complete(null);
         return null;
       }
 
-      final newAccess = response.data['accessToken'] as String?;
-      final newRefresh = response.data['refreshToken'] as String?;
+      final data = response.data;
+      final newAccess = data is Map ? data['accessToken'] as String? : null;
+      final newRefresh = data is Map ? data['refreshToken'] as String? : null;
 
-      if (newAccess == null || newRefresh == null) {
+      if (newAccess == null ||
+          newAccess.isEmpty ||
+          newRefresh == null ||
+          newRefresh.isEmpty) {
+        // 200 but malformed/empty body — likely a transient server glitch, not
+        // proof the session is invalid. Keep the user logged in.
         _refreshCompleter!.complete(null);
         return null;
       }
 
+      // Persist BOTH the new access token and the rotated refresh token so the
+      // next refresh uses the latest (rotated) refresh token.
       await saveTokens(newAccess, newRefresh);
       _refreshCompleter!.complete(newAccess);
       return newAccess;
     } catch (e) {
+      // Unexpected error — treat as transient (no logout).
       _refreshCompleter!.complete(null);
       return null;
     } finally {

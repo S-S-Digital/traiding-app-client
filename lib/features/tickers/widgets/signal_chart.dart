@@ -1,5 +1,6 @@
 
 import 'package:aspiro_trade/repositories/assets/assets.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -26,10 +27,10 @@ class SignalChart extends StatelessWidget {
           color: AppColors.elevated,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            'No data',
-            style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+            AppLocalizations.noData,
+            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
           ),
         ),
       );

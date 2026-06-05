@@ -19,8 +19,8 @@ HistoryDto _$HistoryDtoFromJson(Map<String, dynamic> json) => HistoryDto(
   resultPct: json['resultPct'] as num,
   resultUsd: json['resultUsd'] as num,
   duration: json['duration'] as String,
-  createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
-  closedAt: DateTime.tryParse(json['closedAt'] as String? ?? '') ?? DateTime.now(),
+  createdAt: DateTime.parse(json['createdAt'] as String),
+  closedAt: DateTime.parse(json['closedAt'] as String),
 );
 
 Map<String, dynamic> _$HistoryDtoToJson(HistoryDto instance) =>

@@ -1,5 +1,6 @@
 import 'package:aspiro_trade/features/history/models/models.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class HistoryItem extends StatelessWidget {
@@ -9,9 +10,9 @@ class HistoryItem extends StatelessWidget {
 
   String _closeReasonLabel() {
     final status = history.history.status.toLowerCase();
-    if (status.contains('tp') || status.contains('won')) return 'Take Profit';
-    if (status.contains('sl') || status.contains('lost')) return 'Stop Loss';
-    return 'Closed';
+    if (status.contains('tp') || status.contains('won')) return AppLocalizations.takeProfit;
+    if (status.contains('sl') || status.contains('lost')) return AppLocalizations.stopLoss;
+    return AppLocalizations.closed;
   }
 
   @override
@@ -21,26 +22,33 @@ class HistoryItem extends StatelessWidget {
         history.history.resultPct > 0;
     final isBuy = history.history.direction.toLowerCase() == 'buy';
     final resultPct = history.history.resultPct;
+    final directionColor = isBuy ? AppColors.up : AppColors.down;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
       child: Row(
         children: [
-          // Status icon
+          // Direction indicator icon with subtle glow background
           Container(
-            width: 32, height: 32,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: isWin ? AppColors.up.withValues(alpha: 0.12) : AppColors.down.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
+              color: directionColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: directionColor.withOpacity(0.3),
+                width: 1,
+              ),
             ),
             child: Icon(
-              isWin ? Icons.check : Icons.close,
+              isBuy ? Icons.call_made_rounded : Icons.call_received_rounded,
               size: 16,
-              color: isWin ? AppColors.up : AppColors.down,
+              color: directionColor,
             ),
           ),
-          const SizedBox(width: 10),
-          // Info
+          const SizedBox(width: 12),
+
+          // Trade Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,43 +57,127 @@ class HistoryItem extends StatelessWidget {
                   children: [
                     Text(
                       history.history.symbol,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
+
+                    // Direction Capsule (LONG/SHORT)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                       decoration: BoxDecoration(
-                        color: isBuy ? AppColors.up.withValues(alpha: 0.12) : AppColors.down.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(3),
+                        color: directionColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: directionColor.withOpacity(0.3),
+                          width: 1,
+                        ),
                       ),
                       child: Text(
-                        isBuy ? 'LONG' : 'SHORT',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isBuy ? AppColors.up : AppColors.down),
+                        isBuy ? AppLocalizations.directionLong : AppLocalizations.directionShort,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          color: directionColor,
+                          letterSpacing: 0.3,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      history.history.timeframe.toUpperCase(),
-                      style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+
+                    // Timeframe Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: AppColors.border.withOpacity(0.4),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        history.history.timeframe.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 6),
+
+                // Prices: Entry -> Exit
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      '${AppLocalizations.inWord}: \$${history.history.entry.toStringAsFixed(history.history.entry < 1 ? 4 : 2)}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 9,
+                      color: AppColors.textTertiary,
+                    ),
+                    Text(
+                      '${AppLocalizations.outWord}: \$${history.history.exit.toStringAsFixed(history.history.exit < 1 ? 4 : 2)}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+
+                // Close reason & Duration
                 Text(
                   '${_closeReasonLabel()} • ${history.history.duration}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
               ],
             ),
           ),
-          // P&L %
-          Text(
-            '${resultPct > 0 ? '+' : ''}${resultPct.toStringAsFixed(2)}%',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: resultPct >= 0 ? AppColors.up : AppColors.down,
-            ),
+
+          // P&L Column
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Percent Capsule
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (resultPct >= 0 ? AppColors.up : AppColors.down).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: (resultPct >= 0 ? AppColors.up : AppColors.down).withOpacity(0.2),
+                    width: 0.8,
+                  ),
+                ),
+                child: Text(
+                  '${resultPct > 0 ? '+' : ''}${resultPct.toStringAsFixed(2)}%',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: resultPct >= 0 ? AppColors.up : AppColors.down,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -136,4 +136,17 @@ class SignalsDto  {
     ticker: ticker?.toEntity(),
   );
 
+  SignalsLocal toLocal() => SignalsLocal(
+        id,
+        symbol,
+        direction,
+        price?.toString() ?? '0',
+        takeProfit?.toString() ?? '0',
+        stopLoss?.toString() ?? '0',
+        currentPrice.toString(),
+        progressPct.toString(),
+        profitPct?.toString() ?? '0',
+        profitUsd?.toString() ?? '0',
+        status,
+      );
 }

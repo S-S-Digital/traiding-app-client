@@ -29,4 +29,13 @@ abstract interface class SignalsRepositoryI {
     String direction,
     String status,
   );
+
+  Future<SignalStats> fetchStats({String? category});
+
+  Future<List<Signals>> fetchLocalSignals();
+
+  /// Evicts the persisted (Realm) signals cache. Used on a premium/subscription
+  /// transition so stale gated content is not served from disk before a fresh
+  /// fetch completes.
+  void clearLocalCache();
 }

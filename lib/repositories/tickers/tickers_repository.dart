@@ -70,4 +70,13 @@ class TickersRepository extends BaseRepository implements TickersRepositoryI {
       throw UnknownException(e.toString());
     }
   }
+
+  @override
+  void clearLocalCache() {
+    try {
+      realm.write(() => realm.deleteAll<TickersLocal>());
+    } catch (e, stack) {
+      talker.error('Failed to clear local tickers cache', e, stack);
+    }
+  }
 }

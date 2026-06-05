@@ -28,13 +28,21 @@ class SplashCubit extends Cubit<SplashState> {
         return;
       }
 
-      // Validate session by refreshing token
+      // Validate session by refreshing the token. Hard-cap it: if anything in
+      // the refresh chain stalls (secure storage, a hung platform channel),
+      // time out and keep the user logged in rather than hanging the splash.
       try {
-        await _authRepository.refresh();
-      } catch (_) {
-        // Refresh failed — session expired
+        await _authRepository.refresh().timeout(const Duration(seconds: 12));
+      } on UnauthorizedException {
+        // Refresh token is invalid/revoked — the session is genuinely gone.
         await _storage.clear();
         emit(const SplashLoaded(false));
+        return;
+      } catch (_) {
+        // Transient failure (offline, timeout, 5xx). Do NOT clear the session
+        // for a connectivity blip — keep the user logged in with the tokens we
+        // already have; the interceptor will refresh once the network returns.
+        emit(const SplashLoaded(true));
         return;
       }
 
@@ -43,8 +51,9 @@ class SplashCubit extends Cubit<SplashState> {
       await _storage.clear();
       emit(const SplashLoaded(false));
     } catch (e) {
-      await _storage.clear();
-      emit(const SplashLoaded(false));
+      // We have a refresh token but couldn't validate it due to a transient
+      // error — keep the user logged in rather than forcing re-login offline.
+      emit(const SplashLoaded(true));
     }
   }
 }

@@ -19,6 +19,15 @@ class SignalsScreen extends StatefulWidget {
 class _SignalsScreenState extends State<SignalsScreen> {
   final List<String> filters = ['All', 'Buy', 'Sell'];
   String activeFilter = 'All';
+
+  String _filterLabel(String key) {
+    switch (key) {
+      case 'All': return AppLocalizations.filterAll;
+      case 'Buy': return AppLocalizations.filterBuy;
+      case 'Sell': return AppLocalizations.filterSell;
+      default: return key;
+    }
+  }
   late final AppLifecycleListener _lifecycleListener;
 
   @override
@@ -42,7 +51,9 @@ class _SignalsScreenState extends State<SignalsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
+      body: PremiumGate(
+        onUnlocked: () => context.read<SignalsBloc>().add(Start()),
+        child: SafeArea(
         child: RefreshIndicator(
           color: AppColors.brand,
           backgroundColor: AppColors.card,
@@ -57,9 +68,9 @@ class _SignalsScreenState extends State<SignalsScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: Row(
                     children: [
-                      const Text(
-                        'Signals',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.signals,
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
@@ -76,7 +87,7 @@ class _SignalsScreenState extends State<SignalsScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              '${state.signals.length} active',
+                              '${state.signals.length} ${AppLocalizations.activeCount}',
                               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.brand),
                             ),
                           );
@@ -122,7 +133,7 @@ class _SignalsScreenState extends State<SignalsScreen> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    filter,
+                                    _filterLabel(filter),
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -186,9 +197,9 @@ class _SignalsScreenState extends State<SignalsScreen> {
                     }).toList();
 
                     if (filteredSignals.isEmpty) {
-                      return const SliverFillRemaining(
+                      return SliverFillRemaining(
                         hasScrollBody: false,
-                        child: _EmptyState(message: 'No signals for this filter'),
+                        child: _EmptyState(message: AppLocalizations.noSignalsFilter),
                       );
                     }
 
@@ -201,9 +212,9 @@ class _SignalsScreenState extends State<SignalsScreen> {
                   }
 
                   if (state.signals.isEmpty && state.status != Status.loading) {
-                    return const SliverFillRemaining(
+                    return SliverFillRemaining(
                       hasScrollBody: false,
-                      child: _EmptyState(message: 'No active signals'),
+                      child: _EmptyState(message: AppLocalizations.noActiveSignals),
                     );
                   }
 
@@ -214,6 +225,7 @@ class _SignalsScreenState extends State<SignalsScreen> {
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -233,22 +245,59 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 72, height: 72,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: AppColors.brand.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(36),
+                color: AppColors.brand.withOpacity(0.05),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.brand.withOpacity(0.15),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brand.withOpacity(0.08),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
-              child: const Icon(Icons.cell_tower_rounded, size: 36, color: AppColors.brand),
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.brand.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.brand.withOpacity(0.25),
+                    width: 1,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.cell_tower_rounded,
+                  size: 32,
+                  color: AppColors.brandLight,
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
               message,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                letterSpacing: 0.1,
+              ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Add a ticker to start receiving\ntrading signals',
-              style: TextStyle(fontSize: 14, color: AppColors.textTertiary),
+            const SizedBox(height: 10),
+            Text(
+              AppLocalizations.addTickerHint,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.textTertiary,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

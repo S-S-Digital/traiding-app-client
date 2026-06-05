@@ -211,15 +211,31 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           verified = true;
         } catch (e) {
           talker.error('Verification error: $e');
+
+          // PERMANENT backend rejection (4xx — e.g. expired or already-used
+          // transaction): we MUST finish the transaction. Otherwise StoreKit /
+          // Play Billing keeps the purchase unfinished and re-delivers it via
+          // purchaseStream on every launch — an infinite verify loop that also
+          // blocks the user from making any NEW purchase of the same product.
+          // TRANSIENT failures (network/timeout/5xx → statusCode null or >=500)
+          // are intentionally left unfinished so the purchase is retried later.
+          final status = e is AppException ? e.statusCode : null;
+          final isPermanentReject =
+              status != null && status >= 400 && status < 500;
+          if (isPermanentReject && purchase.pendingCompletePurchase) {
+            await _iap.completePurchase(purchase);
+          }
+
+          // Pass the typed exception (not an interpolated String) so
+          // context.handleException can map it to a friendly localized message
+          // instead of dumping the raw backend text (e.g. the "Testflight
+          // receipts aren't supported" string) into a user-facing snackbar.
           emit(
             state.copyWith(
               status: SubscriptionStatus.failure,
-              error: 'Verification failed: $e',
+              error: e,
             ),
           );
-          // Do NOT completePurchase on verification failure: Apple/Google will
-          // re-deliver the purchase on next app launch via purchaseStream so we
-          // can retry the server verify. Completing here would drop the purchase.
         }
 
         if (verified) {

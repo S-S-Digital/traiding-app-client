@@ -1,4 +1,5 @@
 
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class SubscriptionTitle extends StatelessWidget {
@@ -14,7 +15,7 @@ class SubscriptionTitle extends StatelessWidget {
         children: [
           const SizedBox(height: 20),
           Text(
-            'Разблокируй полный потенциал',
+            AppLocalizations.unlockPotential,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -22,7 +23,7 @@ class SubscriptionTitle extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            'Получи доступ к расширенной аналитике, неограниченным сигналам и приоритетной поддержке',
+            AppLocalizations.unlockPotentialSub,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSecondary,

@@ -81,7 +81,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (state is ProfileLoaded) {
                 final user = state.users;
                 final limits = state.limits;
-                final themeColor = limits.isPremium ? AppColors.brand : AppColors.info;
+                
+                final isAnnual = limits.isPremium && user.premiumUntil != null &&
+                    user.premiumUntil!.difference(DateTime.now()).inDays > 60;
+                
+                final themeColor = isAnnual
+                    ? const Color(0xFFD4AF37)
+                    : (limits.isPremium ? AppColors.brand : AppColors.info);
                 final oppositeColor = limits.isPremium ? AppColors.info : AppColors.brand;
 
                 return SliverToBoxAdapter(
@@ -126,6 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: OrbitingProfileAvatar(
                                 name: user.email.split('@').first,
                                 isPremium: limits.isPremium,
+                                isAnnual: isAnnual,
                                 imageUrl: 'assets/logo/elon_musk_nft.png',
                               ),
                             ),
@@ -152,8 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               textAlign: TextAlign.center,
                             ),
-
-                            // ── 4. Premium Resized PRO Badge ──
+                                     // ── 4. Premium Resized PRO Badge ──
                             if (limits.isPremium) ...[
                               const SizedBox(height: 14),
                               Container(
@@ -162,16 +168,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF20B26C),
-                                      Color(0xFF2DC77A),
-                                    ],
+                                  gradient: LinearGradient(
+                                    colors: isAnnual
+                                        ? [const Color(0xFFD4AF37), const Color(0xFFE8C245)]
+                                        : [const Color(0xFF20B26C), const Color(0xFF2DC77A)],
                                   ),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.brand.withValues(alpha: 0.25),
+                                      color: (isAnnual ? const Color(0xFFD4AF37) : AppColors.brand)
+                                          .withValues(alpha: 0.25),
                                       blurRadius: 14,
                                       offset: const Offset(0, 4),
                                     ),
@@ -179,16 +185,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
-                                  children: const [
-                                    Icon(
+                                  children: [
+                                    const Icon(
                                       Icons.verified_rounded,
                                       size: 13,
                                       color: Colors.white,
                                     ),
-                                    SizedBox(width: 5),
+                                    const SizedBox(width: 5),
                                     Text(
-                                      'PRO NODE ACTIVE',
-                                      style: TextStyle(
+                                      AppLocalizations.proNodeActive,
+                                      style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w800,
                                         color: Colors.white,
@@ -201,11 +207,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ],
                             const SizedBox(height: 32),
 
-                            // ── 5. Premium Overlapping 3D Credit Card Stack Centerpiece ──
-                            const _GlassmorphicSubscriptionCardStack(
-                              holderName: 'sporyshev.savelii',
-                              cardNumber: '**** **** **** 2026',
-                              expiryDate: '19.06.2026',
+                            // ── 5. Premium Bank Card ──
+                            _ProfileBankCard(
+                              isPremium: limits.isPremium,
+                              premiumUntil: user.premiumUntil,
+                              holderName: user.email.split('@').first,
+                              expiryDate: user.premiumUntilFormatted,
                             ),
 
                             const SizedBox(height: 36),
@@ -216,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.only(left: 4, bottom: 12),
                                 child: Text(
-                                  'ACCOUNT METRICS & DETAILS'.toUpperCase(),
+                                  AppLocalizations.accountMetrics,
                                   style: TextStyle(
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w800,
@@ -243,9 +250,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    content: const Text(
-                                      'Email copied to clipboard',
-                                      style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                                    content: Text(
+                                      AppLocalizations.emailCopied,
+                                      style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                 );
@@ -254,10 +261,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             
                             _InfoTile(
                               icon: Icons.workspace_premium_rounded,
-                              iconColor: AppColors.brand,
+                              iconColor: isAnnual ? const Color(0xFFD4AF37) : AppColors.brand,
                               label: AppLocalizations.plan,
-                              value: limits.isPremium ? 'Pro Membership' : AppLocalizations.free,
-                              valueColor: limits.isPremium ? AppColors.brand : AppColors.textSecondary,
+                              value: limits.isPremium
+                                  ? (isAnnual ? AppLocalizations.proYear : 'Pro Membership')
+                                  : AppLocalizations.free,
+                              valueColor: limits.isPremium
+                                  ? (isAnnual ? const Color(0xFFD4AF37) : AppColors.brand)
+                                  : AppColors.textSecondary,
                               onTap: () {
                                 AutoRouter.of(context).push(const SubscriptionRoute());
                               },
@@ -459,289 +470,301 @@ class _InfoTileState extends State<_InfoTile> {
   }
 }
 
-// ── Overlapping 3D Glassmorphic Credit Card Stack Centerpiece ──
-class _GlassmorphicSubscriptionCardStack extends StatelessWidget {
-  const _GlassmorphicSubscriptionCardStack({
+// ── Profile Bank Card (matches subscription screen design) ──
+class _ProfileBankCard extends StatefulWidget {
+  const _ProfileBankCard({
+    required this.isPremium,
+    required this.premiumUntil,
     required this.holderName,
-    required this.cardNumber,
     required this.expiryDate,
   });
 
+  final bool isPremium;
+  final DateTime? premiumUntil;
   final String holderName;
-  final String cardNumber;
   final String expiryDate;
 
   @override
+  State<_ProfileBankCard> createState() => _ProfileBankCardState();
+}
+
+class _ProfileBankCardState extends State<_ProfileBankCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _shimmerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  bool get _isAnnual {
+    if (!widget.isPremium || widget.premiumUntil == null) return false;
+    return widget.premiumUntil!.difference(DateTime.now()).inDays > 60;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    Widget creditCard({
-      required String cardType,
-      required Color color,
-      required double rotationRad,
-      required double scale,
-      required double offsetY,
-      required bool isFront,
-    }) {
-      return Transform.translate(
-        offset: Offset(0, offsetY),
-        child: Transform.rotate(
-          angle: rotationRad,
-          child: Transform.scale(
-            scale: scale,
-            child: Container(
-              width: 290,
-              height: 172,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isFront
-                      ? [
-                          const Color(0xFF122A1D).withValues(alpha: 0.95),
-                          const Color(0xFF0C1611).withValues(alpha: 0.95),
-                        ]
-                      : [
-                          const Color(0xFF1B202E).withValues(alpha: 0.88),
-                          const Color(0xFF10121A).withValues(alpha: 0.88),
-                        ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: color.withValues(alpha: isFront ? 0.35 : 0.15),
-                  width: isFront ? 1.2 : 1.0,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: isFront ? 0.12 : 0.04),
-                    blurRadius: isFront ? 24 : 10,
-                    spreadRadius: isFront ? 2.0 : 0.0,
-                    offset: const Offset(0, 8),
+    return AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (context, _) {
+        if (!widget.isPremium) return _buildFreeCard();
+        return _isAnnual ? _buildAnnualCard() : _buildMonthlyCard();
+      },
+    );
+  }
+
+  Widget _buildFreeCard() {
+    return _buildCardShell(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF1A1E26), Color(0xFF12151B), Color(0xFF1A1E26)],
+        stops: [0.0, 0.5, 1.0],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      accentColor: AppColors.info,
+      borderColor: AppColors.info.withValues(alpha: 0.15),
+      glowColor: AppColors.info.withValues(alpha: 0.05),
+      shimmerColor: Colors.white.withValues(alpha: 0.03),
+      badgeText: 'FREE',
+      chipBaseColor: const Color(0xFF8B8B8B),
+      chipDarkColor: const Color(0xFF555555),
+    );
+  }
+
+  Widget _buildMonthlyCard() {
+    return _buildCardShell(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF1A2E20), Color(0xFF0D1811), Color(0xFF152818)],
+        stops: [0.0, 0.5, 1.0],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      accentColor: AppColors.brand,
+      borderColor: AppColors.brand.withValues(alpha: 0.22),
+      glowColor: AppColors.brand.withValues(alpha: 0.1),
+      shimmerColor: AppColors.brand.withValues(alpha: 0.06),
+      badgeText: 'PRO',
+      chipBaseColor: const Color(0xFFD4AF37),
+      chipDarkColor: const Color(0xFF8B6914),
+    );
+  }
+
+  Widget _buildAnnualCard() {
+    return _buildCardShell(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF2A2213), Color(0xFF1A150B), Color(0xFF261E0E)],
+        stops: [0.0, 0.5, 1.0],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      accentColor: const Color(0xFFD4AF37),
+      borderColor: const Color(0xFFD4AF37).withValues(alpha: 0.25),
+      glowColor: const Color(0xFFD4AF37).withValues(alpha: 0.12),
+      shimmerColor: const Color(0xFFD4AF37).withValues(alpha: 0.06),
+      badgeText: AppLocalizations.proYear,
+      chipBaseColor: const Color(0xFFE8C245),
+      chipDarkColor: const Color(0xFF8B6914),
+    );
+  }
+
+  Widget _buildCardShell({
+    required LinearGradient gradient,
+    required Color accentColor,
+    required Color borderColor,
+    required Color glowColor,
+    required Color shimmerColor,
+    required String badgeText,
+    required Color chipBaseColor,
+    required Color chipDarkColor,
+  }) {
+    return AspectRatio(
+      aspectRatio: 1.586,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: gradient,
+          border: Border.all(color: borderColor, width: 0.8),
+          boxShadow: [
+            BoxShadow(color: glowColor, blurRadius: 28, offset: const Offset(0, 10)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.45), blurRadius: 18, offset: const Offset(0, 6)),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              // Shimmer
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _ProfileShimmerPainter(
+                    progress: _shimmerController.value,
+                    shimmerColor: shimmerColor,
                   ),
-                ],
+                ),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: Stack(
+              // Content
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Corner mesh light accent
-                    Positioned(
-                      right: -30,
-                      top: -30,
-                      child: Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              color.withValues(alpha: isFront ? 0.12 : 0.03),
-                              Colors.transparent,
-                            ],
+                    // Top: Logo + Badge
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/logo/logo_transparent.png',
+                          height: 36,
+                          fit: BoxFit.contain,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: accentColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: accentColor.withValues(alpha: 0.25), width: 0.8),
+                          ),
+                          child: Text(
+                            badgeText,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: accentColor,
+                              letterSpacing: 1.2,
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                    const Spacer(flex: 2),
+                    // EMV Chip
+                    Container(
+                      width: 40,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [chipBaseColor, chipBaseColor.withValues(alpha: 0.85), chipBaseColor],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: chipDarkColor.withValues(alpha: 0.5), width: 0.6),
+                      ),
+                      child: CustomPaint(painter: _ProfileChipPainter(lineColor: chipDarkColor)),
+                    ),
+                    const Spacer(flex: 2),
+                    // Card Number
+                    Text(
+                      '**** **** **** ****',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withValues(alpha: 0.88),
+                        letterSpacing: 2.8,
+                        fontFamily: 'monospace',
                       ),
                     ),
-
-                    Padding(
-                      padding: const EdgeInsets.all(18.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Top row: Logo & Status indicator
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 18,
-                                    height: 18,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: color.withValues(alpha: 0.2),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        isFront ? Icons.verified_user_rounded : Icons.cloud_done_rounded,
-                                        size: 10,
-                                        color: color,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    cardType,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white.withValues(alpha: isFront ? 0.9 : 0.5),
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (isFront)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: color.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: color.withValues(alpha: 0.25), width: 0.8),
-                                  ),
-                                  child: Text(
-                                    'VIP MEMBER',
-                                    style: TextStyle(
-                                      fontSize: 7.5,
-                                      fontWeight: FontWeight.w900,
-                                      color: color,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-
-                          // Center row: Brass Gold Chip & Contactless indicator
-                          if (isFront)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                // Gold Chip UI
-                                Container(
-                                  width: 32,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFC5A862).withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: const Color(0xFFC5A862).withValues(alpha: 0.4),
-                                      width: 1.0,
-                                    ),
-                                  ),
-                                  child: Stack(
-                                    children: [
-                                      Positioned(
-                                        left: 8, right: 8, top: 0, bottom: 0,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            border: Border(
-                                              left: BorderSide(color: const Color(0xFFC5A862).withValues(alpha: 0.3)),
-                                              right: BorderSide(color: const Color(0xFFC5A862).withValues(alpha: 0.3)),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 8, bottom: 8, left: 0, right: 0,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            border: Border(
-                                              top: BorderSide(color: const Color(0xFFC5A862).withValues(alpha: 0.3)),
-                                              bottom: BorderSide(color: const Color(0xFFC5A862).withValues(alpha: 0.3)),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // WiFi-like contactless icon
-                                Transform.rotate(
-                                  angle: math.pi / 2,
-                                  child: Icon(
-                                    Icons.wifi_rounded,
-                                    size: 16,
-                                    color: Colors.white.withValues(alpha: 0.36),
-                                  ),
-                                ),
-                              ],
-                            )
-                          else
-                            const SizedBox(height: 24),
-
-                          // Bottom row: Card credentials
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                cardNumber,
-                                style: TextStyle(
-                                  fontSize: isFront ? 14.5 : 12.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white.withValues(alpha: isFront ? 0.95 : 0.45),
-                                  letterSpacing: 1.5,
-                                  fontFamily: 'monospace',
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    holderName,
-                                    style: TextStyle(
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white.withValues(alpha: isFront ? 0.7 : 0.3),
-                                      letterSpacing: 0.5,
-                                      fontFamily: 'monospace',
-                                    ),
-                                  ),
-                                  Text(
-                                    'EXP $expiryDate',
-                                    style: TextStyle(
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white.withValues(alpha: isFront ? 0.6 : 0.25),
-                                      fontFamily: 'monospace',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    const Spacer(flex: 2),
+                    // Bottom: Name + Expiry
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('CARD HOLDER',
+                              style: TextStyle(fontSize: 6.5, fontWeight: FontWeight.w500, color: Colors.white.withValues(alpha: 0.25), letterSpacing: 1.0)),
+                            const SizedBox(height: 2),
+                            Text(widget.holderName.toUpperCase(),
+                              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: accentColor.withValues(alpha: 0.75), letterSpacing: 1.0, fontFamily: 'monospace')),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('VALID THRU',
+                              style: TextStyle(fontSize: 6.5, fontWeight: FontWeight.w500, color: Colors.white.withValues(alpha: 0.25), letterSpacing: 1.0)),
+                            const SizedBox(height: 2),
+                            Text(widget.expiryDate,
+                              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.white.withValues(alpha: 0.6), letterSpacing: 0.8, fontFamily: 'monospace')),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ),
+            ],
           ),
         ),
-      );
-    }
-
-    return SizedBox(
-      height: 200,
-      width: 320,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // SOL SECURE BACKUP CARD (Bottom)
-          creditCard(
-            cardType: 'SECURE BACKUP NODE',
-            color: AppColors.info,
-            rotationRad: -0.16,
-            scale: 0.88,
-            offsetY: -22,
-            isFront: false,
-          ),
-
-          // PRO NODE MEMBERSHIP CARD (Top)
-          creditCard(
-            cardType: 'PRO MEMBERSHIP',
-            color: AppColors.brand,
-            rotationRad: -0.02,
-            scale: 1.0,
-            offsetY: 8,
-            isFront: true,
-          ),
-        ],
       ),
     );
   }
 }
+
+// ── Profile card painters ──
+class _ProfileChipPainter extends CustomPainter {
+  _ProfileChipPainter({required this.lineColor});
+  final Color lineColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final linePaint = Paint()..color = lineColor.withValues(alpha: 0.5)..strokeWidth = 0.6..style = PaintingStyle.stroke;
+    final w = size.width; final h = size.height;
+    canvas.drawLine(Offset(w * 0.33, h * 0.1), Offset(w * 0.33, h * 0.9), linePaint);
+    canvas.drawLine(Offset(w * 0.66, h * 0.1), Offset(w * 0.66, h * 0.9), linePaint);
+    canvas.drawLine(Offset(w * 0.08, h * 0.5), Offset(w * 0.92, h * 0.5), linePaint);
+    final padPaint = Paint()..color = lineColor.withValues(alpha: 0.18)..style = PaintingStyle.fill;
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.06, h * 0.14, w * 0.24, h * 0.3), const Radius.circular(1)), padPaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.7, h * 0.14, w * 0.24, h * 0.3), const Radius.circular(1)), padPaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.06, h * 0.56, w * 0.24, h * 0.3), const Radius.circular(1)), padPaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.7, h * 0.56, w * 0.24, h * 0.3), const Radius.circular(1)), padPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _ProfileShimmerPainter extends CustomPainter {
+  _ProfileShimmerPainter({required this.progress, required this.shimmerColor});
+  final double progress;
+  final Color shimmerColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bandWidth = size.width * 0.3;
+    final startX = -bandWidth - size.height;
+    final endX = size.width + bandWidth + size.height;
+    final currentX = startX + (endX - startX) * progress;
+    canvas.save();
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.rotate(-0.45);
+    canvas.translate(-size.width / 2, -size.height / 2);
+    final rect = Rect.fromLTWH(currentX, -size.height, bandWidth, size.height * 3);
+    final gradient = LinearGradient(
+      colors: [Colors.transparent, shimmerColor, shimmerColor, Colors.transparent],
+      stops: const [0.0, 0.35, 0.65, 1.0],
+    );
+    canvas.drawRect(rect, Paint()..shader = gradient.createShader(rect));
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_ProfileShimmerPainter old) => old.progress != progress;
+}
+
 
 // ── Massive Redesigned Orbiting Profile Avatar ──
 class OrbitingProfileAvatar extends StatefulWidget {
@@ -749,11 +772,13 @@ class OrbitingProfileAvatar extends StatefulWidget {
     super.key,
     required this.name,
     required this.isPremium,
+    this.isAnnual = false,
     this.imageUrl,
   });
 
   final String name;
   final bool isPremium;
+  final bool isAnnual;
   final String? imageUrl;
 
   @override
@@ -780,7 +805,9 @@ class _OrbitingProfileAvatarState extends State<OrbitingProfileAvatar> with Sing
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = widget.isPremium ? AppColors.brand : AppColors.info;
+    final themeColor = widget.isAnnual
+        ? const Color(0xFFD4AF37)
+        : (widget.isPremium ? AppColors.brand : AppColors.info);
     final oppositeColor = widget.isPremium ? AppColors.info : AppColors.brand;
 
     return Stack(

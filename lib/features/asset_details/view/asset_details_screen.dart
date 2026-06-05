@@ -1,4 +1,5 @@
 import 'package:aspiro_trade/features/add_tickers/add_tickers.dart';
+import 'package:aspiro_trade/features/analytics/view/asset_analytics_section.dart';
 import 'package:aspiro_trade/features/asset_details/bloc/asset_details_bloc.dart';
 import 'package:aspiro_trade/features/assets/bloc/assets_bloc.dart'
     as assets_bloc;
@@ -90,9 +91,27 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
               },
             ),
           ),
+          // Premium per-asset AI analytics (backend Task #3). Crypto-only — the
+          // analytics job covers the 7 prod pairs; non-crypto is being disabled.
+          if (_isCryptoSymbol(widget.assets.symbol))
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 24),
+                child: AssetAnalyticsSection(symbol: widget.assets.symbol),
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  static bool _isCryptoSymbol(String symbol) {
+    final s = symbol.toUpperCase();
+    return s.endsWith('USDT') ||
+        s.endsWith('USDC') ||
+        s.endsWith('BTC') ||
+        s.endsWith('ETH') ||
+        s.endsWith('BNB');
   }
 }
 
@@ -106,18 +125,29 @@ class _AssetBody extends StatelessWidget {
     final isUp = !assets.change24h.startsWith('-');
     return Column(
       children: [
+        const SizedBox(height: 10),
         // ── Icon + Name ──
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.card,
-                  border: Border.all(color: AppColors.border, width: 1),
+                  color: AppColors.elevated,
+                  border: Border.all(
+                    color: AppColors.border.withOpacity(0.6),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: ClipOval(
                   child: Image.network(
@@ -129,8 +159,8 @@ class _AssetBody extends StatelessWidget {
                             ? assets.baseAsset[0]
                             : '?',
                         style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
                           color: AppColors.textPrimary,
                         ),
                       ),
@@ -138,22 +168,25 @@ class _AssetBody extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     assets.name,
                     style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
+                      letterSpacing: -0.2,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     assets.baseAsset,
                     style: const TextStyle(
                       fontSize: 13,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.textTertiary,
                     ),
                   ),
@@ -162,21 +195,21 @@ class _AssetBody extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 26),
 
         // ── Price centered ──
         Text(
           assets.price.isEmpty
-              ? (AppLocalizations.isRu ? 'Нет данных' : 'No data')
+              ? AppLocalizations.noData
               : '\$${assets.formatPriceLogic(assets.price)}',
           style: const TextStyle(
-            fontSize: 36,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -1.5,
+            fontSize: 40,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1.8,
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         if (assets.price.isNotEmpty)
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -185,56 +218,57 @@ class _AssetBody extends StatelessWidget {
                 '${isUp ? '+' : ''}\$${assets.formatPriceLogic(assets.change24h)}',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                   color: isUp ? AppColors.up : AppColors.down,
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                 decoration: BoxDecoration(
-                  color: isUp
-                      ? AppColors.up.withValues(alpha: 0.12)
-                      : AppColors.down.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(4),
+                  color: isUp ? AppColors.up.withOpacity(0.08) : AppColors.down.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: isUp ? AppColors.up.withOpacity(0.2) : AppColors.down.withOpacity(0.2),
+                    width: 0.8,
+                  ),
                 ),
                 child: Text(
                   '${isUp ? '+' : ''}${assets.formatPriceLogic(assets.priceChangePercent)}%',
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                     color: isUp ? AppColors.up : AppColors.down,
                   ),
                 ),
               ),
             ],
           ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
 
         // ── Market Stats ──
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
               'MARKET STATS',
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
                 color: AppColors.textTertiary,
-                letterSpacing: 0.3,
+                letterSpacing: 0.8,
               ),
             ),
           ),
         ),
         const SizedBox(height: 8),
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+          margin: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            color: AppColors.card.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border.withOpacity(0.2), width: 1),
           ),
           child: Column(
             children: [
@@ -242,13 +276,13 @@ class _AssetBody extends StatelessWidget {
                 label: 'Volume 24h',
                 value: '\$${assets.formatPriceLogic(assets.volume24h)}',
               ),
-              Container(height: 1, color: AppColors.border),
+              Container(height: 0.8, color: AppColors.border.withOpacity(0.2)),
               _StatRow(
                 label: '24h High',
                 value: '\$${assets.formatPriceLogic(assets.high24h)}',
                 valueColor: AppColors.up,
               ),
-              Container(height: 1, color: AppColors.border),
+              Container(height: 0.8, color: AppColors.border.withOpacity(0.2)),
               _StatRow(
                 label: '24h Low',
                 value: '\$${assets.formatPriceLogic(assets.low24h)}',
@@ -257,14 +291,29 @@ class _AssetBody extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 36),
 
         // ── Add ticker button ──
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: SizedBox(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            height: 50,
             width: double.infinity,
-            height: 48,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.brand, AppColors.brandLight],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.brand.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: ElevatedButton(
               onPressed: () {
                 showModalBottomSheet(
@@ -272,26 +321,35 @@ class _AssetBody extends StatelessWidget {
                   isScrollControlled: true,
                   backgroundColor: AppColors.card,
                   shape: const RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
                   ),
                   builder: (_) => AddTickersScreen(assets: originalAssets),
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: AppColors.background,
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(25),
                 ),
-                elevation: 0,
               ),
-              child: Text(
-                AppLocalizations.addTicker,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add_circle_outline_rounded, color: Colors.white, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    AppLocalizations.addTicker,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -315,7 +373,7 @@ class _StatRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -323,6 +381,7 @@ class _StatRow extends StatelessWidget {
             label,
             style: const TextStyle(
               fontSize: 13,
+              fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
             ),
           ),
@@ -330,7 +389,7 @@ class _StatRow extends StatelessWidget {
             value,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
               color: valueColor ?? AppColors.textPrimary,
             ),
           ),

@@ -40,65 +40,38 @@ class _AssetsScreenState extends State<AssetsScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            title: const Text(
-              'Market',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            centerTitle: false,
             pinned: true,
             floating: true,
             snap: true,
             backgroundColor: AppColors.background,
             surfaceTintColor: Colors.transparent,
             automaticallyImplyLeading: false,
-            leading: IconButton(
-              onPressed: () {
-                context.read<AssetsBloc>().add(StopTimer());
-                AutoRouter.of(context).maybePop();
-              },
-              icon: const Icon(
-                Icons.arrow_back_ios,
-                color: AppColors.textSecondary,
-                size: 20,
-              ),
-            ),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(56),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: SearchTextField(
-                        controller: _searchController,
-                        onClearTap: () =>
-                            context.read<AssetsBloc>().add(Start()),
-                        onSubmitted: (_) => _doSearch(),
-                      ),
+            elevation: 0,
+            titleSpacing: 0,
+            title: Padding(
+              padding: const EdgeInsets.only(left: 4, right: 16),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      context.read<AssetsBloc>().add(StopTimer());
+                      AutoRouter.of(context).maybePop();
+                    },
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: AppColors.textSecondary,
+                      size: 20,
                     ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: _doSearch,
-                      child: Container(
-                        height: 40,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.brand,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.search,
-                          size: 20,
-                          color: AppColors.background,
-                        ),
-                      ),
+                  ),
+                  Expanded(
+                    child: SearchTextField(
+                      controller: _searchController,
+                      onClearTap: () =>
+                          context.read<AssetsBloc>().add(Start()),
+                      onSubmitted: (_) => _doSearch(),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -106,26 +79,29 @@ class _AssetsScreenState extends State<AssetsScreen> {
           // ── Column headers ──
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   Text(
-                    'NAME',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textQuaternary,
-                      letterSpacing: 0.3,
+                    AppLocalizations.assetColumn,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textTertiary,
+                      letterSpacing: 0.8,
                     ),
                   ),
-                  Text(
-                    'PRICE / 24H',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textQuaternary,
-                      letterSpacing: 0.3,
+                  Padding(
+                    padding: const EdgeInsets.only(right: 56), // aligns with the asset item metrics
+                    child: Text(
+                      AppLocalizations.priceColumn,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textTertiary,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
                 ],
@@ -160,52 +136,37 @@ class _AssetsScreenState extends State<AssetsScreen> {
                 );
               }
               if (state.status != Status.initial && state.assets.isNotEmpty) {
-                return SliverToBoxAdapter(
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Column(
-                      children: List.generate(state.assets.length, (i) {
-                        final asset = state.assets[i];
-                        return Column(
-                          children: [
-                            if (i > 0)
-                              Container(
-                                height: 1,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 14),
-                                color: AppColors.border,
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final asset = state.assets[index];
+                        return AssetsItem(
+                          asset: asset,
+                          onTap: () {
+                            context.read<AssetsBloc>().add(StopTimer());
+                            AutoRouter.of(context)
+                                .push(AssetDetailsRoute(assets: asset));
+                          },
+                          openDrawer: () {
+                            context.read<AssetsBloc>().add(StopTimer());
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: AppColors.card,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(20),
+                                ),
                               ),
-                            AssetsItem(
-                              asset: asset,
-                              onTap: () {
-                                context.read<AssetsBloc>().add(StopTimer());
-                                AutoRouter.of(context)
-                                    .push(AssetDetailsRoute(assets: asset));
-                              },
-                              openDrawer: () {
-                                context.read<AssetsBloc>().add(StopTimer());
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: AppColors.card,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(16),
-                                    ),
-                                  ),
-                                  builder: (_) =>
-                                      AddTickersScreen(assets: asset),
-                                );
-                              },
-                            ),
-                          ],
+                              builder: (_) =>
+                                  AddTickersScreen(assets: asset),
+                            );
+                          },
                         );
-                      }),
+                      },
+                      childCount: state.assets.length,
                     ),
                   ),
                 );

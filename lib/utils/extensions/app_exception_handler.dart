@@ -4,24 +4,84 @@ import 'package:aspiro_trade/repositories/core/core.dart';
 import 'package:aspiro_trade/router/app_router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:talker/talker.dart';
+import 'package:dio/dio.dart';
 
 extension AppExceptionHandler on BuildContext {
   /// Главная точка входа для обработки ошибок
   void handleException(
-    AppException error,
+    Object? error,
     BuildContext context, {
     VoidCallback? onPressed,
+    bool kickToLoginOnUnauthorized = true,
   }) {
-    if (error is NetworkException) {
+    if (error == null) return;
+
+    final AppException appException;
+    if (error is AppException) {
+      appException = error;
+    } else if (error is DioException) {
+      appException = DioExceptionFactory.fromDioException(error, Talker());
+    } else {
+      final errStr = error.toString();
+      final lowerStr = errStr.toLowerCase();
+      if (lowerStr.contains('timeoutexception') || lowerStr.contains('timeout')) {
+        appException = TimeoutException(AppLocalizations.errorTimeout);
+      } else if (lowerStr.contains('socketexception') ||
+                 lowerStr.contains('network') ||
+                 lowerStr.contains('failed host lookup') ||
+                 lowerStr.contains('unreachable')) {
+        appException = NetworkException(AppLocalizations.errorNoNetwork);
+      } else if (lowerStr.contains('unauthorized') || lowerStr.contains('401')) {
+        appException = UnauthorizedException(AppLocalizations.errorSessionExpired);
+      } else if (lowerStr.contains('forbidden') || lowerStr.contains('403')) {
+        appException = FordibenException(AppLocalizations.errorPremiumRequired);
+      } else if (lowerStr.contains('signinwithapple') || lowerStr.contains('authorizationerror') || lowerStr.contains('appleauth')) {
+        appException = UnknownException(
+          AppLocalizations.isRu 
+            ? 'Ошибка входа через Apple. Убедитесь, что вы вошли в Apple ID на вашем устройстве.'
+            : 'Apple Sign-In failed. Please ensure you are logged into your Apple ID on this device.'
+        );
+      } else if (lowerStr.contains('googlesignin') || lowerStr.contains('googleauth')) {
+        appException = UnknownException(
+          AppLocalizations.isRu
+            ? 'Ошибка входа через Google. Попробуйте еще раз или выберите другой способ.'
+            : 'Google Sign-In failed. Please try again or select another method.'
+        );
+      } else {
+        // Clean technical terms to hide raw technical details
+        final isTechnical = errStr.contains('{') ||
+            errStr.contains('<') ||
+            errStr.contains('dio') ||
+            lowerStr.contains('exception') ||
+            lowerStr.contains('error') ||
+            lowerStr.contains('stacktrace') ||
+            lowerStr.contains('http');
+
+        if (isTechnical) {
+          appException = UnknownException(AppLocalizations.errorUnknown);
+        } else {
+          appException = UnknownException(errStr);
+        }
+      }
+    }
+
+    if (appException is NetworkException) {
       showNetworkErrorSnackBar();
-    } else if (error is UnauthorizedException) {
+    } else if (appException is UnauthorizedException && !kickToLoginOnUnauthorized) {
+      // On the auth screens a 401 means bad credentials, NOT an expired session.
+      // Show the real message instead of the "session expired → go to login"
+      // dialog (we are already on the login/register screen).
+      _showErrorSnackBar(appException.message);
+    } else if (appException is UnauthorizedException) {
       // Только для Unauthorized — показываем диалог и делаем logout
       _showErrorDialog(
-        title: 'Сессия истекла',
-        message: 'Войдите в аккаунт заново',
+        title: AppLocalizations.sessionExpired,
+        message: AppLocalizations.logInAgain,
         onPressed: () {
           Navigator.of(context).pop();
           onPressed?.call();
@@ -30,12 +90,12 @@ extension AppExceptionHandler on BuildContext {
           ).pushAndPopUntil(const LoginRoute(), predicate: (_) => false);
         },
       );
-    } else if (error is FordibenException) {
+    } else if (appException is FordibenException) {
       // 403 — Premium required: handled inline by each screen, suppress snackbar
       return;
     } else {
       // Все остальные ошибки — тихий snackbar, не блокирующий UI
-      _showErrorSnackBar(error.message);
+      _showErrorSnackBar(appException.message);
     }
   }
 
@@ -84,18 +144,18 @@ extension AppExceptionHandler on BuildContext {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Premium Required',
-              style: TextStyle(
+            Text(
+              AppLocalizations.premiumRequired,
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Upgrade to Pro to unlock all features',
-              style: TextStyle(
+            Text(
+              AppLocalizations.premiumSubtitle,
+              style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.textTertiary,
               ),
@@ -103,13 +163,13 @@ extension AppExceptionHandler on BuildContext {
             ),
             const SizedBox(height: 24),
             // Feature list
-            _PremiumFeatureRow(icon: Icons.cell_tower_rounded, text: 'Unlimited trading signals'),
+            _PremiumFeatureRow(icon: Icons.cell_tower_rounded, text: AppLocalizations.featureUnlimitedSignals),
             const SizedBox(height: 12),
-            _PremiumFeatureRow(icon: Icons.analytics_outlined, text: 'Advanced analytics & history'),
+            _PremiumFeatureRow(icon: Icons.analytics_outlined, text: AppLocalizations.featureAdvancedAnalytics),
             const SizedBox(height: 12),
-            _PremiumFeatureRow(icon: Icons.add_chart_rounded, text: 'Unlimited ticker tracking'),
+            _PremiumFeatureRow(icon: Icons.add_chart_rounded, text: AppLocalizations.featureUnlimitedTickers),
             const SizedBox(height: 12),
-            _PremiumFeatureRow(icon: Icons.notifications_active_outlined, text: 'Real-time push notifications'),
+            _PremiumFeatureRow(icon: Icons.notifications_active_outlined, text: AppLocalizations.featurePriorityAlerts),
             const SizedBox(height: 28),
             // CTA Button
             SizedBox(
@@ -128,9 +188,9 @@ extension AppExceptionHandler on BuildContext {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Upgrade to Pro',
-                  style: TextStyle(
+                child: Text(
+                  AppLocalizations.upgradeToPlan,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -141,9 +201,9 @@ extension AppExceptionHandler on BuildContext {
             // Close
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text(
-                'Maybe Later',
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.maybeLater,
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textTertiary,
@@ -204,7 +264,7 @@ extension AppExceptionHandler on BuildContext {
             theme.colorScheme.error, // Берем красный из ColorScheme
         duration: const Duration(seconds: 10),
         action: SnackBarAction(
-          label: 'Закрыть',
+          label: AppLocalizations.close,
           textColor: theme.colorScheme.onError,
           onPressed: () {
             messenger.hideCurrentSnackBar();
@@ -224,7 +284,7 @@ extension AppExceptionHandler on BuildContext {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          'Нет подключения к интернету',
+          AppLocalizations.noInternet,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w600,
             color: theme.colorScheme.onError, // Используем on-color из темы
@@ -241,7 +301,7 @@ extension AppExceptionHandler on BuildContext {
         duration: const Duration(days: 1),
 
         action: SnackBarAction(
-          label: 'Закрыть',
+          label: AppLocalizations.close,
           textColor: theme.colorScheme.onError,
           onPressed: messenger.hideCurrentSnackBar,
         ),
@@ -394,13 +454,13 @@ extension AppExceptionHandler on BuildContext {
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
         title: Text(
-          'Удаление аккаунта',
+          AppLocalizations.deleteAccount,
           style: Theme.of(
             context,
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
         content: Text(
-          'Ваш профиль и все связанные данные будут стерты. Вы действительно хотите продолжить?',
+          AppLocalizations.deleteAccountConfirm,
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
@@ -409,13 +469,13 @@ extension AppExceptionHandler on BuildContext {
           CupertinoDialogAction(
             isDefaultAction: true,
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.cancel),
           ),
           CupertinoDialogAction(
             isDestructiveAction:
                 true, // Делает текст красным и выделяет значимость
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Удалить'),
+            child: Text(AppLocalizations.delete),
           ),
         ],
       ),
@@ -428,13 +488,13 @@ extension AppExceptionHandler on BuildContext {
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: const Text('Удаление учетной записи'),
-        content: const Text(
-          'Ваш профиль и все связанные данные будут стерты. Вы действительно хотите продолжить?',
+        title: Text(AppLocalizations.deleteAccount),
+        content: Text(
+          AppLocalizations.deleteAccountConfirm,
         ),
         actions: <Widget>[
           TextButton(
-            child: const Text('ОТМЕНА'),
+            child: Text(AppLocalizations.cancel.toUpperCase()),
             onPressed: () => Navigator.pop(context, false),
           ),
           FilledButton(
@@ -442,7 +502,7 @@ extension AppExceptionHandler on BuildContext {
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
             ),
-            child: const Text('УДАЛИТЬ'),
+            child: Text(AppLocalizations.delete.toUpperCase()),
             onPressed: () => Navigator.pop(context, true),
           ),
         ],

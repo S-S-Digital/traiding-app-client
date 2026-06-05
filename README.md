@@ -27,17 +27,17 @@ Release Android:
 
 ```bash
 flutter build apk --release \
-  --dart-define=API_URL=https://api.tradeaspiro.ru
+  --dart-define=API_URL=https://tradeaspiro.ru
 
 flutter build appbundle --release \
-  --dart-define=API_URL=https://api.tradeaspiro.ru
+  --dart-define=API_URL=https://tradeaspiro.ru
 ```
 
 Release iOS:
 
 ```bash
 flutter build ipa --release \
-  --dart-define=API_URL=https://api.tradeaspiro.ru
+  --dart-define=API_URL=https://tradeaspiro.ru
 ```
 
 Versioning is controlled from `pubspec.yaml` (`version: X.Y.Z+build`).

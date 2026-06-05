@@ -24,8 +24,22 @@ abstract class AspiroTradeApi {
     required Future<void> Function(String access, String refresh) saveTokens,
     required Future<void> Function() onForceLogout,
   }) {
-    final dio = Dio();
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 15),
+        sendTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 20),
+      ),
+    );
+    // Order matters: Auth attaches token → Retry handles transient failures → Logger logs final result
     dio.interceptors.addAll([
+      AuthInterceptor(
+        dio: dio,
+        getTokens: getTokens,
+        saveTokens: saveTokens,
+        onForceLogout: onForceLogout,
+      ),
+      RetryInterceptor(dio: dio, maxRetries: 3),
       TalkerDioLogger(
         talker: talker,
         settings: TalkerDioLoggerSettings(
@@ -34,12 +48,6 @@ abstract class AspiroTradeApi {
           printRequestData: kDebugMode,
           printResponseData: kDebugMode,
         ),
-      ),
-      AuthInterceptor(
-        dio: dio,
-        getTokens: getTokens,
-        saveTokens: saveTokens,
-        onForceLogout: onForceLogout,
       ),
     ]);
     if (apiUrl != null) {
@@ -127,6 +135,14 @@ abstract class AspiroTradeApi {
   @POST('/payments/verify/google')
   Future<PaymentReceiptDto> googlePayments(@Body() GoogleReceipts receipts);
 
+  /// Cancels a subscription record on OUR backend (clears auto-renew + flips
+  /// isPremium if no other active sub remains). NOTE: this does NOT stop
+  /// Apple/Google auto-renewal — for store-managed (auto-renewable) purchases
+  /// the user must cancel via the store. Kept for completeness / admin flows;
+  /// the user-facing button deep-links to the store instead. See report.
+  @DELETE('/payments/subscription/{id}')
+  Future<void> cancelSubscription(@Path() String id);
+
   // =============== Signals ===============
 
   @GET('/signals')
@@ -159,6 +175,21 @@ abstract class AspiroTradeApi {
     @Query('status') String status,
   );
 
+  @GET('/signals/stats')
+  Future<SignalStatsDto> fetchSignalStats({
+    @Query('category') String? category,
+  });
+
+  // =============== Digest ===============
+
+  @GET('/market-digest')
+  Future<List<MarketDigestDto>> fetchLatestDigests();
+
+  // =============== Per-asset Analytics (premium) ===============
+
+  @GET('/asset-analytics/today')
+  Future<AssetAnalyticsFeedDto> fetchTodayAnalytics();
+
   // =============== Users ===============
 
   @GET('/users/me')
@@ -166,6 +197,13 @@ abstract class AspiroTradeApi {
 
   @GET('/users/limits')
   Future<LimitsDto> getLimits();
+
+  // Account-level strategy mode (quality | turnover)
+  @GET('/users/strategy-mode')
+  Future<StrategyModeDto> getStrategyMode();
+
+  @PUT('/users/strategy-mode')
+  Future<StrategyModeDto> setStrategyMode(@Body() UpdateStrategyMode body);
 
 
   @DELETE('/users/account')

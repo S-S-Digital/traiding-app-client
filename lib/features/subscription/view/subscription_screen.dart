@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:aspiro_trade/features/profile/cubit/profile_cubit.dart';
 import 'package:aspiro_trade/features/subscription/bloc/subscription_bloc.dart';
-import 'package:aspiro_trade/repositories/core/core.dart';
+import 'package:aspiro_trade/features/subscription/view/purchase_error_mapper.dart';
+import 'package:aspiro_trade/features/subscription/view/purchase_failure_screen.dart';
+import 'package:aspiro_trade/features/subscription/view/purchase_success_screen.dart';
 import 'package:aspiro_trade/repositories/payments/payments.dart';
 import 'package:aspiro_trade/router/router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
@@ -26,6 +29,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   int _selectedPlanIndex = -1; // -1 = auto-select annual
   bool _agreedToTerms = false;
 
+  // Tracks a user-initiated purchase/restore so the full-screen result screens
+  // only appear for real attempts (initial-load failures stay non-blocking).
+  bool _purchaseFlowActive = false;
+  // Last product the user tried to buy — enables "Try Again" on the failure screen.
+  ProductDetails? _lastProduct;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +50,73 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
   }
 
+  // ── Purchase result screens ──────────────────────────────────────────────
+
+  void _openResult(BuildContext context, Widget screen) {
+    Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder(
+        opaque: true,
+        barrierColor: AppColors.background,
+        transitionDuration: const Duration(milliseconds: 350),
+        reverseTransitionDuration: const Duration(milliseconds: 250),
+        pageBuilder: (_, __, ___) => screen,
+        transitionsBuilder: (_, animation, __, child) => FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  void _openSuccessScreen(BuildContext context) {
+    _openResult(
+      context,
+      PurchaseSuccessScreen(
+        onContinue: () {
+          Navigator.of(context, rootNavigator: true).pop(); // close result
+          AutoRouter.of(context).maybePop(); // close paywall → back to app
+        },
+      ),
+    );
+  }
+
+  void _openFailureScreen(BuildContext context, Object? error) {
+    _openResult(
+      context,
+      PurchaseFailureScreen(
+        message: mapPurchaseError(error), // friendly + localized, never raw
+        onRetry: _lastProduct == null
+            ? null
+            : () {
+                Navigator.of(context, rootNavigator: true).pop();
+                final product = _lastProduct;
+                if (product != null) {
+                  _purchaseFlowActive = true;
+                  context.read<SubscriptionBloc>().add(PurchasePlan(product));
+                }
+              },
+        onRestore: () {
+          Navigator.of(context, rootNavigator: true).pop();
+          _purchaseFlowActive = true;
+          context.read<SubscriptionBloc>().add(RestorePurchases());
+        },
+        onContactSupport: _contactSupport,
+        onClose: () => Navigator.of(context, rootNavigator: true).pop(),
+      ),
+    );
+  }
+
+  Future<void> _contactSupport() async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: AppLocalizations.supportEmail,
+      query: 'subject=${Uri.encodeComponent(AppLocalizations.supportSubject)}',
+    );
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,30 +126,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             curr.status == SubscriptionStatus.failure ||
             curr.status == SubscriptionStatus.success,
         listener: (context, state) {
-          if (state.status == SubscriptionStatus.failure) {
-            final error = state.error;
-            if (error is AppException) {
-              context.handleException(error, context);
-            } else {
-              showErrorDialog(
-                context,
-                error?.toString() ?? 'Unknown error',
-                AppLocalizations.ok,
-                () => Navigator.of(context).pop(),
-              );
-            }
-          }
           if (state.status == SubscriptionStatus.success) {
             HapticFeedback.heavyImpact();
             // Refresh profile to update isPremium immediately
             context.read<ProfileCubit>().start();
             // Reload subscription data so paywall UI updates
             context.read<SubscriptionBloc>().add(Start());
-            context.showSuccesDialog(
-              title: AppLocalizations.accessGranted,
-              message: AppLocalizations.accessGrantedMessage,
-              onPressed: () => Navigator.of(context).pop(),
-            );
+            _purchaseFlowActive = false;
+            _openSuccessScreen(context);
+          } else if (state.status == SubscriptionStatus.failure) {
+            // Full-screen result only for a real user-initiated purchase/restore.
+            // Initial-load failures keep the lightweight, non-blocking handler.
+            if (_purchaseFlowActive) {
+              _purchaseFlowActive = false;
+              _openFailureScreen(context, state.error);
+            } else {
+              context.handleException(state.error, context);
+            }
           }
         },
         buildWhen: (prev, curr) => curr.isBuildable,
@@ -99,7 +168,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   String _localizedPrice(SubscriptionPlans plan, ProductDetails? product) {
-    if (product != null) return product.price;
+    // Show the store's localized price ONLY when it's a real recurring price.
+    // For a subscription with a free-trial offer the store reports the first
+    // billing phase (the 3-day trial) with rawPrice == 0 / price == "Free" —
+    // showing that as the headline is misleading. Fall back to the recurring
+    // backend price; the "3 дня бесплатно" badge already conveys the trial.
+    if (product != null && product.rawPrice > 0) return product.price;
     final amount = double.tryParse(plan.price) ?? 0;
     try {
       return NumberFormat.currency(
@@ -140,9 +214,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     // Sort: annual first (duration desc)
     paidPlans.sort((a, b) => b.duration.compareTo(a.duration));
 
-    // Auto-select annual (first = longest duration)
+    // Auto-select monthly (duration < 365) by default
     if (_selectedPlanIndex == -1 && paidPlans.isNotEmpty) {
-      _selectedPlanIndex = 0;
+      final monthlyIdx = paidPlans.indexWhere((p) => p.duration < 365);
+      _selectedPlanIndex = monthlyIdx != -1 ? monthlyIdx : 0;
     }
 
     final hasActivePro = state.subscription != null &&
@@ -153,8 +228,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         state.subscription!.status == 'trial';
 
     final renewDate = hasActivePro
-        ? DateFormat('MMM d, yyyy').format(state.subscription!.endDate)
+        ? DateFormat('dd.MM.yyyy').format(state.subscription!.endDate)
         : '';
+
+    final isAnnualSub = state.subscription != null &&
+        state.subscription!.status == 'active' &&
+        (state.subscription!.plan.duration >= 365 || state.subscription!.endDate.difference(DateTime.now()).inDays > 60);
+
+    final isAnnualSelected = hasActivePro
+        ? isAnnualSub
+        : (paidPlans.isNotEmpty &&
+            _selectedPlanIndex >= 0 &&
+            _selectedPlanIndex < paidPlans.length &&
+            paidPlans[_selectedPlanIndex].duration >= 365);
 
     return SafeArea(
       child: Stack(
@@ -195,20 +281,36 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // ── Premium 3D Overlapping Credit Cards Paywall Header ──
-                const _GlassmorphicSubscriptionPaywallStack(),
+                // ── Premium 3D Flipping Credit Card Paywall Header ──
+                _Futuristic3DSubscriptionCard(
+                  isAnnualSelected: isAnnualSelected,
+                  holderName: 'sporyshev.savelii',
+                  cardNumber: '**** **** **** 2026',
+                  expiryDate: '19.06.2026',
+                ),
                 const SizedBox(height: 24),
 
                 // ── Title ──
                 if (hasActivePro || hasTrial) ...[
-                  Text(
-                    hasActivePro ? AppLocalizations.youArePro : '🎉 Trial Active',
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                      color: AppColors.textPrimary,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        hasActivePro ? AppLocalizations.youArePro : (AppLocalizations.isRu ? 'Пробный период' : 'Trial Active'),
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        hasActivePro ? Icons.verified_rounded : Icons.card_giftcard_rounded,
+                        color: (hasActivePro && isAnnualSub) ? const Color(0xFFD4AF37) : AppColors.brand,
+                        size: 28,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -289,13 +391,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF14241B), Color(0xFF0F1611)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      gradient: isAnnualSub
+                          ? const LinearGradient(
+                              colors: [Color(0xFF241F14), Color(0xFF16130F)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : const LinearGradient(
+                              colors: [Color(0xFF14241B), Color(0xFF0F1611)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.brand.withValues(alpha: 0.35), width: 1.0),
+                      border: Border.all(
+                        color: (isAnnualSub ? const Color(0xFFD4AF37) : AppColors.brand).withValues(alpha: 0.35),
+                        width: 1.0,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -303,10 +414,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: AppColors.brand.withValues(alpha: 0.15),
+                            color: (isAnnualSub ? const Color(0xFFD4AF37) : AppColors.brand).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.verified_rounded, color: AppColors.brand, size: 24),
+                          child: Icon(
+                            Icons.verified_rounded,
+                            color: isAnnualSub ? const Color(0xFFD4AF37) : AppColors.brand,
+                            size: 24,
+                          ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -314,7 +429,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                AppLocalizations.proActiveBadge,
+                                isAnnualSub
+                                    ? (AppLocalizations.isRu ? 'Pro план на год активен' : 'Pro Year Plan Active')
+                                    : AppLocalizations.proActiveBadge,
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                               ),
                               const SizedBox(height: 2),
@@ -328,15 +445,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: AppColors.brand.withValues(alpha: 0.15),
+                            color: (isAnnualSub ? const Color(0xFFD4AF37) : AppColors.brand).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             AppLocalizations.active.toUpperCase(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.brand,
+                              color: isAnnualSub ? const Color(0xFFD4AF37) : AppColors.brand,
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -364,7 +481,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       child: Text(
-                        AppLocalizations.isRu ? 'Управление подпиской' : 'Manage Subscription',
+                        AppLocalizations.manageSubscription,
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textSecondary),
                       ),
                     ),
@@ -571,9 +688,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     onTap: () {
                       if (_selectedPlanIndex >= 0 && _selectedPlanIndex < paidPlans.length) {
                         final plan = paidPlans[_selectedPlanIndex];
-                        var product = _productFor(state, plan);
-                        product ??= state.productDetails.isNotEmpty ? state.productDetails.first : null;
+                        // Buy ONLY the product matching the selected plan. Do NOT
+                        // fall back to productDetails.first — that charged the user
+                        // for the WRONG plan (e.g. Monthly when Annual was selected)
+                        // whenever the selected plan's product failed to load.
+                        final product = _productFor(state, plan);
                         if (product != null) {
+                          _lastProduct = product;
+                          _purchaseFlowActive = true;
                           context.read<SubscriptionBloc>().add(PurchasePlan(product));
                         }
                       }
@@ -592,6 +714,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           ? null
                           : () {
                               HapticFeedback.lightImpact();
+                              _purchaseFlowActive = true;
                               context.read<SubscriptionBloc>().add(RestorePurchases());
                             },
                       style: OutlinedButton.styleFrom(
@@ -639,9 +762,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     onTap: () => _launchURL(
                         'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'),
                     child: Text(
-                      AppLocalizations.isRu
-                          ? 'См. также: Apple Standard EULA'
-                          : 'See also: Apple Standard EULA',
+                      AppLocalizations.seeAlsoAppleEula,
                       style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
                     ),
                   ),
@@ -800,115 +921,317 @@ class _PulsingCheckoutButtonState extends State<_PulsingCheckoutButton> with Sin
   }
 }
 
-// ── Overlapping 3D Glassmorphic Credit Cards Subscription Paywall Header ──
-class _GlassmorphicSubscriptionPaywallStack extends StatelessWidget {
-  const _GlassmorphicSubscriptionPaywallStack();
+// ── Premium 3D Flipping Bank Card ──
+class _Futuristic3DSubscriptionCard extends StatefulWidget {
+  const _Futuristic3DSubscriptionCard({
+    required this.isAnnualSelected,
+    required this.holderName,
+    required this.cardNumber,
+    required this.expiryDate,
+  });
+
+  final bool isAnnualSelected;
+  final String holderName;
+  final String cardNumber;
+  final String expiryDate;
+
+  @override
+  State<_Futuristic3DSubscriptionCard> createState() =>
+      _Futuristic3DSubscriptionCardState();
+}
+
+class _Futuristic3DSubscriptionCardState
+    extends State<_Futuristic3DSubscriptionCard>
+    with TickerProviderStateMixin {
+  late AnimationController _flipController;
+  late Animation<double> _flipAnimation;
+  late AnimationController _shimmerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _flipController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+    _flipAnimation = Tween<double>(begin: 0.0, end: math.pi).animate(
+      CurvedAnimation(parent: _flipController, curve: Curves.easeInOutCubic),
+    );
+    if (widget.isAnnualSelected) _flipController.value = 1.0;
+
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3500),
+    )..repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant _Futuristic3DSubscriptionCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isAnnualSelected != oldWidget.isAnnualSelected) {
+      widget.isAnnualSelected
+          ? _flipController.forward()
+          : _flipController.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _flipController.dispose();
+    _shimmerController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    Widget card({
-      required String cardType,
-      required IconData icon,
-      required Color color,
-      required double rotationRad,
-      required double scale,
-      required double offsetY,
-      required bool isFront,
-    }) {
-      return Transform.translate(
-        offset: Offset(0, offsetY),
-        child: Transform.rotate(
-          angle: rotationRad,
-          child: Transform.scale(
-            scale: scale,
-            child: Container(
-              width: 210,
-              height: 122,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isFront
-                      ? [
-                          const Color(0xFF142B1F).withValues(alpha: 0.95),
-                          const Color(0xFF0F1712).withValues(alpha: 0.95),
-                        ]
-                      : [
-                          const Color(0xFF1B2130).withValues(alpha: 0.9),
-                          const Color(0xFF10131B).withValues(alpha: 0.9),
-                        ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+    return AnimatedBuilder(
+      animation: Listenable.merge([_flipAnimation, _shimmerController]),
+      builder: (context, _) {
+        final angle = _flipAnimation.value;
+        final isFront = angle < math.pi / 2;
+        return Transform(
+          transform: Matrix4.identity()
+            ..setEntry(3, 2, 0.0015)
+            ..rotateY(angle),
+          alignment: Alignment.center,
+          child: isFront
+              ? _buildMonthlyCard()
+              : Transform(
+                  transform: Matrix4.identity()..rotateY(math.pi),
+                  alignment: Alignment.center,
+                  child: _buildAnnualCard(),
                 ),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: color.withValues(alpha: isFront ? 0.35 : 0.15),
-                  width: isFront ? 1.2 : 1.0,
+        );
+      },
+    );
+  }
+
+  // ── Monthly PRO Card (Green) ──
+  Widget _buildMonthlyCard() {
+    return _SubscriptionBankCard(
+      shimmerProgress: _shimmerController.value,
+      gradient: const LinearGradient(
+        colors: [Color(0xFF1A2E20), Color(0xFF0D1811), Color(0xFF152818)],
+        stops: [0.0, 0.5, 1.0],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      accentColor: AppColors.brand,
+      borderColor: AppColors.brand.withValues(alpha: 0.22),
+      glowColor: AppColors.brand.withValues(alpha: 0.1),
+      shimmerColor: AppColors.brand.withValues(alpha: 0.06),
+      badgeText: 'PRO',
+      holderName: widget.holderName,
+      cardNumber: widget.cardNumber,
+      expiryDate: widget.expiryDate,
+      chipStyle: _ChipStyle.standard,
+    );
+  }
+
+  // ── Annual VIP Card (Gold) ──
+  Widget _buildAnnualCard() {
+    return _SubscriptionBankCard(
+      shimmerProgress: _shimmerController.value,
+      gradient: const LinearGradient(
+        colors: [Color(0xFF2A2213), Color(0xFF1A150B), Color(0xFF261E0E)],
+        stops: [0.0, 0.5, 1.0],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      accentColor: const Color(0xFFD4AF37),
+      borderColor: const Color(0xFFD4AF37).withValues(alpha: 0.25),
+      glowColor: const Color(0xFFD4AF37).withValues(alpha: 0.12),
+      shimmerColor: const Color(0xFFD4AF37).withValues(alpha: 0.06),
+      badgeText: AppLocalizations.proYear,
+      holderName: widget.holderName,
+      cardNumber: widget.cardNumber,
+      expiryDate: widget.expiryDate,
+      chipStyle: _ChipStyle.gold,
+    );
+  }
+}
+
+// ── Chip visual style ──
+enum _ChipStyle { standard, gold }
+
+// ── Reusable Bank Card Widget ──
+class _SubscriptionBankCard extends StatelessWidget {
+  const _SubscriptionBankCard({
+    required this.shimmerProgress,
+    required this.gradient,
+    required this.accentColor,
+    required this.borderColor,
+    required this.glowColor,
+    required this.shimmerColor,
+    required this.badgeText,
+    required this.holderName,
+    required this.cardNumber,
+    required this.expiryDate,
+    required this.chipStyle,
+  });
+
+  final double shimmerProgress;
+  final LinearGradient gradient;
+  final Color accentColor;
+  final Color borderColor;
+  final Color glowColor;
+  final Color shimmerColor;
+  final String badgeText;
+  final String holderName;
+  final String cardNumber;
+  final String expiryDate;
+  final _ChipStyle chipStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final isGold = chipStyle == _ChipStyle.gold;
+    final chipBaseColor = isGold ? const Color(0xFFE8C245) : const Color(0xFFD4AF37);
+    final chipDarkColor = isGold ? const Color(0xFF8B6914) : const Color(0xFF8B6914);
+
+    return AspectRatio(
+      aspectRatio: 1.586,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: gradient,
+          border: Border.all(color: borderColor, width: 0.8),
+          boxShadow: [
+            BoxShadow(color: glowColor, blurRadius: 28, offset: const Offset(0, 10)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.45), blurRadius: 18, offset: const Offset(0, 6)),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              // Shimmer sweep
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _ShimmerPainter(progress: shimmerProgress, shimmerColor: shimmerColor),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: isFront ? 0.12 : 0.03),
-                    blurRadius: isFront ? 16 : 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
+              // Card content
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // ── Top Row: Logo + Badge ──
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(icon, size: 16, color: color),
-                        if (isFront)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'VIP ACCESS',
-                              style: TextStyle(
-                                fontSize: 6.5,
-                                fontWeight: FontWeight.w900,
-                                color: color,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
+                        // Aspiro Trade logo (PNG transparent)
+                        Image.asset(
+                          'assets/logo/logo_transparent.png',
+                          height: 36,
+                          fit: BoxFit.contain,
+                        ),
+                        // Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: accentColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: accentColor.withValues(alpha: 0.25), width: 0.8),
                           ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          cardType,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white.withValues(alpha: isFront ? 0.95 : 0.45),
-                            letterSpacing: 1.0,
+                          child: Text(
+                            badgeText,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: accentColor,
+                              letterSpacing: 1.2,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      ],
+                    ),
+                    const Spacer(flex: 2),
+                    // ── EMV Chip ──
+                    Container(
+                      width: 40,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            chipBaseColor,
+                            chipBaseColor.withValues(alpha: 0.85),
+                            chipBaseColor,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: chipDarkColor.withValues(alpha: 0.5), width: 0.6),
+                      ),
+                      child: CustomPaint(painter: _ChipContactsPainter(lineColor: chipDarkColor)),
+                    ),
+                    const Spacer(flex: 2),
+                    // ── Card Number ──
+                    Text(
+                      cardNumber,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withValues(alpha: 0.88),
+                        letterSpacing: 2.8,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                    const Spacer(flex: 2),
+                    // ── Bottom Row: Name + Expiry ──
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '**** **** **** 2026',
+                              'CARD HOLDER',
                               style: TextStyle(
-                                fontSize: 9.5,
+                                fontSize: 6.5,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.25),
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              holderName.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white.withValues(alpha: isFront ? 0.5 : 0.25),
+                                color: accentColor.withValues(alpha: 0.75),
+                                letterSpacing: 1.0,
                                 fontFamily: 'monospace',
                               ),
                             ),
-                            Icon(
-                              Icons.wifi_rounded,
-                              size: 10,
-                              color: Colors.white.withValues(alpha: isFront ? 0.25 : 0.1),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'VALID THRU',
+                              style: TextStyle(
+                                fontSize: 6.5,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.25),
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              expiryDate,
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white.withValues(alpha: 0.6),
+                                letterSpacing: 0.8,
+                                fontFamily: 'monospace',
+                              ),
                             ),
                           ],
                         ),
@@ -917,41 +1240,82 @@ class _GlassmorphicSubscriptionPaywallStack extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
+            ],
           ),
         ),
-      );
-    }
-
-    return SizedBox(
-      height: 155,
-      width: 250,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // PRO SIGNALS CARD (Bottom)
-          card(
-            cardType: 'PRO SIGNALS VIP',
-            icon: Icons.offline_bolt_rounded,
-            color: AppColors.info,
-            rotationRad: -0.16,
-            scale: 0.88,
-            offsetY: -18,
-            isFront: false,
-          ),
-
-          // VIP NODE CARD (Top)
-          card(
-            cardType: 'PRO NODE ACCESS',
-            icon: Icons.workspace_premium_rounded,
-            color: AppColors.brand,
-            rotationRad: -0.02,
-            scale: 1.0,
-            offsetY: 10,
-            isFront: true,
-          ),
-        ],
       ),
     );
   }
 }
+
+// ═══════════════════════════════════════════════
+// ── Custom Painters ──
+// ═══════════════════════════════════════════════
+
+/// EMV chip contact grid
+class _ChipContactsPainter extends CustomPainter {
+  _ChipContactsPainter({required this.lineColor});
+  final Color lineColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final linePaint = Paint()
+      ..color = lineColor.withValues(alpha: 0.5)
+      ..strokeWidth = 0.6
+      ..style = PaintingStyle.stroke;
+
+    final w = size.width;
+    final h = size.height;
+
+    // Vertical dividers
+    canvas.drawLine(Offset(w * 0.33, h * 0.1), Offset(w * 0.33, h * 0.9), linePaint);
+    canvas.drawLine(Offset(w * 0.66, h * 0.1), Offset(w * 0.66, h * 0.9), linePaint);
+    // Horizontal divider
+    canvas.drawLine(Offset(w * 0.08, h * 0.5), Offset(w * 0.92, h * 0.5), linePaint);
+
+    // Contact pads
+    final padPaint = Paint()
+      ..color = lineColor.withValues(alpha: 0.18)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.06, h * 0.14, w * 0.24, h * 0.3), const Radius.circular(1)), padPaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.7, h * 0.14, w * 0.24, h * 0.3), const Radius.circular(1)), padPaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.06, h * 0.56, w * 0.24, h * 0.3), const Radius.circular(1)), padPaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.7, h * 0.56, w * 0.24, h * 0.3), const Radius.circular(1)), padPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Animated diagonal shimmer light sweep
+class _ShimmerPainter extends CustomPainter {
+  _ShimmerPainter({required this.progress, required this.shimmerColor});
+  final double progress;
+  final Color shimmerColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bandWidth = size.width * 0.3;
+    final startX = -bandWidth - size.height;
+    final endX = size.width + bandWidth + size.height;
+    final currentX = startX + (endX - startX) * progress;
+
+    canvas.save();
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.rotate(-0.45);
+    canvas.translate(-size.width / 2, -size.height / 2);
+
+    final rect = Rect.fromLTWH(currentX, -size.height, bandWidth, size.height * 3);
+    final gradient = LinearGradient(
+      colors: [Colors.transparent, shimmerColor, shimmerColor, Colors.transparent],
+      stops: const [0.0, 0.35, 0.65, 1.0],
+    );
+    canvas.drawRect(rect, Paint()..shader = gradient.createShader(rect));
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_ShimmerPainter old) => old.progress != progress;
+}
+

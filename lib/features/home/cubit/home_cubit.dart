@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io' show Platform;
 
@@ -19,6 +20,11 @@ class HomeCubit extends Cubit<HomeState> {
   final AuthRepositoryI _authRepository;
   final NotificationsRepositoryI _notificationsRepository;
 
+  /// FCM token-refresh subscription — cancelled in [close] so it stops firing
+  /// after logout/teardown (audit M5). Also guards against double-subscription
+  /// if init() runs more than once.
+  StreamSubscription<String>? _tokenRefreshSub;
+
   Future<void> init() async {
     try {
       await _notificationsRepository.init();
@@ -34,8 +40,11 @@ class HomeCubit extends Cubit<HomeState> {
       );
       log('FCM token sent to server successfully');
 
-      // Re-send token when Firebase rotates it
-      _notificationsRepository.onTokenRefresh((newToken) async {
+      // Re-send token when Firebase rotates it. Cancel any prior subscription
+      // first so repeated init() never stacks listeners.
+      await _tokenRefreshSub?.cancel();
+      _tokenRefreshSub =
+          _notificationsRepository.onTokenRefresh((newToken) async {
         try {
           log('FCM token refreshed: $newToken');
           await _authRepository.registerFcmToken(
@@ -49,5 +58,11 @@ class HomeCubit extends Cubit<HomeState> {
     } catch (e) {
       log('FCM init error: $e');
     }
+  }
+
+  @override
+  Future<void> close() {
+    _tokenRefreshSub?.cancel();
+    return super.close();
   }
 }

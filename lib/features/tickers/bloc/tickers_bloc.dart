@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:aspiro_trade/features/tickers/models/models.dart';
 import 'package:aspiro_trade/repositories/assets/assets.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
-import 'package:aspiro_trade/repositories/signals/signals.dart';
+import 'package:aspiro_trade/repositories/signals/signals.dart' hide Tickers;
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
+import 'package:aspiro_trade/services/websocket_service.dart';
+import 'package:aspiro_trade/services/cache_invalidation_bus.dart';
 import 'package:aspiro_trade/utils/utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -16,23 +18,36 @@ class TickersBloc extends Bloc<TickersEvent, TickersState> {
     required TickersRepositoryI tickersRepository,
     required AssetsRepositoryI assetsRepository,
     required SignalsRepositoryI signalsRepository,
+    required WebSocketService webSocketService,
   }) : _tickersRepository = tickersRepository,
        _assetsRepository = assetsRepository,
        _signalsRepository = signalsRepository,
+       _webSocketService = webSocketService,
        super(const TickersState()) {
     on<Start>(_onStart);
     on<Refresh>(_onRefresh);
     on<DeleteTicker>(_onDeleteTicker);
     on<UpdateAsset>(_onUpdateAsset);
+    on<UpdatePrice>(_onUpdatePrice);
     on<StopTimer>(_onStopPolling);
+
+    // Premium/subscription change → refetch tickers + their gated signals so the
+    // watchlist reflects the user's current entitlement.
+    _invalidationSubscription =
+        CacheInvalidationBus.instance.onInvalidateMarketData.listen((_) {
+      add(Refresh());
+    });
   }
 
   final TickersRepositoryI _tickersRepository;
   final AssetsRepositoryI _assetsRepository;
   final SignalsRepositoryI _signalsRepository;
+  final WebSocketService _webSocketService;
 
-  // Заменяем Timer на подписку
+  StreamSubscription? _priceSubscription;
+  // Legacy подписка для обратной совместимости
   StreamSubscription<List<Assets>>? _assetsSubscription;
+  StreamSubscription? _invalidationSubscription;
 
   Future<void> _onStart(Start event, Emitter<TickersState> emit) async {
     try {
@@ -40,46 +55,58 @@ class TickersBloc extends Bloc<TickersEvent, TickersState> {
       if (state.tickers.isEmpty) {
         final localTickers = await _tickersRepository.fetchAllLocalTickers();
         if (localTickers.isNotEmpty) {
-          final cachedCombined = localTickers
-              .map((t) => CombinedTicker(
-                    assets: Assets.empty(t.symbol),
-                    tickers: t,
-                  ))
-              .toList();
+          final cachedCombined = await Future.wait(
+            localTickers.map((t) async {
+              final localAsset = await _assetsRepository.fetchLocalAssetsBySymbol(t.symbol);
+              return CombinedTicker(
+                assets: localAsset ?? Assets.empty(t.symbol),
+                tickers: t,
+              );
+            }),
+          );
           emit(state.copyWith(tickers: cachedCombined, status: Status.loading));
         } else {
           emit(state.copyWith(status: Status.loading));
         }
       } else {
-        // Уже есть данные — не показываем спиннер, обновляем в фоне
-        emit(state.copyWith(status: Status.loading));
+        // Уже есть данные — не показываем спиннер, просто обновляем в фоне
       }
 
-      final tickers = await _tickersRepository.fetchAllTickers();
+      // Делаем три bulk-запроса параллельно в сети за один проход!
+      final results = await Future.wait([
+        _tickersRepository.fetchAllTickers(),
+        _assetsRepository.fetchAllAssets(),
+        _signalsRepository.fetchAllSignals(1, 100, '', '', '', 'active'),
+      ]);
 
-      // Параллельно загружаем assets + signals для всех тикеров
-      final combinedTickers = await Future.wait(
-        tickers.map((i) async {
-          final results = await Future.wait([
-            _assetsRepository.fetchAssetsBySymbol(i.symbol),
-            _signalsRepository.fetchSignalsByTickerId(
-              i.id, 1, 20, i.symbol, i.timeframe, '', '',
-            ),
-          ]);
-          final asset = results[0] as Assets;
-          final signals = results[1] as List<Signals>;
-          return CombinedTicker(
-            assets: asset,
-            tickers: i,
-            signals: signals.isEmpty ? null : signals.first,
-          );
-        }),
-      );
+      final List<Tickers> tickers = (results[0] as List).cast<Tickers>();
+      final List<Assets> assetsList = (results[1] as List).cast<Assets>();
+      final List<Signals> signalsList = (results[2] as List).cast<Signals>();
+
+      final assetsMap = {for (final asset in assetsList) asset.symbol: asset};
+
+      // Группируем сигналы по tickerId для O(1) поиска
+      final signalsMap = <String, List<Signals>>{};
+      for (final sig in signalsList) {
+        if (sig.tickerId != null) {
+          signalsMap.putIfAbsent(sig.tickerId!, () => []).add(sig);
+        }
+      }
+
+      final combinedTickers = tickers.map((Tickers t) {
+        final asset = assetsMap[t.symbol] ?? Assets.empty(t.symbol);
+        final tickerSignals = signalsMap[t.id] ?? [];
+        return CombinedTicker(
+          assets: asset,
+          tickers: t,
+          signals: tickerSignals.isEmpty ? null : tickerSignals.first,
+        );
+      }).toList();
 
       emit(state.copyWith(tickers: combinedTickers, status: Status.loaded));
 
-      // После успешной загрузки запускаем стрим-опрос
-      _startPolling(combinedTickers.map((e) => e.tickers.symbol).toList());
+      // Подписываемся на WebSocket обновления цен (вместо HTTP polling)
+      _startPriceSubscription();
     } on AppException catch (error) {
       emit(state.copyWith(status: Status.failure, error: error));
     } catch (error) {
@@ -87,17 +114,16 @@ class TickersBloc extends Bloc<TickersEvent, TickersState> {
     }
   }
 
-  /// Метод для инициализации стрима
-  void _startPolling(List<String> symbols) {
-    if (symbols.isEmpty) return;
-
-    _assetsSubscription?.cancel();
-    _assetsSubscription = _assetsRepository
-        .watchAssets(symbols, const Duration(seconds: 20))
-        .listen(
-          (newAssets) => add(UpdateAsset(newAssets: newAssets)),
-          onError: (error) => talker.error("Polling stream error: $error"),
-        );
+  /// Подписка на WebSocket-поток обновления цен
+  void _startPriceSubscription() {
+    _priceSubscription?.cancel();
+    _priceSubscription = _webSocketService.priceUpdates.listen((update) {
+      final symbol = update['symbol'] as String?;
+      final price = update['price'];
+      if (symbol != null && price != null) {
+        add(UpdatePrice(symbol: symbol, price: price.toString()));
+      }
+    });
   }
 
   /// Обработка новых данных из стрима
@@ -124,6 +150,30 @@ class TickersBloc extends Bloc<TickersEvent, TickersState> {
     }
   }
 
+  /// Обновление цены одного тикера через WebSocket
+  Future<void> _onUpdatePrice(
+    UpdatePrice event,
+    Emitter<TickersState> emit,
+  ) async {
+    final currentTickers = state.tickers;
+    // Проверяем, есть ли тикер с таким символом
+    final hasSymbol = currentTickers.any((t) => t.tickers.symbol == event.symbol);
+    if (!hasSymbol) return;
+
+    final updatedList = currentTickers.map((ticker) {
+      if (ticker.tickers.symbol == event.symbol) {
+        return ticker.copyWith(
+          assets: ticker.assets.copyWith(price: event.price),
+        );
+      }
+      return ticker;
+    }).toList();
+
+    if (updatedList != state.tickers) {
+      emit(state.copyWith(tickers: updatedList));
+    }
+  }
+
   Future<void> _onDeleteTicker(
     DeleteTicker event,
     Emitter<TickersState> emit,
@@ -136,26 +186,28 @@ class TickersBloc extends Bloc<TickersEvent, TickersState> {
           .toList();
 
       emit(state.copyWith(tickers: updatedTickers));
-
-      // Перезапускаем опрос с новым списком символов
-      _startPolling(updatedTickers.map((e) => e.tickers.symbol).toList());
+      // WebSocket подписка обновится автоматически — она глобальная
     } on AppException catch (error) {
       emit(state.copyWith(status: Status.failure, error: error));
     }
   }
 
   Future<void> _onRefresh(Refresh event, Emitter<TickersState> emit) async {
+    _priceSubscription?.cancel();
     _assetsSubscription?.cancel();
     await _onStart(Start(), emit);
   }
 
   void _onStopPolling(StopTimer event, Emitter<TickersState> emit) {
+    _priceSubscription?.cancel();
     _assetsSubscription?.cancel();
   }
 
   @override
   Future<void> close() {
+    _priceSubscription?.cancel();
     _assetsSubscription?.cancel();
+    _invalidationSubscription?.cancel();
     return super.close();
   }
 }

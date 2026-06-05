@@ -29,14 +29,14 @@ class SignalsRepository extends BaseRepository implements SignalsRepositoryI {
 
     final signals = response.data.map((signal) => signal.toEntity()).toList();
 
-    // realm.write(() {
-    //   realm.deleteAll<SignalsLocal>();
+    realm.write(() {
+      realm.deleteAll<SignalsLocal>();
 
-    //   realm.addAll(
-    //     response.data.map((signal) => signal.toLocal()).toList(),
-    //     update: true,
-    //   );
-    // });
+      realm.addAll(
+        response.data.map((signal) => signal.toLocal()).toList(),
+        update: true,
+      );
+    });
     return signals;
   });
 
@@ -60,12 +60,12 @@ class SignalsRepository extends BaseRepository implements SignalsRepositoryI {
       status,
     );
 
-    // realm.write(() {
-    //   realm.addAll(
-    //     response.data.map((signal) => signal.toLocal()).toList(),
-    //     update: true,
-    //   );
-    // });
+    realm.write(() {
+      realm.addAll(
+        response.data.map((signal) => signal.toLocal()).toList(),
+        update: true,
+      );
+    });
 
     return response.data.map((signal)=> signal.toEntity()).toList();
   });
@@ -90,4 +90,30 @@ class SignalsRepository extends BaseRepository implements SignalsRepositoryI {
 
     return response.toEntity();
   });
+
+  @override
+  Future<SignalStats> fetchStats({String? category}) => safeApiCall(() async {
+    final response = await api.fetchSignalStats(category: category);
+    return response.toEntity();
+  });
+
+  @override
+  Future<List<Signals>> fetchLocalSignals() async {
+    try {
+      final locals = realm.all<SignalsLocal>();
+      return locals.map((local) => local.toEntity()).toList();
+    } catch (e, stack) {
+      talker.error('Failed to fetch local signals from Realm', e, stack);
+      return [];
+    }
+  }
+
+  @override
+  void clearLocalCache() {
+    try {
+      realm.write(() => realm.deleteAll<SignalsLocal>());
+    } catch (e, stack) {
+      talker.error('Failed to clear local signals cache', e, stack);
+    }
+  }
 }

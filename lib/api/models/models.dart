@@ -5,3 +5,5 @@ export 'payments/payments.dart';
 export 'signals/signals.dart';
 export 'history/history.dart';
 export 'users/users.dart';
+export 'digest/market_digest_dto.dart';
+export 'analytics/asset_analytics_dto.dart';

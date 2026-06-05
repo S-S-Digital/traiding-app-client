@@ -43,4 +43,8 @@ class PaymentsRepository extends BaseRepository implements PaymentsRepositoryI {
       safeApiCall(() async {
         return await api.googlePayments(receipts);
       });
+
+  @override
+  Future<void> cancelSubscription(String id) =>
+      safeApiCall(() => api.cancelSubscription(id));
 }

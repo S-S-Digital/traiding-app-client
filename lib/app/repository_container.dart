@@ -4,9 +4,10 @@ import 'package:aspiro_trade/repositories/auth/auth.dart';
 import 'package:aspiro_trade/repositories/notifications/notifications.dart';
 import 'package:aspiro_trade/repositories/payments/payments.dart';
 import 'package:aspiro_trade/repositories/signals/signals.dart';
-
 import 'package:aspiro_trade/repositories/tickers/tickers.dart';
 import 'package:aspiro_trade/repositories/users/users.dart';
+import 'package:aspiro_trade/repositories/digest/digest.dart';
+import 'package:aspiro_trade/repositories/analytics/analytics.dart';
 
 class RepositoryContainer {
   RepositoryContainer({
@@ -17,6 +18,8 @@ class RepositoryContainer {
     required this.paymentsRepository,
     required this.signalsRepository,
     required this.usersRepository,
+    required this.digestRepository,
+    required this.analyticsRepository,
   });
 
   final AuthRepositoryI authRepository;
@@ -26,6 +29,8 @@ class RepositoryContainer {
   final PaymentsRepositoryI paymentsRepository;
   final SignalsRepositoryI signalsRepository;
   final UsersRepositoryI usersRepository;
+  final DigestRepositoryI digestRepository;
+  final AnalyticsRepositoryI analyticsRepository;
 
   factory RepositoryContainer.prod({required AppConfig config}) =>
       RepositoryContainer(
@@ -33,7 +38,10 @@ class RepositoryContainer {
           config.talker,
           api: config.api,
           realm: config.realm,
-          tokenStorage: config.tokenStorage, firebaseAuth: config.firebaseAuth,
+          tokenStorage: config.tokenStorage,
+          firebaseAuth: config.firebaseAuth,
+          webSocketService: config.webSocketService,
+          apiUrl: config.apiUrl,
         ),
         tickersRepository: TickersRepository(
           config.talker,
@@ -60,5 +68,8 @@ class RepositoryContainer {
           realm: config.realm,
         ),
         usersRepository: UsersRepository(config.talker, api: config.api),
+        digestRepository: DigestRepository(config.talker, api: config.api),
+        analyticsRepository:
+            AnalyticsRepository(config.talker, api: config.api),
       );
 }

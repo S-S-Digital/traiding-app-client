@@ -6,7 +6,7 @@ class HistoryState extends Equatable {
     this.status = Status.initial,
     this.histories = const [],
     this.stats = const [],
-    this.activePeriod = '24h',
+    this.activePeriod = 'Today',
     this.error,
   });
   bool get isBuildable => true;

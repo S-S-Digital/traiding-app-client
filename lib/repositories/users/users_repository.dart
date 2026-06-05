@@ -25,5 +25,15 @@ class UsersRepository extends BaseRepository implements UsersRepositoryI {
     await api.deleteAccount();
   });
 
-  
+  @override
+  Future<StrategyMode> getStrategyMode() => safeApiCall(() async {
+    final dto = await api.getStrategyMode();
+    return StrategyMode(current: dto.strategyMode, available: dto.availableModes);
+  });
+
+  @override
+  Future<StrategyMode> setStrategyMode(String mode) => safeApiCall(() async {
+    final dto = await api.setStrategyMode(UpdateStrategyMode(strategyMode: mode));
+    return StrategyMode(current: dto.strategyMode, available: dto.availableModes);
+  });
 }

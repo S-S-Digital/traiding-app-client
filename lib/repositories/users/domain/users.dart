@@ -23,6 +23,17 @@ class Users {
     required this.updatedAt,
   });
 
+  /// True only when `isPremium` is set AND `premiumUntil` is still in the
+  /// future. Guards against stale backend state where a user keeps
+  /// `isPremium=true` with a past `premiumUntil` (e.g. after webhook delay),
+  /// which used to paint the profile as PRO while everything else was locked.
+  bool get isPremiumActive {
+    if (!isPremium) return false;
+    final until = premiumUntil;
+    if (until == null) return true;
+    return until.isAfter(DateTime.now());
+  }
+
   String get premiumUntilFormatted {
     if (premiumUntil == null) return '-';
 

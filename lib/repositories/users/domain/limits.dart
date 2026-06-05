@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/api/api.dart';
 import 'package:equatable/equatable.dart';
 
@@ -30,44 +31,17 @@ class Limits extends Equatable {
     return premiumUntil!.isAfter(DateTime.now());
   }
 
+  String get premiumUntilFormatted {
+    final d = premiumUntil;
+    if (d == null) return '-';
+    final day = d.day.toString().padLeft(2, '0');
+    final month = d.month.toString().padLeft(2, '0');
+    return '$day.$month.${d.year}';
+  }
+
   List<String> get readableFeatures {
-  return availableFeatures.map((feature) {
-    switch (feature) {
-      case 'view_signals':
-        return 'Просмотр сигналов';
-
-      case 'add_tickers':
-        return 'Добавление тикеров';
-
-      case 'receive_signals':
-        return 'Получение сигналов';
-
-      case 'push_notifications':
-        return 'Push-уведомления';
-
-      case 'signal_history':
-        return 'История сигналов';
-
-      case 'advanced_analytics':
-        return 'Расширенная аналитика';
-
-      case 'priority_support':
-        return 'Приоритетная поддержка';
-
-      case 'unlimited_signals':
-        return 'Неограниченные сигналы';
-
-      case 'custom_alerts':
-        return 'Пользовательские уведомления';
-
-      case 'lifetime_updates':
-        return 'Обновления на всю жизнь';
-
-      default:
-        return feature;
-    }
-  }).toList();
-}
+    return availableFeatures.map((feature) => AppLocalizations.readableFeature(feature)).toList();
+  }
 
   @override
   List<Object?> get props => [

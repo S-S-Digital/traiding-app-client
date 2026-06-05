@@ -1,3 +1,4 @@
+import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -22,7 +23,7 @@ class ErrorDialog extends StatelessWidget {
       backgroundColor: AppColors.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       title: Text(
-        dialogTitle ?? 'Error',
+        dialogTitle ?? AppLocalizations.errorTitle,
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,

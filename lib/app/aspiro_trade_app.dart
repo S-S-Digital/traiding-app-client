@@ -6,10 +6,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AspiroTradeApp extends StatefulWidget {
-  const AspiroTradeApp({super.key, required this.config, required this.initialLanguage});
+  const AspiroTradeApp({
+    super.key,
+    required this.config,
+    required this.initialLanguage,
+    this.appRouter,
+  });
 
   final AppConfig config;
   final AppLanguage initialLanguage;
+
+  /// Shared router instance (from main) so force-logout can navigate to Login.
+  /// Falls back to a local instance when not provided (e.g. tests).
+  final AppRouter? appRouter;
 
   @override
   State<AspiroTradeApp> createState() => _AspiroTradeAppState();
@@ -17,13 +26,14 @@ class AspiroTradeApp extends StatefulWidget {
 
 class _AspiroTradeAppState extends State<AspiroTradeApp>
     with WidgetsBindingObserver {
-  final _appRouter = AppRouter();
+  late final AppRouter _appRouter;
   late final LocaleProvider _localeProvider;
   late final RepositoryContainer _repositoryContainer;
 
   @override
   void initState() {
     super.initState();
+    _appRouter = widget.appRouter ?? AppRouter();
     _repositoryContainer = RepositoryContainer.prod(config: widget.config);
     _localeProvider = LocaleProvider(initial: widget.initialLanguage);
     WidgetsBinding.instance.addObserver(this);
@@ -33,6 +43,9 @@ class _AspiroTradeAppState extends State<AspiroTradeApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _localeProvider.dispose();
+    // Close the WS broadcast controllers + socket (audit H2) — they previously
+    // leaked across app teardown / hot-restart.
+    widget.config.webSocketService.dispose();
     widget.config.realm.close();
     super.dispose();
   }
@@ -57,7 +70,8 @@ class _AspiroTradeAppState extends State<AspiroTradeApp>
       repositoryContainer: _repositoryContainer,
       child: _LocaleScope(
         provider: _localeProvider,
-        child: MaterialApp.router(
+        builder: (context) => MaterialApp.router(
+          key: ValueKey(_localeProvider.language),
           debugShowCheckedModeBanner: false,
           title: 'Aspiro trade',
           theme: darkTheme,
@@ -74,11 +88,11 @@ class _AspiroTradeAppState extends State<AspiroTradeApp>
 class _LocaleScope extends StatefulWidget {
   const _LocaleScope({
     required this.provider,
-    required this.child,
+    required this.builder,
   });
 
   final LocaleProvider provider;
-  final Widget child;
+  final WidgetBuilder builder;
 
   @override
   State<_LocaleScope> createState() => _LocaleScopeState();
@@ -105,7 +119,9 @@ class _LocaleScopeState extends State<_LocaleScope> {
   Widget build(BuildContext context) {
     return _LocaleData(
       provider: widget.provider,
-      child: widget.child,
+      child: Builder(
+        builder: widget.builder,
+      ),
     );
   }
 }
