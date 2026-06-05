@@ -23,44 +23,48 @@ class StrategyModeStats {
 
   final int tradesPerMonth;
   final int tradesPer90d;
-  final int winRatePct;
+  final double winRatePct;
   final double profitFactor;
-  final int maxDrawdownPct;
+  final double maxDrawdownPct;
   final String explanation;
 
-  /// Illustrative equity curve starting at $1000 (13 points over 90 days).
+  /// Equity curve starting at $1000 (13 points over the 90d backtest window).
   final List<double> equity;
   final Color color;
 
   static const double startEquity = 1000;
 
-  /// Quality: fewer/cleaner trades, ends ~+30% (~\$1300 at 90d).
+  // Numbers below are the canonical 90-day backtest (vol-ML, 7 pairs, 1% risk,
+  // R=1:1, no commission) — same figures as the owner's PDF presentation.
+
+  /// Quality (ML threshold 0.53): cleaner — higher win-rate & PF, +24.0%.
   static StrategyModeStats get quality => StrategyModeStats(
-        tradesPerMonth: 26,
-        tradesPer90d: 78,
-        winRatePct: 61,
-        profitFactor: 1.53,
-        maxDrawdownPct: 24,
+        tradesPerMonth: 34,
+        tradesPer90d: 102,
+        winRatePct: 60.8,
+        profitFactor: 1.55,
+        maxDrawdownPct: 4.9,
         explanation: AppLocalizations.strategyModeQualityExplain,
         color: AppColors.brand,
         equity: const [
-          1000, 1015, 1040, 1030, 1070, 1100, 1095, 1140, 1175, 1160, 1210,
-          1255, 1300,
+          1000, 1030, 1080, 1060, 1100, 1130, 1120, 1150, 1160, 1185, 1205,
+          1225, 1240,
         ],
       );
 
-  /// Turnover: more trades, ends ~+40% (~\$1400 at 90d), bumpier curve.
+  /// Turnover (ML threshold 0.50): more trades & turnover, +36.3% but lower
+  /// per-trade quality (WR 57.5%, PF 1.36) and deeper drawdown.
   static StrategyModeStats get turnover => StrategyModeStats(
-        tradesPerMonth: 61,
-        tradesPer90d: 183,
-        winRatePct: 65,
-        profitFactor: 1.54,
-        maxDrawdownPct: 37,
+        tradesPerMonth: 71,
+        tradesPer90d: 212,
+        winRatePct: 57.5,
+        profitFactor: 1.36,
+        maxDrawdownPct: 8.7,
         explanation: AppLocalizations.strategyModeTurnoverExplain,
         color: AppColors.brandLight,
         equity: const [
-          1000, 1025, 1010, 1060, 1110, 1095, 1150, 1200, 1185, 1250, 1310,
-          1360, 1400,
+          1000, 1040, 1010, 1080, 1130, 1100, 1160, 1210, 1180, 1255, 1310,
+          1345, 1363,
         ],
       );
 
@@ -77,10 +81,9 @@ class StrategyModeStatsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final endPct =
-        ((stats.equity.last - StrategyModeStats.startEquity) /
-                StrategyModeStats.startEquity *
-                100)
-            .round();
+        (stats.equity.last - StrategyModeStats.startEquity) /
+            StrategyModeStats.startEquity *
+            100;
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(14),
@@ -130,18 +133,13 @@ class StrategyModeStatsPanel extends StatelessWidget {
               ),
               _StatCell(
                 label: AppLocalizations.strategyModeStatWinrate,
-                value: '${stats.winRatePct}%',
+                value: '${stats.winRatePct.toStringAsFixed(1)}%',
                 color: AppColors.brand,
               ),
               _StatCell(
                 label: AppLocalizations.strategyModeStatPf,
                 value: stats.profitFactor.toStringAsFixed(2),
                 color: AppColors.brand,
-              ),
-              _StatCell(
-                label: AppLocalizations.strategyModeStatMaxDd,
-                value: '${stats.maxDrawdownPct}%',
-                color: AppColors.down,
               ),
             ],
           ),
@@ -158,7 +156,7 @@ class StrategyModeStatsPanel extends StatelessWidget {
                 ),
               ),
               Text(
-                '\$1000 → \$${stats.equity.last.round()}  (+$endPct%)',
+                '\$1000 → \$${stats.equity.last.round()}  (+${endPct.toStringAsFixed(1)}%)',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,

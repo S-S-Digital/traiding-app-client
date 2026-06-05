@@ -319,8 +319,9 @@ class AppLocalizations {
       : 'More signals across all tiers. More trades, higher activity.';
   static String get strategyModeSaved => isRu ? 'Режим обновлён' : 'Mode updated';
   // Static backtest stats panel (hardcoded numbers, not recomputed)
-  static String get strategyModeBacktestLabel =>
-      isRu ? 'Бэктест 90 дней, без комиссии' : 'Backtest 90 days, no commission';
+  static String get strategyModeBacktestLabel => isRu
+      ? 'Бэктест 90 дней · комиссия 0% · риск 1%/сделку · R 1:1'
+      : 'Backtest 90 days · 0% fee · 1% risk/trade · R 1:1';
   static String get strategyModeQualityExplain => isRu
       ? 'Строже, чище, спокойнее. Меньше сделок — выше точность.'
       : 'Stricter, cleaner, calmer. Fewer trades — higher precision.';
@@ -333,8 +334,8 @@ class AppLocalizations {
   static String get strategyModeStatMaxDd => isRu ? 'Макс. просадка' : 'Max drawdown';
   static String get strategyModeChartAxis => isRu ? '\$, рост за 90д' : '\$, growth over 90d';
   static String get strategyModeDisclaimer => isRu
-      ? 'Исторический бэктест без комиссии. Не гарантия будущей доходности.'
-      : 'Historical backtest without commission. Not a guarantee of future returns.';
+      ? 'Исторический бэктест (комиссия 0%). Не гарантия будущей доходности.'
+      : 'Historical backtest (0% fee). Not a guarantee of future returns.';
 
   // ─── Login / Register ───
   static String get welcomeBack => isRu ? 'С возвращением' : 'Welcome back';
