@@ -1,4 +1,5 @@
 import 'package:aspiro_trade/features/history/models/combined_history.dart';
+import 'package:aspiro_trade/repositories/signals/signals.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -8,10 +9,14 @@ class PerformanceDashboard extends StatelessWidget {
     super.key,
     required this.histories,
     required this.activePeriod,
+    this.backendStats,
   });
 
   final List<CombinedHistory> histories;
   final String activePeriod;
+  // Server-authoritative aggregate over all closed signals; used for the
+  // all-time view so this card matches the Settings screen exactly.
+  final Stats? backendStats;
 
   @override
   Widget build(BuildContext context) {
@@ -31,20 +36,29 @@ class PerformanceDashboard extends StatelessWidget {
       return true;
     }).toList();
 
-    // 2. Compute stats
-    final total = filtered.length;
-    final successful = filtered.where((h) =>
-      h.history.status.toLowerCase().contains('won') ||
-      h.history.status.toLowerCase().contains('tp') ||
-      h.history.resultPct > 0
-    ).length;
+    // 2. Compute stats.
+    // All-time view trusts the backend aggregate (every closed signal, not just
+    // the loaded page). Period sub-views fold locally with a win predicate
+    // aligned to the backend (resultPct > 0 strictly).
+    final backend = backendStats;
+    final int total;
+    final int successful;
+    final int winRate;
+    final double roundedProfit;
+    if (activePeriod == 'All' && backend != null) {
+      total = backend.totalSignals.toInt();
+      successful = backend.successfulSignals.toInt();
+      winRate = backend.winRate.round();
+      roundedProfit = (backend.totalProfit.toDouble() * 100).round() / 100;
+    } else {
+      total = filtered.length;
+      successful = filtered.where((h) => h.history.resultPct > 0).length;
+      winRate = total > 0 ? (successful / total * 100).round() : 0;
+      final totalProfit = filtered.fold<double>(
+          0, (sum, h) => sum + h.history.resultPct.toDouble());
+      roundedProfit = (totalProfit * 100).round() / 100;
+    }
     final lost = total - successful;
-    final winRate = total > 0 ? (successful / total * 100).round() : 0;
-    
-    final totalProfit = filtered.fold<double>(0, (sum, h) => sum + h.history.resultPct.toDouble());
-    final roundedProfit = (totalProfit * 100).round() / 100;
-    final totalProfitUsd = filtered.fold<double>(0, (sum, h) => sum + h.history.resultUsd.toDouble());
-    final roundedProfitUsd = (totalProfitUsd * 100).round() / 100;
 
     final isProfit = roundedProfit >= 0;
     final trendColor = isProfit ? AppColors.up : AppColors.down;

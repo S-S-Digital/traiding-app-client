@@ -29,15 +29,22 @@ class History {
   final num? stopLoss;
   final num resultPct;
   final num resultUsd;
-  final String duration;
+  final String? duration;
   final DateTime createdAt;
   final DateTime closedAt;
 
+  // Lowercase before matching — the backend now uppercases direction to
+  // 'BUY'/'SELL' and may send mixed-case status, so a raw `.contains('buy')`
+  // would silently fall through to the SELL branch.
   String formatStatus(String value) =>
-      value.contains('closed') ? AppLocalizations.closed : AppLocalizations.open;
+      value.toLowerCase().contains('closed')
+          ? AppLocalizations.closed
+          : AppLocalizations.open;
 
   String formatDirection(String value) =>
-      value.contains('buy') ? AppLocalizations.filterBuy : AppLocalizations.filterSell;
+      value.toLowerCase().contains('buy')
+          ? AppLocalizations.filterBuy
+          : AppLocalizations.filterSell;
 
    String formatTimeframe(String timeframe) {
     switch (timeframe) {

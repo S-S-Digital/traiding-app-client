@@ -41,10 +41,15 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
   // All histories (unfiltered) for client-side stats computation
   List<CombinedHistory> _allHistories = [];
 
+  // Latest server-authoritative aggregate (all closed signals). Used as the
+  // source of truth for the all-time period; period sub-views fall back to a
+  // local fold because the backend has no period-scoped stats.
+  Stats? _backendStats;
+
   // Restoring the original exact helper structure
   void _emitFilteredStats(Emitter<HistoryState> emit) {
     final filtered = _filterByPeriod(_allHistories, state.activePeriod);
-    final stats = _computeStats(filtered);
+    final stats = _computeStats(filtered, state.activePeriod);
     emit(state.copyWith(stats: stats));
   }
 
@@ -65,16 +70,39 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     return all.where((h) => h.history.closedAt.isAfter(cutoff)).toList();
   }
 
-  List<HistoryStatistics> _computeStats(List<CombinedHistory> histories) {
+  List<HistoryStatistics> _computeStats(
+    List<CombinedHistory> histories,
+    String period,
+  ) {
+    // All-time view: trust the server aggregate (covers every closed signal,
+    // not just the loaded page) so this screen agrees with Settings.
+    final backend = _backendStats;
+    if (period == 'All' && backend != null) {
+      final total = backend.totalSignals.toInt();
+      final successful = backend.successfulSignals.toInt();
+      final winRate = backend.winRate.round();
+      final roundedProfit = (backend.totalProfit.toDouble() * 100).round() / 100;
+      return _statsList(total, successful, winRate, roundedProfit);
+    }
+
+    // Period sub-views: backend has no period-scoped stats, so fold locally.
+    // Win predicate aligned to backend (profit > 0 strictly) — the old
+    // status-string OR-clause made the client more generous than the server.
     final total = histories.length;
-    final successful = histories.where((h) =>
-      h.history.status.toLowerCase().contains('won') ||
-      h.history.status.toLowerCase().contains('tp') ||
-      h.history.resultPct > 0
-    ).length;
+    final successful =
+        histories.where((h) => h.history.resultPct > 0).length;
     final winRate = total > 0 ? (successful / total * 100).round() : 0;
     final totalProfit = histories.fold<double>(0, (sum, h) => sum + h.history.resultPct.toDouble());
     final roundedProfit = (totalProfit * 100).round() / 100;
+    return _statsList(total, successful, winRate, roundedProfit);
+  }
+
+  List<HistoryStatistics> _statsList(
+    int total,
+    int successful,
+    int winRate,
+    double roundedProfit,
+  ) {
 
     return [
       HistoryStatistics(
@@ -127,14 +155,16 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
       }
 
       _allHistories = histories;
+      _backendStats = historyList.stats;
       final filtered = _filterByPeriod(histories, state.activePeriod);
-      final stats = _computeStats(filtered);
+      final stats = _computeStats(filtered, state.activePeriod);
 
       emit(
         state.copyWith(
           status: Status.loaded,
           histories: histories,
           stats: stats,
+          backendStats: historyList.stats,
         ),
       );
     } on AppException catch (error) {
@@ -164,10 +194,15 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
       }
 
       _allHistories = histories;
+      _backendStats = historyList.stats;
       final filtered = _filterByPeriod(histories, state.activePeriod);
-      final stats = _computeStats(filtered);
+      final stats = _computeStats(filtered, state.activePeriod);
 
-      emit(state.copyWith(histories: histories, stats: stats));
+      emit(state.copyWith(
+        histories: histories,
+        stats: stats,
+        backendStats: historyList.stats,
+      ));
     } catch (_) {
       // Silently ignore update errors
     }

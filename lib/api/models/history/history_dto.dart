@@ -34,7 +34,7 @@ class HistoryDto extends Equatable {
   final num? stopLoss;
   final num resultPct;
   final num resultUsd;
-  final String duration;
+  final String? duration;
   final DateTime createdAt;
   final DateTime closedAt;
 

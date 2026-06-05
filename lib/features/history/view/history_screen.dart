@@ -73,6 +73,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       return PerformanceDashboard(
                         histories: state.histories,
                         activePeriod: state.activePeriod,
+                        backendStats: state.backendStats,
                       );
                     },
                   ),

@@ -51,14 +51,22 @@ class SignalsItem extends StatelessWidget {
     // Visual ranges: Left is always Stop Loss, Right is always Take Profit
     final hasRange = sl != null && tp != null;
     
-    // Progress calculation for slider
+    // Progress calculation for slider.
+    //
+    // NOTE: we deliberately do NOT use the backend `progressPct` here. The
+    // slider plots the live price on a full SL↔TP track (0 = SL, 1 = TP), but
+    // backend `progressPct` measures entry→TP only and clamps loss-side moves
+    // to 0 — so it can't place the dot below entry toward SL and would break
+    // the loss-side visualization. The local SL↔TP ratio is direction-safe
+    // (`.abs()` works for BUY and SELL) and clamped, so it stays the source of
+    // truth for the dot. (audit M3 — keep local clamp.)
     double entryRatio = 0.3;
     double currentRatio = 0.5;
     if (hasRange) {
       final totalDiff = (tp - sl).abs();
       if (totalDiff > 0) {
         entryRatio = ((entry - sl).abs() / totalDiff).clamp(0.0, 1.0);
-        currentRatio = current != null 
+        currentRatio = current != null
             ? ((current - sl).abs() / totalDiff).clamp(0.0, 1.0)
             : entryRatio;
       }

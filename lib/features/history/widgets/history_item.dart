@@ -1,6 +1,7 @@
 import 'package:aspiro_trade/features/history/models/models.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:aspiro_trade/ui/localization/app_localizations.dart';
+import 'package:aspiro_trade/utils/methods/price_formatter.dart';
 import 'package:flutter/material.dart';
 
 class HistoryItem extends StatelessWidget {
@@ -17,9 +18,6 @@ class HistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWin = history.history.status.toLowerCase().contains('won') ||
-        history.history.status.toLowerCase().contains('tp') ||
-        history.history.resultPct > 0;
     final isBuy = history.history.direction.toLowerCase() == 'buy';
     final resultPct = history.history.resultPct;
     final directionColor = isBuy ? AppColors.up : AppColors.down;
@@ -115,7 +113,7 @@ class HistoryItem extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      '${AppLocalizations.inWord}: \$${history.history.entry.toStringAsFixed(history.history.entry < 1 ? 4 : 2)}',
+                      '${AppLocalizations.inWord}: ${PriceFormatter.price(history.history.entry, withSymbol: true)}',
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -128,7 +126,7 @@ class HistoryItem extends StatelessWidget {
                       color: AppColors.textTertiary,
                     ),
                     Text(
-                      '${AppLocalizations.outWord}: \$${history.history.exit.toStringAsFixed(history.history.exit < 1 ? 4 : 2)}',
+                      '${AppLocalizations.outWord}: ${PriceFormatter.price(history.history.exit, withSymbol: true)}',
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -139,9 +137,12 @@ class HistoryItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
 
-                // Close reason & Duration
+                // Close reason & Duration (duration is nullable — backend sends
+                // null when createdAt/closedAt are missing)
                 Text(
-                  '${_closeReasonLabel()} • ${history.history.duration}',
+                  (history.history.duration ?? '').isEmpty
+                      ? _closeReasonLabel()
+                      : '${_closeReasonLabel()} • ${history.history.duration}',
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,

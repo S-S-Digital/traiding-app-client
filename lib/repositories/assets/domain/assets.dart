@@ -81,7 +81,8 @@ class Assets {
   /// Signed percent, 2 decimals, locale-neutral (audit M10).
   String get formatPercent {
     final value = double.tryParse(priceChangePercent) ?? 0.0;
-    if (value == 0) return '0';
+    // Keep zero consistent with every other value (signed, 2dp, '%').
+    if (value == 0) return '0.00%';
     return PriceFormatter.percent(value);
   }
 }

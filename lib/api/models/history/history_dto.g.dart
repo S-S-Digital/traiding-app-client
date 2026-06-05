@@ -18,7 +18,7 @@ HistoryDto _$HistoryDtoFromJson(Map<String, dynamic> json) => HistoryDto(
   stopLoss: json['stopLoss'] as num?,
   resultPct: json['resultPct'] as num,
   resultUsd: json['resultUsd'] as num,
-  duration: json['duration'] as String,
+  duration: json['duration'] as String?,
   createdAt: DateTime.parse(json['createdAt'] as String),
   closedAt: DateTime.parse(json['closedAt'] as String),
 );
