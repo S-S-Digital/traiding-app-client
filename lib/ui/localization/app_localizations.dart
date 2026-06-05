@@ -267,6 +267,7 @@ class AppLocalizations {
 
   // ─── Per-asset Analytics (premium) ───
   static String get assetAnalyticsTitle => isRu ? 'AI Аналитика по активу' : 'AI Asset Analytics';
+  static String get analyticsPerCoinTitle => isRu ? 'AI Аналитика по монетам' : 'AI Per-coin Analytics';
   static String get analyticsTrend => isRu ? 'Тренд' : 'Trend';
   static String get analyticsRegime => isRu ? 'Режим' : 'Regime';
   static String get analyticsVolatility => isRu ? 'Волатильность' : 'Volatility';
@@ -317,6 +318,23 @@ class AppLocalizations {
       ? 'Больше сигналов всех уровней. Больше сделок, выше активность.'
       : 'More signals across all tiers. More trades, higher activity.';
   static String get strategyModeSaved => isRu ? 'Режим обновлён' : 'Mode updated';
+  // Static backtest stats panel (hardcoded numbers, not recomputed)
+  static String get strategyModeBacktestLabel =>
+      isRu ? 'Бэктест 90 дней, без комиссии' : 'Backtest 90 days, no commission';
+  static String get strategyModeQualityExplain => isRu
+      ? 'Строже, чище, спокойнее. Меньше сделок — выше точность.'
+      : 'Stricter, cleaner, calmer. Fewer trades — higher precision.';
+  static String get strategyModeTurnoverExplain => isRu
+      ? 'Больше сделок для оборота на нулевой комиссии и малом депозите. Активнее, волатильнее.'
+      : 'More trades for turnover on zero commission and a small deposit. More active, more volatile.';
+  static String get strategyModeStatTrades => isRu ? 'Сделок/мес' : 'Trades/mo';
+  static String get strategyModeStatWinrate => isRu ? 'Винрейт' : 'Win rate';
+  static String get strategyModeStatPf => isRu ? 'Profit factor' : 'Profit factor';
+  static String get strategyModeStatMaxDd => isRu ? 'Макс. просадка' : 'Max drawdown';
+  static String get strategyModeChartAxis => isRu ? '\$, рост за 90д' : '\$, growth over 90d';
+  static String get strategyModeDisclaimer => isRu
+      ? 'Исторический бэктест без комиссии. Не гарантия будущей доходности.'
+      : 'Historical backtest without commission. Not a guarantee of future returns.';
 
   // ─── Login / Register ───
   static String get welcomeBack => isRu ? 'С возвращением' : 'Welcome back';

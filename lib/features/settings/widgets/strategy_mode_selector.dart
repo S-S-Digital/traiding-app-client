@@ -1,4 +1,5 @@
 import 'package:aspiro_trade/features/settings/cubit/strategy_mode_cubit.dart';
+import 'package:aspiro_trade/features/settings/widgets/strategy_mode_stats.dart';
 import 'package:aspiro_trade/repositories/users/users.dart';
 import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
@@ -75,6 +76,7 @@ class _StrategyModeBody extends StatelessWidget {
                   .read<StrategyModeCubit>()
                   .setMode(StrategyMode.qualityKey),
             ),
+            StrategyModeStatsPanel(stats: StrategyModeStats.quality),
             const SizedBox(height: 8),
             _ModeOption(
               selected: mode.isTurnover,
@@ -86,6 +88,7 @@ class _StrategyModeBody extends StatelessWidget {
                   .read<StrategyModeCubit>()
                   .setMode(StrategyMode.turnoverKey),
             ),
+            StrategyModeStatsPanel(stats: StrategyModeStats.turnover),
           ],
         );
       },
@@ -121,13 +124,13 @@ class _ModeOption extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: selected
-                ? AppColors.brand.withOpacity(0.08)
-                : AppColors.card.withOpacity(0.5),
+                ? AppColors.brand.withValues(alpha: 0.08)
+                : AppColors.card.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: selected
-                  ? AppColors.brand.withOpacity(0.5)
-                  : AppColors.border.withOpacity(0.5),
+                  ? AppColors.brand.withValues(alpha: 0.5)
+                  : AppColors.border.withValues(alpha: 0.5),
               width: selected ? 1.2 : 0.5,
             ),
           ),

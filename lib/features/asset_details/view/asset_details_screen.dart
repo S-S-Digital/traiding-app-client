@@ -1,5 +1,4 @@
 import 'package:aspiro_trade/features/add_tickers/add_tickers.dart';
-import 'package:aspiro_trade/features/analytics/view/asset_analytics_section.dart';
 import 'package:aspiro_trade/features/asset_details/bloc/asset_details_bloc.dart';
 import 'package:aspiro_trade/features/assets/bloc/assets_bloc.dart'
     as assets_bloc;
@@ -91,27 +90,11 @@ class _AssetDetailsScreenState extends State<AssetDetailsScreen> {
               },
             ),
           ),
-          // Premium per-asset AI analytics (backend Task #3). Crypto-only — the
-          // analytics job covers the 7 prod pairs; non-crypto is being disabled.
-          if (_isCryptoSymbol(widget.assets.symbol))
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 24),
-                child: AssetAnalyticsSection(symbol: widget.assets.symbol),
-              ),
-            ),
+          // Per-asset AI analytics relocated into the Analytics (Аналитика) tab,
+          // combined with the free market digest. See DigestScreen.
         ],
       ),
     );
-  }
-
-  static bool _isCryptoSymbol(String symbol) {
-    final s = symbol.toUpperCase();
-    return s.endsWith('USDT') ||
-        s.endsWith('USDC') ||
-        s.endsWith('BTC') ||
-        s.endsWith('ETH') ||
-        s.endsWith('BNB');
   }
 }
 

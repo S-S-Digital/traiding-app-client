@@ -1,20 +1,24 @@
 import 'package:aspiro_trade/features/analytics/cubit/asset_analytics_cubit.dart';
+import 'package:aspiro_trade/features/profile/cubit/profile_cubit.dart';
 import 'package:aspiro_trade/repositories/analytics/analytics.dart';
 import 'package:aspiro_trade/router/app_router.dart';
 import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
+import 'package:aspiro_trade/ui/widgets/premium_gate.dart';
 import 'package:aspiro_trade/utils/methods/price_formatter.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Premium per-asset AI analytics section (backend Task #3). Self-contained:
-/// provides its own [AssetAnalyticsCubit], fetches today's feed, and renders the
-/// card for [symbol] — full detail for subscribers, teaser + paywall otherwise.
+/// Premium per-coin AI analytics section (backend Task #3). Lives in the
+/// Analytics tab BELOW the free market digest. Self-contained: provides its own
+/// [AssetAnalyticsCubit], fetches today's feed, and renders one card per coin —
+/// full detail for subscribers, a single teaser + paywall otherwise.
+///
+/// Refetches automatically when premium flips on (purchase), so the teaser
+/// upgrades to the full breakdown without a manual refresh.
 class AssetAnalyticsSection extends StatelessWidget {
-  const AssetAnalyticsSection({super.key, required this.symbol});
-
-  final String symbol;
+  const AssetAnalyticsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,14 +26,21 @@ class AssetAnalyticsSection extends StatelessWidget {
       create: (context) => AssetAnalyticsCubit(
         analyticsRepository: context.read<AnalyticsRepositoryI>(),
       )..fetch(),
-      child: _AssetAnalyticsBody(symbol: symbol),
+      child: Builder(
+        builder: (context) => BlocListener<ProfileCubit, ProfileState>(
+          listenWhen: (prev, curr) =>
+              PremiumGate.isPremium(prev) == false &&
+              PremiumGate.isPremium(curr) == true,
+          listener: (context, _) => context.read<AssetAnalyticsCubit>().fetch(),
+          child: const _AssetAnalyticsBody(),
+        ),
+      ),
     );
   }
 }
 
 class _AssetAnalyticsBody extends StatelessWidget {
-  const _AssetAnalyticsBody({required this.symbol});
-  final String symbol;
+  const _AssetAnalyticsBody();
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +54,7 @@ class _AssetAnalyticsBody extends StatelessWidget {
               const Icon(Icons.auto_awesome_rounded, size: 18, color: AppColors.brand),
               const SizedBox(width: 8),
               Text(
-                AppLocalizations.assetAnalyticsTitle,
+                AppLocalizations.analyticsPerCoinTitle,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -65,14 +76,25 @@ class _AssetAnalyticsBody extends StatelessWidget {
                 );
               }
               final feed = (state as AssetAnalyticsLoaded).feed;
-              final asset = feed.forSymbol(symbol);
-              if (asset == null) {
-                return const _AnalyticsMessage(text: null);
-              }
-              if (asset.isLocked || feed.isLocked) {
+              // Non-premium → backend returns a top-level locked teaser.
+              if (feed.isLocked) {
                 return const _AnalyticsTeaser();
               }
-              return _AnalyticsCard(asset: asset);
+              if (feed.assets.isEmpty) {
+                return const _AnalyticsMessage(text: null);
+              }
+              // Premium → one card per coin in the feed.
+              return Column(
+                children: [
+                  for (final asset in feed.assets)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: asset.isLocked
+                          ? const _AnalyticsTeaser()
+                          : _AnalyticsCard(asset: asset),
+                    ),
+                ],
+              );
             },
           ),
         ],
@@ -109,6 +131,32 @@ class _AnalyticsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Coin header (symbol + last price)
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  asset.asset.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+              if (asset.price > 0)
+                Text(
+                  PriceFormatter.price(asset.price, withSymbol: true),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
           // Chips: trend / regime / volatility
           Wrap(
             spacing: 8,

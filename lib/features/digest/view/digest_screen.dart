@@ -1,5 +1,7 @@
 import 'dart:ui';
+import 'package:aspiro_trade/features/analytics/view/asset_analytics_section.dart';
 import 'package:aspiro_trade/features/digest/cubit/digest_cubit.dart';
+import 'package:aspiro_trade/features/profile/cubit/profile_cubit.dart';
 import 'package:aspiro_trade/repositories/digest/domain/market_digest.dart';
 import 'package:aspiro_trade/router/app_router.dart';
 import 'package:aspiro_trade/ui/ui.dart';
@@ -33,10 +35,15 @@ class _DigestScreenState extends State<DigestScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: PremiumGate(
-        // AI analytics is premium-only — show the paywall to non-premium users
-        // and reload the feed immediately once premium is granted.
-        onUnlocked: () => context.read<DigestCubit>().fetchDigests(),
+      // The general market digest is FREE for everyone (per-card backend lock
+      // still applies to premium-only digests). The premium per-coin analytics
+      // section below carries its own teaser/paywall. Refetch the digest when
+      // premium is granted so any locked cards unlock immediately.
+      body: BlocListener<ProfileCubit, ProfileState>(
+        listenWhen: (prev, curr) =>
+            PremiumGate.isPremium(prev) == false &&
+            PremiumGate.isPremium(curr) == true,
+        listener: (context, _) => context.read<DigestCubit>().fetchDigests(),
         child: SafeArea(
         child: RefreshIndicator(
           color: AppColors.brand,
@@ -191,7 +198,7 @@ class _DigestScreenState extends State<DigestScreen> {
                     }
 
                     return SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
@@ -210,6 +217,16 @@ class _DigestScreenState extends State<DigestScreen> {
 
                   return const SliverToBoxAdapter(child: SizedBox.shrink());
                 },
+              ),
+
+              // ── Premium per-coin AI analytics (relocated from asset cards) ──
+              // Shows full per-coin breakdown to subscribers, a teaser+paywall
+              // to free users (backend returns a locked teaser for them).
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 4, bottom: 100),
+                  child: AssetAnalyticsSection(),
+                ),
               ),
             ],
           ),
