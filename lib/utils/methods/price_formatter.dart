@@ -15,7 +15,10 @@ class PriceFormatter {
     final p = (value ?? 0).abs();
     if (p == 0) return 2;
     if (p >= 1000) return 2; // 69 000.12
-    if (p >= 1) return 2; //     12.34
+    if (p >= 10) return 2; //      64.05, 575.06
+    if (p >= 1) return 4; //        1.1042 (XRP), 5.0350 (TON) — TP/SL ~0.3-0.7%
+    //                              moves live in the 3rd-4th decimal; 2dp
+    //                              collapsed Entry=Exit (e.g. $1.10 → $1.10).
     if (p >= 0.1) return 4; //    0.1634
     if (p >= 0.01) return 5; //   0.05123
     if (p >= 0.0001) return 6; // 0.000812
