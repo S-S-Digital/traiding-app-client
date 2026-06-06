@@ -60,6 +60,8 @@ class _AspiroTradeAppState extends State<AspiroTradeApp>
       } catch (_) {
         // ProfileCubit may not be available yet
       }
+      // NOTE: AppConfigCubit re-fetches on resume via its own
+      // WidgetsBindingObserver, so no explicit call is needed here.
     }
   }
 

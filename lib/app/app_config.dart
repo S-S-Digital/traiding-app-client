@@ -1,5 +1,6 @@
 import 'package:aspiro_trade/api/api.dart';
 import 'package:aspiro_trade/repositories/core/core.dart';
+import 'package:aspiro_trade/services/config/config_service.dart';
 import 'package:aspiro_trade/services/websocket_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -20,6 +21,7 @@ class AppConfig {
     required this.localNotificationsPlugin,
     required this.firebaseAuth,
     required this.webSocketService,
+    required this.configService,
   });
 
  
@@ -32,4 +34,5 @@ class AppConfig {
   final FirebaseMessaging firebaseMessaging;
   final FirebaseAuth firebaseAuth;
   final WebSocketService webSocketService;
+  final ConfigService configService;
 }

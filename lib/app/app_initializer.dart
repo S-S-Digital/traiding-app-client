@@ -25,6 +25,7 @@ import 'package:aspiro_trade/repositories/tickers/tickers.dart';
 import 'package:aspiro_trade/repositories/users/users.dart';
 import 'package:aspiro_trade/repositories/digest/digest.dart';
 import 'package:aspiro_trade/services/cache_invalidation_bus.dart';
+import 'package:aspiro_trade/services/config/app_config_cubit.dart';
 import 'package:aspiro_trade/ui/widgets/premium_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -80,6 +81,13 @@ class AppInitializer extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
+          // Server-driven config: available app-wide from frame one (seeded
+          // with the baked crypto-only default, then cache → network).
+          BlocProvider(
+            lazy: false,
+            create: (context) =>
+                AppConfigCubit(service: config.configService)..init(),
+          ),
           BlocProvider(
             create: (context) => SplashCubit(
               storage: config.tokenStorage,

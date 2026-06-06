@@ -22,11 +22,14 @@ class PriceFormatter {
     return 8; //                  0.00000012
   }
 
-  /// Formats a price with magnitude-aware decimals and thousands grouping.
+  /// Formats a price with thousands grouping. Decimal places come from
+  /// [decimals] when provided (the server-driven `priceDecimals` override),
+  /// otherwise from the magnitude-aware [decimalsFor] (today's behavior — so
+  /// passing `null` is a no-op for every existing coin).
   /// Returns the em dash for null/non-finite values.
-  static String price(num? value, {bool withSymbol = false}) {
+  static String price(num? value, {bool withSymbol = false, int? decimals}) {
     if (value == null || !value.toDouble().isFinite) return '—';
-    final d = decimalsFor(value);
+    final d = (decimals != null && decimals >= 0) ? decimals : decimalsFor(value);
     final pattern = d == 0 ? '#,##0' : '#,##0.${'0' * d}';
     final formatted = NumberFormat(pattern, 'en_US').format(value);
     return withSymbol ? '\$$formatted' : formatted;

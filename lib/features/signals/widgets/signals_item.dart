@@ -1,9 +1,11 @@
 import 'dart:math';
 import 'package:aspiro_trade/features/signals/models/models.dart';
+import 'package:aspiro_trade/services/config/app_config_cubit.dart';
 import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:aspiro_trade/utils/methods/price_formatter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SignalsItem extends StatelessWidget {
   const SignalsItem({super.key, required this.signal});
@@ -38,7 +40,17 @@ class SignalsItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isBuy = signal.signal.direction.toLowerCase() == 'buy';
-    final isCrypto = _isCrypto(signal.signal.symbol);
+    final config = context.watch<AppConfigCubit>().state.config;
+    // Live-vs-static is server-driven: a symbol shows the live price slider iff
+    // its market has a live feed (`market.liveData`). Falls back to the legacy
+    // `_isCrypto` regex when config hasn't resolved the symbol yet, so Phase 0
+    // stays byte-identical (crypto live as today, non-crypto static as today).
+    final isCrypto = config.liveDataFor(signal.signal.symbol) ??
+        _isCrypto(signal.signal.symbol);
+    // Server-driven decimals override (null ⇒ magnitude-aware fallback, today's
+    // behavior). Read from app-config for this symbol.
+    final priceDecimals =
+        config.assetFor(signal.signal.symbol)?.priceDecimals;
     final profitPct = signal.signal.profitPct?.toDouble() ?? 0;
     final isProfit = profitPct >= 0;
     final isClosed = signal.signal.isClosed;
@@ -248,8 +260,8 @@ class SignalsItem extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('SL ${PriceFormatter.price(sl)}', style: const TextStyle(fontSize: 10, color: AppColors.down, fontWeight: FontWeight.w600)),
-                          Text('TP ${PriceFormatter.price(tp)}', style: const TextStyle(fontSize: 10, color: AppColors.up, fontWeight: FontWeight.w600)),
+                          Text('SL ${PriceFormatter.price(sl, decimals: priceDecimals)}', style: const TextStyle(fontSize: 10, color: AppColors.down, fontWeight: FontWeight.w600)),
+                          Text('TP ${PriceFormatter.price(tp, decimals: priceDecimals)}', style: const TextStyle(fontSize: 10, color: AppColors.up, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -300,7 +312,7 @@ class SignalsItem extends StatelessWidget {
                               Positioned(
                                 left: entryPosition - 2,
                                 child: Tooltip(
-                                  message: '${AppLocalizations.entryLabel}: ${PriceFormatter.price(entry)}',
+                                  message: '${AppLocalizations.entryLabel}: ${PriceFormatter.price(entry, decimals: priceDecimals)}',
                                   child: Container(
                                     width: 4,
                                     height: 10,
@@ -371,11 +383,11 @@ class SignalsItem extends StatelessWidget {
                     child: isCrypto
                         ? Row(
                             children: [
-                              _GridCell(label: AppLocalizations.entryLabel, value: PriceFormatter.price(entry, withSymbol: true), valueColor: AppColors.textPrimary),
+                              _GridCell(label: AppLocalizations.entryLabel, value: PriceFormatter.price(entry, withSymbol: true, decimals: priceDecimals), valueColor: AppColors.textPrimary),
                               Container(width: 1, height: 24, color: AppColors.border.withOpacity(0.5)),
                               _GridCell(
                                 label: isClosed ? AppLocalizations.closeLabel : AppLocalizations.currentLabel,
-                                value: current != null ? PriceFormatter.price(current, withSymbol: true) : '—',
+                                value: current != null ? PriceFormatter.price(current, withSymbol: true, decimals: priceDecimals) : '—',
                                 valueColor: current != null
                                     ? (isClosed
                                         ? AppColors.textPrimary
@@ -387,11 +399,11 @@ class SignalsItem extends StatelessWidget {
                         // Non-crypto: only Entry / SL / TP — no live Current, no %, no slider.
                         : Row(
                             children: [
-                              _GridCell(label: AppLocalizations.entryLabel, value: PriceFormatter.price(entry, withSymbol: true), valueColor: AppColors.textPrimary),
+                              _GridCell(label: AppLocalizations.entryLabel, value: PriceFormatter.price(entry, withSymbol: true, decimals: priceDecimals), valueColor: AppColors.textPrimary),
                               Container(width: 1, height: 24, color: AppColors.border.withOpacity(0.5)),
-                              _GridCell(label: 'SL', value: sl != null ? PriceFormatter.price(sl, withSymbol: true) : '—', valueColor: AppColors.down),
+                              _GridCell(label: 'SL', value: sl != null ? PriceFormatter.price(sl, withSymbol: true, decimals: priceDecimals) : '—', valueColor: AppColors.down),
                               Container(width: 1, height: 24, color: AppColors.border.withOpacity(0.5)),
-                              _GridCell(label: 'TP', value: tp != null ? PriceFormatter.price(tp, withSymbol: true) : '—', valueColor: AppColors.up),
+                              _GridCell(label: 'TP', value: tp != null ? PriceFormatter.price(tp, withSymbol: true, decimals: priceDecimals) : '—', valueColor: AppColors.up),
                             ],
                           ),
                   ),

@@ -1,9 +1,13 @@
 import 'dart:ui';
+import 'package:aspiro_trade/api/models/app_config/app_config_dto.dart';
 import 'package:aspiro_trade/features/home/cubit/home_cubit.dart';
 import 'package:aspiro_trade/features/profile/cubit/profile_cubit.dart';
 import 'package:aspiro_trade/router/app_router.dart';
+import 'package:aspiro_trade/services/config/app_config_cubit.dart';
 import 'package:aspiro_trade/ui/ui.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
+import 'package:aspiro_trade/ui/widgets/market_tab_bar.dart';
+import 'package:aspiro_trade/ui/widgets/update_banner.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,23 +31,41 @@ class _HomeScreenState extends State<HomeScreen> {
     context.read<ProfileCubit>().start();
   }
 
+  // Currently-selected market (only meaningful once >1 market is enabled —
+  // today crypto-only, so the selector is hidden and this stays "crypto").
+  String _selectedMarket = '';
+
   @override
   Widget build(BuildContext context) {
+    final config = context.watch<AppConfigCubit>().state.config;
+    final tabs = _visibleTabs(config);
+    final selectedMarket = _selectedMarket.isNotEmpty
+        ? _selectedMarket
+        : (config.enabledMarkets.isNotEmpty
+            ? config.enabledMarkets.first.id
+            : 'crypto');
+
     return AutoTabsRouter(
-      routes: const [
-        TickersRoute(),
-        SignalsRoute(),
-        DigestRoute(),
-        HistoryRoute(),
-        SettingsRoute(),
-      ],
+      routes: tabs.map((t) => t.route).toList(),
       builder: (context, child) {
         final tabsRouter = AutoTabsRouter.of(context);
 
         return Scaffold(
           backgroundColor: AppColors.background,
           extendBody: true, // Content scroll goes behind the floating bar
-          body: child,
+          // Top section (update banner + market selector) renders nothing in
+          // Phase 0 (version OK + single market), so `body` is layout-identical
+          // to the bare tab content it used to be.
+          body: Column(
+            children: [
+              const UpdateBanner(),
+              MarketTabBar(
+                selected: selectedMarket,
+                onSelected: (id) => setState(() => _selectedMarket = id),
+              ),
+              Expanded(child: child),
+            ],
+          ),
           bottomNavigationBar: Container(
             // Sit the floating bar ABOVE the system navigation. viewPadding.bottom
             // is reported by the OS per nav mode: ~48dp for 3-button navigation
@@ -85,51 +107,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _NavItem(
-                          icon: Icons.show_chart_rounded,
-                          label: AppLocalizations.market,
-                          isActive: tabsRouter.activeIndex == 0,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            tabsRouter.setActiveIndex(0);
-                          },
-                        ),
-                        _NavItem(
-                          icon: Icons.cell_tower_rounded,
-                          label: AppLocalizations.signals,
-                          isActive: tabsRouter.activeIndex == 1,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            tabsRouter.setActiveIndex(1);
-                          },
-                        ),
-                        _NavItem(
-                          icon: Icons.auto_awesome_rounded,
-                          label: AppLocalizations.analyticsTab,
-                          isActive: tabsRouter.activeIndex == 2,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            tabsRouter.setActiveIndex(2);
-                          },
-                        ),
-                        _NavItem(
-                          icon: Icons.history_rounded,
-                          label: AppLocalizations.history,
-                          isActive: tabsRouter.activeIndex == 3,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            tabsRouter.setActiveIndex(3);
-                          },
-                        ),
-                        _NavItem(
-                          icon: Icons.person_outline_rounded,
-                          label: AppLocalizations.profile,
-                          isActive: tabsRouter.activeIndex == 4,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            tabsRouter.setActiveIndex(4);
-                          },
-                        ),
+                        for (var i = 0; i < tabs.length; i++)
+                          _NavItem(
+                            icon: tabs[i].icon,
+                            label: tabs[i].label,
+                            isActive: tabsRouter.activeIndex == i,
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              tabsRouter.setActiveIndex(i);
+                            },
+                          ),
                       ],
                     ),
                   ),
@@ -141,6 +128,57 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
+
+  /// The bottom-nav tabs, after feature gating. Tickers / Signals / History /
+  /// Settings are always present; the AI-analytics/digest tab is included only
+  /// when the `analytics` OR `digest` feature flag is on (both default true ⇒
+  /// today's 5 tabs, unchanged). When a flag is flipped off server-side the
+  /// tab and its route drop together, so indices stay aligned.
+  List<_TabDef> _visibleTabs(AppConfigDto config) {
+    final showAnalytics = config.feature('analytics', fallback: true) ||
+        config.feature('digest', fallback: true);
+    return [
+      _TabDef(
+        route: const TickersRoute(),
+        icon: Icons.show_chart_rounded,
+        label: AppLocalizations.market,
+      ),
+      _TabDef(
+        route: const SignalsRoute(),
+        icon: Icons.cell_tower_rounded,
+        label: AppLocalizations.signals,
+      ),
+      if (showAnalytics)
+        _TabDef(
+          route: const DigestRoute(),
+          icon: Icons.auto_awesome_rounded,
+          label: AppLocalizations.analyticsTab,
+        ),
+      _TabDef(
+        route: const HistoryRoute(),
+        icon: Icons.history_rounded,
+        label: AppLocalizations.history,
+      ),
+      _TabDef(
+        route: const SettingsRoute(),
+        icon: Icons.person_outline_rounded,
+        label: AppLocalizations.profile,
+      ),
+    ];
+  }
+}
+
+/// A single bottom-nav entry: its route + presentation.
+class _TabDef {
+  const _TabDef({
+    required this.route,
+    required this.icon,
+    required this.label,
+  });
+
+  final PageRouteInfo route;
+  final IconData icon;
+  final String label;
 }
 
 class _NavItem extends StatefulWidget {

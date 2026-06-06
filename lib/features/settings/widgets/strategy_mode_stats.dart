@@ -1,14 +1,18 @@
-import 'package:aspiro_trade/repositories/users/users.dart';
+import 'package:aspiro_trade/api/models/app_config/app_config_dto.dart';
 import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-/// STATIC backtest stats for a strategy mode.
+/// Backtest stats for a strategy mode — now SERVER-OWNED.
 ///
-/// These numbers are hardcoded (honest backtest, ~90 days, no commission) and
-/// are NEVER recomputed at runtime — the product owner explicitly wants them
-/// baked. The equity curve is illustrative: a smooth ascending line from $1000.
+/// The numbers (trades/month, WR, PF, drawdown, equity curve) are no longer
+/// hardcoded in Dart: they are sourced from `GET /app-config`'s `strategies[]`
+/// (see [StrategyConfigDto.stats]). They are still never recomputed at
+/// runtime — the product owner wants them baked, just baked in the DB so
+/// they're editable without an app release. With crypto-only enabled the
+/// server ships the exact same figures the app used to hardcode, so the panel
+/// renders identically.
 class StrategyModeStats {
   const StrategyModeStats({
     required this.tradesPerMonth,
@@ -28,48 +32,34 @@ class StrategyModeStats {
   final double maxDrawdownPct;
   final String explanation;
 
-  /// Equity curve starting at $1000 (13 points over the 90d backtest window).
+  /// Equity curve starting at $1000 (points over the 90d backtest window).
   final List<double> equity;
   final Color color;
 
   static const double startEquity = 1000;
 
-  // Numbers below are the canonical 90-day backtest (vol-ML, 7 pairs, 1% risk,
-  // R=1:1, no commission) — same figures as the owner's PDF presentation.
-
-  /// Quality (ML threshold 0.53): cleaner — higher win-rate & PF, +24.0%.
-  static StrategyModeStats get quality => StrategyModeStats(
-        tradesPerMonth: 34,
-        tradesPer90d: 102,
-        winRatePct: 60.8,
-        profitFactor: 1.55,
-        maxDrawdownPct: 4.9,
-        explanation: AppLocalizations.strategyModeQualityExplain,
-        color: AppColors.brand,
-        equity: const [
-          1000, 1030, 1080, 1060, 1100, 1130, 1120, 1150, 1160, 1185, 1205,
-          1225, 1240,
-        ],
-      );
-
-  /// Turnover (ML threshold 0.50): more trades & turnover, +36.3% but lower
-  /// per-trade quality (WR 57.5%, PF 1.36) and deeper drawdown.
-  static StrategyModeStats get turnover => StrategyModeStats(
-        tradesPerMonth: 71,
-        tradesPer90d: 212,
-        winRatePct: 57.5,
-        profitFactor: 1.36,
-        maxDrawdownPct: 8.7,
-        explanation: AppLocalizations.strategyModeTurnoverExplain,
-        color: AppColors.brandLight,
-        equity: const [
-          1000, 1040, 1010, 1080, 1130, 1100, 1160, 1210, 1180, 1255, 1310,
-          1345, 1363,
-        ],
-      );
-
-  static StrategyModeStats forMode(String modeKey) =>
-      modeKey == StrategyMode.turnoverKey ? turnover : quality;
+  /// Build a display model from a server strategy entry. [explanation] is the
+  /// plain-language blurb (localized for known modes, falling back to the
+  /// server `description`); [color] tints the chart/accent. Returns null when
+  /// the strategy has no stats (e.g. a work-in-progress mode) ⇒ no panel.
+  static StrategyModeStats? fromConfig(
+    StrategyConfigDto strategy, {
+    required String explanation,
+    required Color color,
+  }) {
+    final s = strategy.stats;
+    if (s == null) return null;
+    return StrategyModeStats(
+      tradesPerMonth: s.tradesPerMonth,
+      tradesPer90d: s.tradesPer90d,
+      winRatePct: s.winRatePct,
+      profitFactor: s.profitFactor,
+      maxDrawdownPct: s.maxDrawdownPct,
+      explanation: explanation,
+      equity: s.equity.isEmpty ? const [startEquity, startEquity] : s.equity,
+      color: color,
+    );
+  }
 }
 
 /// Explanation + static stats grid + equity sparkline for a single mode.

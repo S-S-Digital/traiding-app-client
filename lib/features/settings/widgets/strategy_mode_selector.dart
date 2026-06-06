@@ -1,6 +1,8 @@
+import 'package:aspiro_trade/api/models/app_config/app_config_dto.dart';
 import 'package:aspiro_trade/features/settings/cubit/strategy_mode_cubit.dart';
 import 'package:aspiro_trade/features/settings/widgets/strategy_mode_stats.dart';
 import 'package:aspiro_trade/repositories/users/users.dart';
+import 'package:aspiro_trade/services/config/app_config_cubit.dart';
 import 'package:aspiro_trade/ui/localization/app_localizations.dart';
 import 'package:aspiro_trade/ui/theme/theme.dart';
 import 'package:flutter/material.dart';
@@ -50,49 +52,118 @@ class _StrategyModeBody extends StatelessWidget {
           return const SizedBox.shrink();
         }
         final mode = state.mode;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
-              child: Text(
-                AppLocalizations.strategyModeTitle.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textTertiary,
-                  letterSpacing: 0.5,
-                ),
+        // Strategies are server-driven: render every enabled strategy from
+        // app-config, in order. With crypto-only enabled this is exactly
+        // [quality, turnover] with the same numbers as before → identical UI.
+        // A flipped-on mode (e.g. "hourly") appears automatically with no
+        // release. Known modes keep their localized copy so nothing changes;
+        // unknown modes fall back to the server-provided name/description.
+        final strategies =
+            context.watch<AppConfigCubit>().state.config.enabledStrategies;
+
+        final children = <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
+            child: Text(
+              AppLocalizations.strategyModeTitle.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textTertiary,
+                letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 4),
-            _ModeOption(
-              selected: mode.isQuality,
-              enabled: !state.saving,
-              icon: Icons.verified_outlined,
-              title: AppLocalizations.strategyModeQuality,
-              subtitle: AppLocalizations.strategyModeQualityDesc,
-              onTap: () => context
-                  .read<StrategyModeCubit>()
-                  .setMode(StrategyMode.qualityKey),
-            ),
-            StrategyModeStatsPanel(stats: StrategyModeStats.quality),
-            const SizedBox(height: 8),
-            _ModeOption(
-              selected: mode.isTurnover,
-              enabled: !state.saving,
-              icon: Icons.bolt_outlined,
-              title: AppLocalizations.strategyModeTurnover,
-              subtitle: AppLocalizations.strategyModeTurnoverDesc,
-              onTap: () => context
-                  .read<StrategyModeCubit>()
-                  .setMode(StrategyMode.turnoverKey),
-            ),
-            StrategyModeStatsPanel(stats: StrategyModeStats.turnover),
-          ],
+          ),
+          const SizedBox(height: 4),
+        ];
+
+        for (var i = 0; i < strategies.length; i++) {
+          final s = strategies[i];
+          if (i > 0) children.add(const SizedBox(height: 8));
+          children.add(_ModeOption(
+            selected: mode.current == s.id,
+            enabled: !state.saving,
+            icon: _iconFor(s.id),
+            title: _titleFor(s),
+            subtitle: _subtitleFor(s),
+            onTap: () => context.read<StrategyModeCubit>().setMode(s.id),
+          ));
+          final stats = StrategyModeStats.fromConfig(
+            s,
+            explanation: _explanationFor(s),
+            color: _colorFor(s.id, i),
+          );
+          if (stats != null) {
+            children.add(StrategyModeStatsPanel(stats: stats));
+          }
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
         );
       },
     );
+  }
+}
+
+// --- per-strategy display mapping ---
+// Known modes (quality/turnover) keep their hand-tuned icon/color + localized
+// copy so the crypto UI is byte-identical. Unknown / future modes fall back to
+// server-provided strings + neutral styling.
+
+IconData _iconFor(String id) {
+  switch (id) {
+    case StrategyMode.qualityKey:
+      return Icons.verified_outlined;
+    case StrategyMode.turnoverKey:
+      return Icons.bolt_outlined;
+    default:
+      return Icons.auto_graph_outlined;
+  }
+}
+
+Color _colorFor(String id, int index) {
+  switch (id) {
+    case StrategyMode.qualityKey:
+      return AppColors.brand;
+    case StrategyMode.turnoverKey:
+      return AppColors.brandLight;
+    default:
+      return index.isEven ? AppColors.brand : AppColors.brandLight;
+  }
+}
+
+String _titleFor(StrategyConfigDto s) {
+  switch (s.id) {
+    case StrategyMode.qualityKey:
+      return AppLocalizations.strategyModeQuality;
+    case StrategyMode.turnoverKey:
+      return AppLocalizations.strategyModeTurnover;
+    default:
+      return s.name;
+  }
+}
+
+String _subtitleFor(StrategyConfigDto s) {
+  switch (s.id) {
+    case StrategyMode.qualityKey:
+      return AppLocalizations.strategyModeQualityDesc;
+    case StrategyMode.turnoverKey:
+      return AppLocalizations.strategyModeTurnoverDesc;
+    default:
+      return s.description ?? '';
+  }
+}
+
+String _explanationFor(StrategyConfigDto s) {
+  switch (s.id) {
+    case StrategyMode.qualityKey:
+      return AppLocalizations.strategyModeQualityExplain;
+    case StrategyMode.turnoverKey:
+      return AppLocalizations.strategyModeTurnoverExplain;
+    default:
+      return s.description ?? '';
   }
 }
 

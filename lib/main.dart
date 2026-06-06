@@ -1,5 +1,6 @@
 import 'package:aspiro_trade/api/aspiro_trade_api.dart';
 import 'package:aspiro_trade/app/app_config.dart';
+import 'package:aspiro_trade/services/config/config_service.dart';
 import 'package:aspiro_trade/app/aspiro_trade_app.dart';
 import 'package:aspiro_trade/services/websocket_service.dart';
 import 'package:aspiro_trade/services/notification_navigation_service.dart';
@@ -117,6 +118,12 @@ Future<void> main() async {
     webSocketService.connect();
   }
 
+  final configService = ConfigService(
+    apiUrl: apiUrl,
+    storage: const FlutterSecureStorage(),
+    talker: talker,
+  );
+
   final config = AppConfig(
     talker: talker,
     apiUrl: apiUrl,
@@ -127,6 +134,7 @@ Future<void> main() async {
     localNotificationsPlugin: flutterLocalNotificationsPlugin,
     firebaseAuth: firebaseAuth,
     webSocketService: webSocketService,
+    configService: configService,
   );
 
 

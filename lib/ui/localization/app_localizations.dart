@@ -239,6 +239,11 @@ class AppLocalizations {
   static String get deleteAccountConfirm => isRu ? 'Ваш профиль и все связанные данные будут стерты. Вы действительно хотите продолжить?' : 'Your profile and all associated data will be erased. Are you sure you want to continue?';
   static String get delete => isRu ? 'Удалить' : 'Delete';
 
+  // ─── Update banner ───
+  static String get updateAvailable => isRu
+      ? 'Доступна новая версия приложения. Обновите для лучшей работы.'
+      : 'A new app version is available. Update for the best experience.';
+
   // ─── Digest / Analytics ───
   static String get aiAnalytics => isRu ? 'AI Аналитика' : 'AI Analytics';
   static String get analyticsTab => isRu ? 'Аналитика' : 'Analytics';
